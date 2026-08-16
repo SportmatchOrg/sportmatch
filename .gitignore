@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.local
+.next/
+dist/
+back/generated/
+*.log
+.idea/
+*.iml
