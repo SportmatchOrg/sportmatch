@@ -48,8 +48,6 @@ sportmatch/
 * `back/`: API backend desarrollada con NestJS.
 * `docker-compose.yml`: configuración de PostgreSQL para desarrollo local.
 
-Las carpetas `front/` y `back/` se crean durante el setup correspondiente de cada aplicación.
-
 ## Base de datos
 
 Para levantar PostgreSQL:
@@ -69,14 +67,57 @@ El servicio `db` debe aparecer como `healthy`.
 ### Conexión local
 
 ```text
-postgres://root:root@localhost:5432/sportmatch
+postgresql://root:root@localhost:5432/sportmatch?schema=public
 ```
 
 Las credenciales incluidas en `docker-compose.yml` son exclusivamente para desarrollo local.
 
+## Prisma y migraciones
+
+Prisma está configurado dentro de `back/`.
+
+Para levantar la base de datos:
+
+```bash
+docker compose up -d db
+```
+
+Luego, desde `back/`, ejecutar las migraciones y generar el cliente de Prisma:
+
+```bash
+cd back
+npm run db:migrate
+```
+
+Finalmente, iniciar el backend:
+
+```bash
+npm run start:dev
+```
+
+El flujo de desarrollo es:
+
+```text
+docker compose up -d db
+        ↓
+npm run db:migrate
+        ↓
+npm run start:dev
+```
+
+Scripts disponibles para Prisma:
+
+```bash
+npm run db:migrate
+npm run db:deploy
+npm run db:generate
+npm run db:seed
+npm run db:studio
+```
+
 ## Frontend
 
-Una vez creado el frontend:
+Para instalar las dependencias e iniciar el frontend:
 
 ```bash
 cd front
@@ -92,11 +133,16 @@ http://localhost:3000
 
 ## Backend
 
-Una vez creado el backend:
+Para instalar las dependencias:
 
 ```bash
 cd back
 npm install
+```
+
+Para iniciar el backend en modo desarrollo:
+
+```bash
 npm run start:dev
 ```
 
