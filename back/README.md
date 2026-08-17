@@ -96,3 +96,18 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Cliente de Prisma
+
+El cliente se genera en `src/generated/prisma/` (definido en el bloque `generator`
+de `prisma/schema.prisma`). Esa carpeta está en el `.gitignore`: se regenera con
+`npm run db:generate`.
+
+Dos detalles de configuración a tener en cuenta:
+
+- `output = "../src/generated/prisma"`: el cliente tiene que quedar dentro de
+  `src/`. Si queda afuera, TypeScript sube la raíz de compilación y el build
+  emite `dist/src/main.js` en lugar de `dist/main.js`, rompiendo `start:prod`.
+- `moduleFormat = "cjs"`: el proyecto usa CommonJS. Sin esta opción el cliente
+  se genera con `import.meta.url`, que solo existe en ES Modules, y la app
+  falla al arrancar con `ReferenceError: exports is not defined`.
