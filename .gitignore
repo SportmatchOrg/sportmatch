@@ -3,7 +3,10 @@ node_modules/
 .env.local
 .next/
 dist/
-back/generated/
+back/src/generated/
 *.log
 .idea/
 *.iml
+
+# Overrides locales de Docker Compose
+docker-compose.override.yml
