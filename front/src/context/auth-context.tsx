@@ -23,14 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged devuelve la función para darse de baja.
-    // Devolverla desde el efecto hace que React la llame al desmontar.
-    const desuscribir = onAuthStateChanged(auth, (usuario) => {
-      setUser(usuario);
+    // onAuthStateChanged returns the unsubscribe function.
+    // Returning it from the effect makes React call it on unmount.
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
     });
 
-    return desuscribir;
+    return unsubscribe;
   }, []);
 
   return (
@@ -41,11 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth(): AuthContextValue {
-  const contexto = useContext(AuthContext);
+  const context = useContext(AuthContext);
 
-  if (contexto === undefined) {
-    throw new Error('useAuth debe usarse dentro de un <AuthProvider>');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an <AuthProvider>');
   }
 
-  return contexto;
+  return context;
 }
