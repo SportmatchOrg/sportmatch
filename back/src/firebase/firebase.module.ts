@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { App, cert, getApp, getApps, initializeApp } from 'firebase-admin/app';
 
 export const FIREBASE_ADMIN = 'FIREBASE_ADMIN';
@@ -8,14 +9,17 @@ export const FIREBASE_ADMIN = 'FIREBASE_ADMIN';
   providers: [
     {
       provide: FIREBASE_ADMIN,
-      useFactory: (): App => {
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): App => {
         if (getApps().length) return getApp();
 
         return initializeApp({
           credential: cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            projectId: config.getOrThrow<string>('FIREBASE_PROJECT_ID'),
+            clientEmail: config.getOrThrow<string>('FIREBASE_CLIENT_EMAIL'),
+            privateKey: config
+              .getOrThrow<string>('FIREBASE_PRIVATE_KEY')
+              .replace(/\\n/g, '\n'),
           }),
         });
       },
