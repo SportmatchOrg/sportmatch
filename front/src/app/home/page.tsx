@@ -5,7 +5,6 @@ import { signOut } from 'firebase/auth';
 import { useAuth } from '@/context/auth-context';
 import { auth } from '@/lib/firebase';
 
-
 export default function HomePage() {
   const { user } = useAuth();
 
@@ -16,7 +15,7 @@ export default function HomePage() {
       <button
         type="button"
         onClick={() => signOut(auth)}
-        className="rounded-full border border-neutral-800 bg-surface-glass px-5 py-2 text-sm transition hover:bg-neutral-900"
+        className="rounded-full border border-white/12 bg-surface-glass px-5 py-2 text-sm transition hover:bg-white/10"
       >
         Cerrar sesión
       </button>

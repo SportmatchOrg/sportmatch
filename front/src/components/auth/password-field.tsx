@@ -20,7 +20,7 @@ export function PasswordField(props: PasswordFieldProps) {
           type="button"
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          className="rounded-full p-1 text-neutral-500 transition hover:text-neutral-300"
+          className="rounded-full p-1 text-neutral-400 transition hover:text-neutral-200"
         >
           {visible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </button>

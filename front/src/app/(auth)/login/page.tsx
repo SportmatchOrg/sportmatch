@@ -43,15 +43,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h2 className="text-[40px] font-extrabold leading-tight tracking-[-0.036em] text-white">Bienvenido</h2>
-        <p className="mt-2 text-sm text-neutral-400">
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2">
+        <h2 className="text-[40px] font-extrabold leading-tight tracking-[-0.036em] text-white">
+          Bienvenido
+        </h2>
+        <p className="text-sm text-neutral-400">
           Iniciá sesión para encontrar tu próximo partido
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthField
           icon={<Mail className="h-5 w-5" />}
           type="email"
