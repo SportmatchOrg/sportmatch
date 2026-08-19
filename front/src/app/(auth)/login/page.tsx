@@ -91,7 +91,7 @@ export default function LoginPage() {
 
       <AuthDivider label="O continuá con" />
 
-      <GoogleButton label="Google" />
+      <GoogleButton label="Google" disabled={submitting} onError={setError} />
 
       <p className="text-center text-sm text-neutral-400">
         ¿No tenés cuenta?{' '}

@@ -112,7 +112,7 @@ export default function SignupPage() {
 
       <AuthDivider label="O registrate con" />
 
-      <GoogleButton label="Google" />
+      <GoogleButton label="Google" disabled={submitting} onError={setError} />
 
       <p className="text-center text-sm text-neutral-400">
         ¿Ya tenés cuenta?{' '}
