@@ -1,0 +1,18 @@
+import { FirebaseError } from 'firebase/app';
+
+const MESSAGES: Record<string, string> = {
+  'auth/invalid-credential': 'Email o contraseña incorrectos.',
+  'auth/email-already-in-use': 'Ya existe una cuenta con ese email.',
+  'auth/weak-password': 'La contraseña tiene que tener al menos 6 caracteres.',
+  'auth/invalid-email': 'El email no es válido.',
+  'auth/too-many-requests': 'Demasiados intentos. Esperá un momento.',
+  'auth/network-request-failed': 'No pudimos conectarnos. Revisá tu conexión.',
+};
+
+const FALLBACK = 'Algo salió mal. Probá de nuevo.';
+
+export function getAuthErrorMessage(error: unknown): string {
+  const code = error instanceof FirebaseError ? error.code : '';
+
+  return MESSAGES[code] ?? FALLBACK;
+}

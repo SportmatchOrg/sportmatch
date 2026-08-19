@@ -7,7 +7,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --color-surface-glass: rgba(255, 255, 255, 0.05);
+  --color-google-blue: #4285f4;
+  --color-google-green: #34a853;
+  --color-google-yellow: #fbbc05;
+  --color-google-red: #ea4335;
+  --color-logo-glow: rgba(76, 154, 255, 0.55);
+  --shadow-glow: 0 0 28px -6px var(--color-sky-400);
+  --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -126,5 +134,15 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@keyframes logo-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 26px var(--color-logo-glow);
   }
 }
