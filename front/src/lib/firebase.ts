@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
 
 function requireEnv(value: string | undefined, name: string): string {
   if (!value) {
@@ -32,3 +32,7 @@ const config = {
 
 export const app = getApps().length ? getApp() : initializeApp(config);
 export const auth = getAuth(app);
+
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Could not set auth persistence:', error);
+});
