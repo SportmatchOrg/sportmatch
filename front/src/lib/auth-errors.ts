@@ -14,8 +14,12 @@ const MESSAGES: Record<string, string> = {
 
 const FALLBACK = 'Algo salió mal. Probá de nuevo.';
 
+export function getAuthErrorCode(error: unknown): string {
+  return error instanceof FirebaseError ? error.code : '';
+}
+
 export function getAuthErrorMessage(error: unknown): string {
-  const code = error instanceof FirebaseError ? error.code : '';
+  const code = getAuthErrorCode(error);
 
   if (!MESSAGES[code]) {
     console.error('Unhandled auth error:', code, error);
