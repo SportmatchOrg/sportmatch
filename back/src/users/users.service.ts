@@ -50,10 +50,6 @@ export class UsersService {
     }
   }
 
-  /**
-   * Maps known Prisma errors to HTTP exceptions.
-   * Unknown errors are returned as-is so Nest responds with a 500.
-   */
   private toHttpException(error: unknown, reference: string): Error {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // P2002: unique constraint violation (duplicated email or firebaseUid)
