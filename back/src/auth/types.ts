@@ -4,7 +4,7 @@ import type { DecodedIdToken } from 'firebase-admin/auth';
 export interface FirebaseUser {
   uid: string;
   email: string;
-  nombre?: string;
+  nombre: string;
   fotoUrl?: string;
 }
 
