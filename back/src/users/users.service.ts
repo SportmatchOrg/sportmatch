@@ -27,6 +27,14 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    const existingUser = await this.usersRepository.findByFirebaseUid(
+      createUserDto.firebaseUid,
+    );
+
+    if (existingUser) {
+      return existingUser;
+    }
+
     try {
       return await this.usersRepository.create(createUserDto);
     } catch (error) {
