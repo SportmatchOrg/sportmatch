@@ -1,15 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
 
-function requireEnv(value: string | undefined, name: string): string {
-  if (!value) {
-    throw new Error(
-      `Missing environment variable ${name}. Copy front/.env.example to front/.env and fill it in.`,
-    );
-  }
-
-  return value;
-}
+import { requireEnv } from './env';
 
 const config = {
   apiKey: requireEnv(
