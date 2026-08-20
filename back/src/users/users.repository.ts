@@ -15,6 +15,10 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
+  findByFirebaseUid(firebaseUid: string) {
+    return this.prisma.user.findUnique({ where: { firebaseUid } });
+  }
+
   create(data: CreateUserDto) {
     return this.prisma.user.create({ data });
   }

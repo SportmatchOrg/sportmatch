@@ -26,13 +26,21 @@ export class UsersService {
     return user;
   }
 
-  async create(createUserDto: CreateUserDto) {
-    try {
-      return await this.usersRepository.create(createUserDto);
-    } catch (error) {
-      throw this.toHttpException(error, createUserDto.email);
-    }
-  }
+ async create(createUserDto: CreateUserDto) {
+   const existingUser = await this.usersRepository.findByFirebaseUid(
+     createUserDto.firebaseUid,
+   );
+
+   if (existingUser) {
+     return existingUser;
+   }
+
+   try {
+     return await this.usersRepository.create(createUserDto);
+   } catch (error) {
+     throw this.toHttpException(error, createUserDto.email);
+   }
+ }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
