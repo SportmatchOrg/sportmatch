@@ -76,12 +76,12 @@ export default function LoginPage() {
         />
 
         <div className="text-right">
-          <span
-            className="cursor-not-allowed text-sm font-semibold text-sky-400"
-            title="Disponible en una próxima entrega"
+          <Link
+            href="/forgot-password"
+            className="text-sm font-semibold text-sky-400 hover:underline"
           >
             ¿Olvidaste tu contraseña?
-          </span>
+          </Link>
         </div>
 
         <FormError message={error} />
@@ -91,7 +91,7 @@ export default function LoginPage() {
 
       <AuthDivider label="O continuá con" />
 
-      <GoogleButton label="Google" />
+      <GoogleButton label="Google" disabled={submitting} onError={setError} />
 
       <p className="text-center text-sm text-neutral-400">
         ¿No tenés cuenta?{' '}
