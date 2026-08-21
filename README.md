@@ -29,6 +29,16 @@ node -v
 
 Debe devolver una versión `v24.x`.
 
+## Instalación inicial
+
+Después de clonar el repositorio, instalar las dependencias desde la raíz:
+
+```bash
+npm install
+```
+
+Este comando instala Husky y activa el hook `pre-push`. Antes de cada push, el hook ejecuta el lint, los tests y el build del frontend y del backend.
+
 ## Estructura del proyecto
 
 La estructura principal del repositorio es:
