@@ -1,7 +1,5 @@
 import { cn } from '@/lib/utils';
 
-export const BRAND_ACCENT = '#4ea8ff';
-
 export function BrandLogo({ className }: { className?: string }) {
   return (
     <span
