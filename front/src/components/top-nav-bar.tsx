@@ -4,9 +4,8 @@ import { Plus, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { BRAND_ACCENT, BrandLogo } from '@/components/brand-logo';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
-import { SpecularEdge } from '@/components/ui/specular-edge';
 import {
   Tooltip,
   TooltipContent,
@@ -17,31 +16,26 @@ import { useAuth } from '@/context/auth-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
 
-const PILL_RADIUS = 999;
+const ACTIVE_RING = 'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]';
 
 function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
 
   const itemClassName = cn(
-    'relative flex items-center gap-2 rounded-full px-3.5 py-2 text-caption transition-colors xl:gap-2 xl:px-5 xl:py-2.5 xl:text-body',
-    active ? 'bg-glass text-white' : 'text-neutral-400 hover:text-white'
+    'flex h-[42px] shrink-0 items-center gap-[9px] rounded-full px-[18px] text-callout transition-colors',
+    active ? cn('bg-glass-strong text-white', ACTIVE_RING) : 'text-white/46'
   );
 
   const content = (
     <>
-      <SpecularEdge
-        radius={PILL_RADIUS}
-        lineColor={BRAND_ACCENT}
-        baseColor={BRAND_ACCENT}
-        baseIntensity={active ? 1 : 0}
-        proximity={180}
-        autoAnimate={active}
-      />
-      <span className="relative z-[1] flex items-center gap-2">
-        <Icon className="size-4 xl:size-5" aria-hidden="true" />
-        {item.label}
-        {active && <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />}
-      </span>
+      <Icon className="size-[18px]" aria-hidden="true" />
+      {item.label}
+      {active && (
+        <span
+          className="size-[5px] rounded-full bg-accent shadow-[0_0_8px_0_rgba(78,168,255,0.45)]"
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 
@@ -52,7 +46,7 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
           type="button"
           aria-disabled="true"
           aria-label={item.label}
-          className={cn(itemClassName, 'aria-disabled:cursor-not-allowed aria-disabled:opacity-70')}
+          className={cn(itemClassName, 'aria-disabled:cursor-not-allowed')}
         >
           {content}
         </TooltipTrigger>
@@ -62,7 +56,11 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   }
 
   return (
-    <Link href={item.href} aria-current={active ? 'page' : undefined} className={itemClassName}>
+    <Link
+      href={item.href}
+      aria-current={active ? 'page' : undefined}
+      className={cn(itemClassName, !active && 'hover:text-white')}
+    >
       {content}
     </Link>
   );
@@ -82,7 +80,7 @@ export function TopNavBar() {
               <BrandLogo className="text-2xl xl:text-title" />
             </Link>
 
-            <nav aria-label="Navegación principal" className="flex items-center gap-2">
+            <nav aria-label="Navegación principal" className="flex items-center gap-1.5">
               {NAV_ITEMS.map((item) => (
                 <TopNavLink key={item.href} item={item} active={isNavItemActive(pathname, item.href)} />
               ))}
@@ -93,9 +91,9 @@ export function TopNavBar() {
             <Button
               nativeButton={false}
               render={<Link href={NEW_MATCH_HREF} />}
-              className="h-11 gap-2 rounded-full bg-accent px-5 text-caption font-semibold text-white shadow-glow hover:bg-accent-bright xl:h-12 xl:px-7 xl:text-body"
+              className="h-[42px] gap-2 rounded-full bg-accent px-5 text-callout text-white shadow-glow hover:bg-accent-bright"
             >
-              <Plus className="size-5" />
+              <Plus className="size-[18px]" />
               Crear partido
             </Button>
 
@@ -104,14 +102,15 @@ export function TopNavBar() {
               aria-label="Perfil"
               aria-current={profileActive ? 'page' : undefined}
               className={cn(
-                'flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-glass-strong text-neutral-400 ring-1 ring-glass-strong transition xl:size-12',
-                profileActive && 'ring-2 ring-accent'
+                'flex size-[42px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-glass-strong text-white/46 transition',
+                profileActive ? 'ring-2 ring-accent' : ACTIVE_RING
               )}
             >
               {user?.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.photoURL} alt="" className="size-full object-cover" />
               ) : (
-                <UserIcon className="size-6" aria-hidden="true" />
+                <UserIcon className="size-[18px]" aria-hidden="true" />
               )}
             </Link>
           </div>

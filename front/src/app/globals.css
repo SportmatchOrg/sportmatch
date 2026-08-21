@@ -32,6 +32,10 @@
   --text-body: 17px;
   --text-body--line-height: 1.5;
   --text-body--font-weight: 400;
+  --text-callout: 15px;
+  --text-callout--line-height: normal;
+  --text-callout--font-weight: 600;
+  --text-callout--letter-spacing: -0.15px;
   --text-caption: 13px;
   --text-caption--line-height: 1.4;
   --text-caption--font-weight: 500;
