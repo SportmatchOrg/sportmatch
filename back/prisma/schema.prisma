@@ -8,6 +8,24 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Deporte {
+  FUTBOL
+  BASQUET
+  TENIS
+  PADEL
+  RUNNING
+
+  @@map("deporte")
+}
+
+enum Nivel {
+  PRINCIPIANTE
+  INTERMEDIO
+  AVANZADO
+
+  @@map("nivel")
+}
+
 model User {
   id          String   @id @default(cuid())
   firebaseUid String   @unique
@@ -17,5 +35,24 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  partidosOrganizados Partido[]
+
   @@map("users")
+}
+
+model Partido {
+  id            String   @id @default(cuid())
+  deporte       Deporte
+  nivel         Nivel
+  fecha         DateTime
+  ubicacion     String
+  cupo          Int
+  descripcion   String?
+  organizadorId String
+  organizador   User     @relation(fields: [organizadorId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([fecha])
+  @@map("partidos")
 }
