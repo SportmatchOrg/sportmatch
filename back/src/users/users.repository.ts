@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FirebaseUser } from '../auth/types';
 
 @Injectable()
 export class UsersRepository {
@@ -21,6 +22,23 @@ export class UsersRepository {
 
   create(data: CreateUserDto) {
     return this.prisma.user.create({ data });
+  }
+
+  upsertByFirebaseUid(user: FirebaseUser) {
+    return this.prisma.user.upsert({
+      where: { firebaseUid: user.uid },
+      update: {
+        email: user.email,
+        nombre: user.nombre,
+        fotoUrl: user.fotoUrl,
+      },
+      create: {
+        firebaseUid: user.uid,
+        email: user.email,
+        nombre: user.nombre,
+        fotoUrl: user.fotoUrl,
+      },
+    });
   }
 
   update(id: string, data: UpdateUserDto) {

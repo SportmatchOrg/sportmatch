@@ -12,6 +12,8 @@ import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { FirebaseUser } from '../auth/types';
 
 @UseGuards(FirebaseAuthGuard)
 @Controller('users')
@@ -26,6 +28,11 @@ export class UsersController {
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('me')
+  me(@CurrentUser() user: FirebaseUser) {
+    return this.usersService.upsertFromFirebase(user);
   }
 
   @Get(':id')

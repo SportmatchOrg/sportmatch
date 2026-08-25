@@ -44,13 +44,14 @@ export class FirebaseAuthGuard implements CanActivate {
   }
 
   private toFirebaseUser(decodedToken: FirebaseIdToken): FirebaseUser {
-    if (!decodedToken.email || !decodedToken.name) {
-      throw new UnauthorizedException('Token is missing required user claims');
+    if (!decodedToken.email) {
+      throw new UnauthorizedException('Token does not contain an email');
     }
+
     return {
       uid: decodedToken.uid,
       email: decodedToken.email,
-      nombre: decodedToken.name,
+      nombre: decodedToken.name ?? decodedToken.email.split('@')[0],
       fotoUrl: decodedToken.picture,
     };
   }
