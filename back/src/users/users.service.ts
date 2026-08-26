@@ -27,6 +27,18 @@ export class UsersService {
     return user;
   }
 
+  async findByFirebaseUid(firebaseUid: string) {
+    const user = await this.usersRepository.findByFirebaseUid(firebaseUid);
+
+    if (!user) {
+      throw new NotFoundException(
+        `User with firebaseUid ${firebaseUid} was not found`,
+      );
+    }
+
+    return user;
+  }
+
   async create(createUserDto: CreateUserDto) {
     const existingUser = await this.usersRepository.findByFirebaseUid(
       createUserDto.firebaseUid,
