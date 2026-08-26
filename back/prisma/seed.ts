@@ -1,18 +1,34 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { inDays } from '../src/utils/time/in-days';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const inDays = (days: number, hour: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  date.setHours(hour, 0, 0, 0);
-  return date;
-};
+const NOMBRES_DEPORTES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
 
 async function main() {
+  const deportes = await Promise.all(
+    NOMBRES_DEPORTES.map((nombre) =>
+      prisma.deporte.upsert({
+        where: { nombre },
+        update: {},
+        create: { nombre },
+      }),
+    ),
+  );
+
+  const deporteId = (nombre: string): string => {
+    const deporte = deportes.find((candidato) => candidato.nombre === nombre);
+
+    if (!deporte) {
+      throw new Error(`Deporte ${nombre} was not seeded`);
+    }
+
+    return deporte.id;
+  };
+
   const ana = await prisma.user.upsert({
     where: { firebaseUid: 'seed-uid-1' },
     update: {},
@@ -38,7 +54,7 @@ async function main() {
   await prisma.partido.createMany({
     data: [
       {
-        deporte: 'FUTBOL',
+        deporteId: deporteId('FUTBOL'),
         nivel: 'INTERMEDIO',
         fecha: inDays(2, 19),
         ubicacion: 'Parque Sur',
@@ -47,7 +63,7 @@ async function main() {
         organizadorId: ana.id,
       },
       {
-        deporte: 'PADEL',
+        deporteId: deporteId('PADEL'),
         nivel: 'PRINCIPIANTE',
         fecha: inDays(3, 20),
         ubicacion: 'Club Norte · Cancha 3',
@@ -55,7 +71,7 @@ async function main() {
         organizadorId: luis.id,
       },
       {
-        deporte: 'BASQUET',
+        deporteId: deporteId('BASQUET'),
         nivel: 'AVANZADO',
         fecha: inDays(5, 21),
         ubicacion: 'Polideportivo Municipal',
@@ -63,7 +79,7 @@ async function main() {
         organizadorId: ana.id,
       },
       {
-        deporte: 'TENIS',
+        deporteId: deporteId('TENIS'),
         nivel: 'INTERMEDIO',
         fecha: inDays(7, 18),
         ubicacion: 'River Courts · Cancha 2',
@@ -72,7 +88,7 @@ async function main() {
         organizadorId: luis.id,
       },
       {
-        deporte: 'RUNNING',
+        deporteId: deporteId('RUNNING'),
         nivel: 'PRINCIPIANTE',
         fecha: inDays(9, 8),
         ubicacion: 'Costanera, kilómetro 0',
@@ -81,7 +97,7 @@ async function main() {
         organizadorId: ana.id,
       },
       {
-        deporte: 'FUTBOL',
+        deporteId: deporteId('FUTBOL'),
         nivel: 'AVANZADO',
         fecha: inDays(12, 22),
         ubicacion: 'Complejo Del Este',
