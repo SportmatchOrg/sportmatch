@@ -7,6 +7,7 @@ import { Prisma } from '../generated/prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersRepository } from './users.repository';
+import { FirebaseUser } from '../auth/types';
 
 @Injectable()
 export class UsersService {
@@ -40,6 +41,10 @@ export class UsersService {
     } catch (error) {
       throw this.toHttpException(error, createUserDto.email);
     }
+  }
+
+  upsertFromFirebase(user: FirebaseUser) {
+    return this.usersRepository.upsertByFirebaseUid(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
