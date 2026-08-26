@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus, User as UserIcon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -107,8 +108,13 @@ export function TopNavBar() {
               )}
             >
               {user?.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.photoURL} alt="" className="size-full object-cover" />
+                <Image
+                  src={user.photoURL}
+                  alt=""
+                  width={42}
+                  height={42}
+                  className="size-full object-cover"
+                />
               ) : (
                 <UserIcon className="size-[18px]" aria-hidden="true" />
               )}

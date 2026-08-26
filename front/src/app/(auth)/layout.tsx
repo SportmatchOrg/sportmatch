@@ -1,14 +1,22 @@
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 
 import { BrandLogo } from '@/components/brand-logo';
 
-const HERO_IMAGE = 'auth-hero.jpg';
+const HERO_IMAGE = '/auth-hero.jpg';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-neutral-950 md:flex-row">
       <div className="relative h-[38vh] w-full shrink-0 overflow-hidden md:h-auto md:w-1/2">
-        <img src={HERO_IMAGE} alt="" className="h-full w-full object-cover" />
+        <Image
+          src={HERO_IMAGE}
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="object-cover"
+        />
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-neutral-950 md:bg-gradient-to-r md:from-black/40 md:via-black/50 md:to-neutral-950" />
 
