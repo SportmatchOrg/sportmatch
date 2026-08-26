@@ -162,6 +162,14 @@ La API estará disponible en:
 http://localhost:3001
 ```
 
+### Imagen Docker del backend
+
+La imagen de producción del backend se publica en:
+
+```text
+ghcr.io/sportmatchorg/sportmatch/back:latest
+```
+
 ## Puertos
 
 | Servicio   | Puerto |
