@@ -159,7 +159,7 @@ export default function NewPartidoPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-full bg-accent px-6 py-4 text-callout text-midnight shadow-glow transition hover:bg-accent-bright disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+          className="rounded-full bg-brand px-6 py-4 text-callout text-midnight shadow-glow transition hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
         >
           {submitting ? 'Creando…' : 'Crear partido'}
         </button>

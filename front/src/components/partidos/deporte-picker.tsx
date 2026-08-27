@@ -26,7 +26,7 @@ const DEPORTE_ICON: Record<DeporteNombre, SportIcon> = {
 const OPTION_BASE =
   'flex items-center gap-3 rounded-[20px] px-4 py-[18px] text-left text-[16.5px] font-bold tracking-[-0.34px] transition';
 
-const OPTION_SELECTED = 'bg-accent text-midnight drop-shadow-accent-glow';
+const OPTION_SELECTED = 'bg-brand text-midnight drop-shadow-brand-glow';
 
 const OPTION_IDLE =
   'bg-glass text-white shadow-bevel hover:bg-glass-strong';

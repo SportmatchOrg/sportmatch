@@ -6,7 +6,7 @@ import { FieldError } from '@/components/partidos/field-error';
 import { cn } from '@/lib/utils';
 
 const CONTROL =
-  'w-full resize-y rounded-xl bg-glass px-4 py-3 text-body text-white shadow-bevel outline-none transition placeholder:text-white/46 focus:shadow-[inset_0_0_0_1px_var(--color-accent)]';
+  'w-full resize-y rounded-xl bg-glass px-4 py-3 text-body text-white shadow-bevel outline-none transition placeholder:text-white/46 focus:shadow-[inset_0_0_0_1px_var(--color-brand)]';
 
 type TextareaFieldProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   id: string;

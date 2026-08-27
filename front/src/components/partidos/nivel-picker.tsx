@@ -7,7 +7,7 @@ import { NIVELES, NIVEL_LABEL, type Nivel } from '@/types/partido';
 const CHIP_BASE =
   'rounded-full px-4 py-2 text-callout transition';
 
-const CHIP_SELECTED = 'bg-accent text-midnight';
+const CHIP_SELECTED = 'bg-brand text-midnight';
 
 const CHIP_IDLE =
   'bg-glass text-white/46 shadow-bevel hover:text-white';

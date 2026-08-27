@@ -73,7 +73,7 @@ export function PartidoCreated({ partido, deportes, onCreateAnother }: PartidoCr
       <button
         type="button"
         onClick={onCreateAnother}
-        className="rounded-full bg-accent px-6 py-3 text-callout text-midnight transition hover:bg-accent-bright"
+        className="rounded-full bg-brand px-6 py-3 text-callout text-midnight transition hover:bg-brand-bright"
       >
         Crear otro
       </button>
