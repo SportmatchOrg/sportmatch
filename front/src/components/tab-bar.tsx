@@ -32,7 +32,7 @@ function TabBarLink({ item, active }: { item: NavItem; active: boolean }) {
       <Icon className="size-6" aria-hidden="true" />
       {active && (
         <span
-          className="absolute bottom-[7px] left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-accent shadow-[0_0_8px_0_rgba(78,168,255,0.45)]"
+          className="absolute bottom-[7px] left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-brand shadow-[0_0_8px_0_rgba(78,168,255,0.45)]"
           aria-hidden="true"
         />
       )}
@@ -87,7 +87,7 @@ export function TabBar() {
           href={NEW_MATCH_HREF}
           aria-label="Crear partido"
           aria-current={isNavItemActive(pathname, NEW_MATCH_HREF) ? 'page' : undefined}
-          className="mx-[2px] flex size-[58px] shrink-0 items-center justify-center rounded-full bg-accent text-midnight drop-shadow-[0_3px_6px_rgba(78,168,255,0.45)] transition hover:bg-accent-bright"
+          className="mx-[2px] flex size-[58px] shrink-0 items-center justify-center rounded-full bg-brand text-midnight drop-shadow-[0_3px_6px_rgba(78,168,255,0.45)] transition hover:bg-brand-bright"
         >
           <Plus className="size-[26px]" aria-hidden="true" />
         </Link>
