@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 const LOGIN_ROUTE = '/login';
 
 const BEVEL =
-  'shadow-[0_6px_20px_0_rgba(0,0,0,0.45),inset_0_0_0_1px_rgba(255,255,255,0.15),inset_0_1px_0_0_rgba(255,255,255,0.4)]';
+  'shadow-sheet';
 
 const TRIGGER_BASE =
   'flex items-center justify-center bg-glass-strong text-white backdrop-blur-[12px] transition hover:bg-white/20';

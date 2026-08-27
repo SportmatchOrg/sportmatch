@@ -17,7 +17,7 @@ import { useAuth } from '@/context/auth-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
 
-const ACTIVE_RING = 'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]';
+const ACTIVE_RING = 'shadow-bevel';
 
 function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
@@ -33,7 +33,7 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
       {item.label}
       {active && (
         <span
-          className="size-[5px] rounded-full bg-brand shadow-[0_0_8px_0_rgba(78,168,255,0.45)]"
+          className="size-[5px] rounded-full bg-brand shadow-brand-glow"
           aria-hidden="true"
         />
       )}

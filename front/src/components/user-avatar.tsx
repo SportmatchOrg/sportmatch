@@ -46,7 +46,7 @@ export function UserAvatar({
       {!photoUrl && !initials && (
         <User className="size-2/5 text-white/46" aria-hidden="true" />
       )}
-      <span className="absolute inset-0 rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]" />
+      <span className="absolute inset-0 rounded-full shadow-bevel" />
     </span>
   );
 }

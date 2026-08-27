@@ -1,9 +1,10 @@
 import { Flame, Star, Trophy, type LucideIcon } from 'lucide-react';
 
+import { PROFILE_SECTION } from '@/components/profile/profile-layout';
 import { cn } from '@/lib/utils';
 
 const TILE_BEVEL =
-  'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15),inset_0_1px_0_0_rgba(255,255,255,0.4)]';
+  'shadow-bevel-lit';
 
 const PENDING_VALUE = '—';
 
@@ -21,7 +22,7 @@ const STATS: Stat[] = [
 
 export function ProfileStats() {
   return (
-    <div className="mx-auto flex w-full max-w-md items-stretch justify-center gap-3 px-5 pt-6 lg:max-w-[1440px] lg:gap-4 lg:px-8 lg:pt-[26px]">
+    <div className={cn(PROFILE_SECTION, 'flex items-stretch justify-center gap-3 pt-6 lg:gap-4 lg:pt-[26px]')}>
       {STATS.map(({ label, icon: Icon, iconClassName }) => (
         <div
           key={label}
