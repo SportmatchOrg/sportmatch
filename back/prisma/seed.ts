@@ -106,6 +106,17 @@ async function main() {
       },
     ],
   });
+
+  const partidosCreados = await prisma.partido.findMany({
+    orderBy: { fecha: 'asc' },
+  });
+
+  await prisma.participante.createMany({
+    data: partidosCreados.slice(0, 3).map((partido) => ({
+      partidoId: partido.id,
+      usuarioId: partido.organizadorId === ana.id ? luis.id : ana.id,
+    })),
+  });
 }
 
 void main()

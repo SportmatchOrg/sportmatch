@@ -28,6 +28,11 @@ export class PartidosController {
     return this.partidosService.create(user.uid, createPartidoDto);
   }
 
+  @Post(':id/participantes')
+  join(@Param('id') id: string, @CurrentUser() user: FirebaseUser) {
+    return this.partidosService.join(id, user.uid);
+  }
+
   @Get()
   findAll() {
     return this.partidosService.findUpcoming();

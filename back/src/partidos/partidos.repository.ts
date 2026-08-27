@@ -3,8 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 
-const ORGANIZADOR_PUBLICO = {
+const PUBLIC_ORGANIZER = {
   select: { id: true, nombre: true, fotoUrl: true },
+} as const;
+
+const PARTICIPANT_COUNT = {
+  select: { participantes: true },
+} as const;
+
+const PARTIDO_INCLUDE = {
+  organizador: PUBLIC_ORGANIZER,
+  _count: PARTICIPANT_COUNT,
 } as const;
 
 @Injectable()
@@ -15,21 +24,21 @@ export class PartidosRepository {
     return this.prisma.partido.findMany({
       where: { fecha: { gte: new Date() } },
       orderBy: { fecha: 'asc' },
-      include: { organizador: ORGANIZADOR_PUBLICO },
+      include: PARTIDO_INCLUDE,
     });
   }
 
   findById(id: string) {
     return this.prisma.partido.findUnique({
       where: { id },
-      include: { organizador: ORGANIZADOR_PUBLICO },
+      include: PARTIDO_INCLUDE,
     });
   }
 
   create(organizadorId: string, data: CreatePartidoDto) {
     return this.prisma.partido.create({
       data: { ...data, organizadorId },
-      include: { organizador: ORGANIZADOR_PUBLICO },
+      include: PARTIDO_INCLUDE,
     });
   }
 
@@ -37,11 +46,23 @@ export class PartidosRepository {
     return this.prisma.partido.update({
       where: { id },
       data,
-      include: { organizador: ORGANIZADOR_PUBLICO },
+      include: PARTIDO_INCLUDE,
     });
   }
 
   remove(id: string) {
     return this.prisma.partido.delete({ where: { id } });
+  }
+
+  findParticipant(partidoId: string, usuarioId: string) {
+    return this.prisma.participante.findUnique({
+      where: { partidoId_usuarioId: { partidoId, usuarioId } },
+    });
+  }
+
+  addParticipant(partidoId: string, usuarioId: string) {
+    return this.prisma.participante.create({
+      data: { partidoId, usuarioId },
+    });
   }
 }
