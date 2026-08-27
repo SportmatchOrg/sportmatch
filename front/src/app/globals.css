@@ -63,6 +63,7 @@
     inset 0 1px 0 0 var(--color-glass-highlight);
   --shadow-brand-glow: 0 0 8px 0 color-mix(in srgb, var(--color-brand) 45%, transparent);
   --drop-shadow-brand-glow: 0 3px 6px color-mix(in srgb, var(--color-brand) 45%, transparent);
+  --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
   --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
