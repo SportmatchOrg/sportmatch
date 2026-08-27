@@ -12,7 +12,6 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { CreatePartidoDto } from './dto/create-partido.dto';
-import { JoinPartidoDto } from './dto/join-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosService } from './partidos.service';
 
@@ -30,11 +29,7 @@ export class PartidosController {
   }
 
   @Post(':id/participantes')
-  join(
-    @Param('id') id: string,
-    @CurrentUser() user: FirebaseUser,
-    @Body() _joinPartidoDto: JoinPartidoDto,
-  ) {
+  join(@Param('id') id: string, @CurrentUser() user: FirebaseUser) {
     return this.partidosService.join(id, user.uid);
   }
 
