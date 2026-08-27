@@ -8,7 +8,7 @@ export function BrandLogo({ className }: { className?: string }) {
         className
       )}
     >
-      Sport<span className="text-accent">Match</span>
+      Sport<span className="text-brand">Match</span>
     </span>
   );
 }
