@@ -1,11 +1,11 @@
 'use client';
 
-import { Plus, User as UserIcon } from 'lucide-react';
-import Image from 'next/image';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { BrandLogo } from '@/components/brand-logo';
+import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -17,7 +17,7 @@ import { useAuth } from '@/context/auth-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
 
-const ACTIVE_RING = 'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]';
+const ACTIVE_RING = 'shadow-bevel';
 
 function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
@@ -33,7 +33,7 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
       {item.label}
       {active && (
         <span
-          className="size-[5px] rounded-full bg-accent shadow-[0_0_8px_0_rgba(78,168,255,0.45)]"
+          className="size-[5px] rounded-full bg-brand shadow-brand-glow"
           aria-hidden="true"
         />
       )}
@@ -92,7 +92,7 @@ export function TopNavBar() {
             <Button
               nativeButton={false}
               render={<Link href={NEW_MATCH_HREF} />}
-              className="h-[42px] gap-2 rounded-full bg-accent px-5 text-callout text-white shadow-glow hover:bg-accent-bright"
+              className="h-[42px] gap-2 rounded-full bg-brand px-5 text-callout text-white shadow-glow hover:bg-brand-bright"
             >
               <Plus className="size-[18px]" />
               Crear partido
@@ -102,22 +102,15 @@ export function TopNavBar() {
               href={PROFILE_HREF}
               aria-label="Perfil"
               aria-current={profileActive ? 'page' : undefined}
-              className={cn(
-                'flex size-[42px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-glass-strong text-white/46 transition',
-                profileActive ? 'ring-2 ring-accent' : ACTIVE_RING
-              )}
+              className="inline-flex shrink-0 rounded-full ring-2 ring-brand ring-offset-2 ring-offset-raised transition"
             >
-              {user?.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt=""
-                  width={42}
-                  height={42}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <UserIcon className="size-[18px]" aria-hidden="true" />
-              )}
+              <UserAvatar
+                name={user?.displayName ?? user?.email ?? ''}
+                photoUrl={user?.photoURL ?? null}
+                sizes="42px"
+                className="size-[42px]"
+                initialsClassName="text-caption"
+              />
             </Link>
           </div>
         </div>

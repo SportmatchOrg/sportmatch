@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-base pb-28 text-white lg:pb-0 lg:pt-28">
+    <div className="min-h-dvh bg-base pb-28 text-white lg:pb-0 lg:pt-20">
       <TopNavBar />
       {children}
       <TabBar />

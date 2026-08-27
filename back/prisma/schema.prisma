@@ -26,6 +26,7 @@ model User {
   updatedAt   DateTime @updatedAt
 
   partidosOrganizados Partido[]
+  participaciones Participante[]
 
   @@map("users")
 }
@@ -54,8 +55,22 @@ model Partido {
   organizador   User     @relation(fields: [organizadorId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  participantes Participante[]
 
   @@index([fecha])
   @@index([deporteId])
   @@map("partidos")
+}
+
+model Participante {
+  id        String   @id @default(cuid())
+  partidoId String
+  partido   Partido  @relation(fields: [partidoId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   User     @relation(fields: [usuarioId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([partidoId, usuarioId])
+  @@index([usuarioId])
+  @@map("participantes")
 }

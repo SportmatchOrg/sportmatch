@@ -9,7 +9,7 @@ export default function HomePage() {
   const { user } = useAuth();
 
   return (
-    <main className="flex flex-col items-start gap-4 p-8">
+    <main className="flex flex-col items-start gap-4 p-8 lg:pt-12">
       <p className="text-body">Inicio — {user?.displayName ?? user?.email}</p>
 
       <button

@@ -14,9 +14,10 @@
   --color-glass: rgba(255, 255, 255, 0.05);
   --color-glass-strong: rgba(255, 255, 255, 0.1);
   --color-glass-border: rgba(255, 255, 255, 0.15);
+  --color-glass-highlight: rgba(255, 255, 255, 0.4);
   --color-surface-glass: var(--color-glass);
-  --color-accent: #4ea8ff;
-  --color-accent-bright: #7cc0ff;
+  --color-brand: #4ea8ff;
+  --color-brand-bright: #7cc0ff;
   --color-success: #66d575;
   --color-warning: #ffcb57;
   --color-danger: #ff5a5f;
@@ -53,10 +54,16 @@
   --color-google-yellow: #fbbc05;
   --color-google-red: #ea4335;
   --color-logo-glow: rgba(76, 154, 255, 0.55);
-  --shadow-glow: 0 0 28px -6px var(--color-accent);
+  --shadow-glow: 0 0 28px -6px var(--color-brand);
   --shadow-bevel: inset 0 0 0 1px var(--color-glass-border);
+  --shadow-bevel-lit: inset 0 0 0 1px var(--color-glass-border),
+    inset 0 1px 0 0 var(--color-glass-highlight);
+  --shadow-sheet: 0 6px 20px 0 color-mix(in srgb, var(--color-base) 45%, transparent),
+    inset 0 0 0 1px var(--color-glass-border),
+    inset 0 1px 0 0 var(--color-glass-highlight);
+  --shadow-brand-glow: 0 0 8px 0 color-mix(in srgb, var(--color-brand) 45%, transparent);
+  --drop-shadow-brand-glow: 0 3px 6px color-mix(in srgb, var(--color-brand) 45%, transparent);
   --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
-  --drop-shadow-accent-glow: 0 3px 6px color-mix(in srgb, var(--color-accent) 45%, transparent);
   --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -79,6 +86,7 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
