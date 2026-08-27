@@ -2,6 +2,7 @@ import { Mail } from 'lucide-react';
 import Image from 'next/image';
 
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
+import { ProfileIdentityRow } from '@/components/profile/profile-layout';
 import { ProfileMenu } from '@/components/profile/profile-menu';
 import type { User } from '@/types/user';
 
@@ -25,7 +26,7 @@ export function ProfileHeader({ user }: { user: User }) {
         </div>
       </div>
 
-      <div className="mx-auto -mt-[52px] flex w-full max-w-md flex-col items-center gap-3 px-5 lg:-mt-[54px] lg:max-w-[1440px] lg:flex-row lg:items-end lg:gap-6 lg:px-8">
+      <ProfileIdentityRow>
         <ProfileAvatar name={user.nombre} photoUrl={user.fotoUrl} />
 
         <div className="flex flex-col items-center gap-[2.5px] lg:flex-1 lg:items-start lg:pb-2">
@@ -39,7 +40,7 @@ export function ProfileHeader({ user }: { user: User }) {
         </div>
 
         <ProfileMenu variant="labelled" className="hidden lg:flex lg:shrink-0" />
-      </div>
+      </ProfileIdentityRow>
     </header>
   );
 }
