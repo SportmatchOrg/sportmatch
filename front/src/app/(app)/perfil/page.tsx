@@ -1,25 +1,36 @@
 'use client';
 
-import { signOut } from 'firebase/auth';
-
-import { useAuth } from '@/context/auth-context';
-import { auth } from '@/lib/firebase';
+import { ProfileHeader } from '@/components/profile/profile-header';
+import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
+import { ProfileStats } from '@/components/profile/profile-stats';
+import { RecentMatches } from '@/components/profile/recent-matches';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, loading, error } = useCurrentUser();
+
+  if (loading) {
+    return (
+      <main className="w-full">
+        <ProfileSkeleton />
+      </main>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <main className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-5 py-16 text-center">
+        <h1 className="text-title">No pudimos cargar tu perfil</h1>
+        <p className="text-body text-white/46">{error}</p>
+      </main>
+    );
+  }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col items-start gap-4 p-6">
-      <h1 className="text-title">Perfil</h1>
-      <p className="text-body text-neutral-400">{user?.displayName ?? user?.email}</p>
-
-      <button
-        type="button"
-        onClick={() => signOut(auth)}
-        className="rounded-full border border-glass-strong bg-glass px-5 py-2 text-caption transition hover:bg-glass-strong"
-      >
-        Cerrar sesión
-      </button>
+    <main className="w-full pb-10">
+      <ProfileHeader user={user} />
+      <ProfileStats />
+      <RecentMatches />
     </main>
   );
 }
