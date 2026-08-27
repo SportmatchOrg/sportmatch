@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 
-const HOME_ROUTE = '/home';
+const HOME_ROUTE = '/perfil';
 
 export function useRedirectIfAuthenticated() {
   const { user, loading } = useAuth();
