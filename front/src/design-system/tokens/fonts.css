@@ -1,0 +1,9 @@
+@theme inline {
+  --font-text: var(--font-geist-sans);
+  --font-display: var(--font-geist-sans);
+  --font-numeric: var(--font-geist-sans);
+
+  --font-sans: var(--font-text);
+  --font-heading: var(--font-display);
+  --font-mono: var(--font-geist-mono);
+}

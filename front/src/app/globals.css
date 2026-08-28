@@ -1,38 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
 @import "../design-system/tokens/colors.css";
+@import "../design-system/tokens/fonts.css";
+@import "../design-system/tokens/typography.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --text-hero: 56px;
-  --text-hero--line-height: 1.05;
-  --text-hero--font-weight: 800;
-  --text-display: 44px;
-  --text-display--line-height: 1.1;
-  --text-display--font-weight: 700;
-  --text-title: 28px;
-  --text-title--line-height: 1.2;
-  --text-title--font-weight: 700;
-  --text-body: 17px;
-  --text-body--line-height: 1.5;
-  --text-body--font-weight: 400;
-  --text-callout: 15px;
-  --text-callout--line-height: normal;
-  --text-callout--font-weight: 600;
-  --text-callout--letter-spacing: -0.15px;
-  --text-caption: 13px;
-  --text-caption--line-height: 1.4;
-  --text-caption--font-weight: 500;
-  --text-overline: 11px;
-  --text-overline--line-height: 1.2;
-  --text-overline--font-weight: 700;
-  --text-overline--letter-spacing: 0.08em;
-  --text-stat: 64px;
-  --text-stat--line-height: 1;
-  --text-stat--font-weight: 800;
-
   --shadow-glow: 0 0 28px -6px var(--color-brand);
   --shadow-bevel: inset 0 0 0 1px var(--color-glass-border);
   --shadow-bevel-lit: inset 0 0 0 1px var(--color-glass-border),
@@ -44,10 +20,6 @@
   --drop-shadow-brand-glow: 0 3px 6px color-mix(in srgb, var(--color-brand) 45%, transparent);
   --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
   --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
-
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
