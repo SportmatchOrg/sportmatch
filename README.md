@@ -82,6 +82,29 @@ postgresql://root:root@localhost:5432/sportmatch?schema=public
 
 Las credenciales incluidas en `docker-compose.yml` son exclusivamente para desarrollo local.
 
+### Variables de entorno del backend
+
+El backend utiliza las siguientes variables de entorno:
+
+- `PORT`: puerto en el que se ejecuta la API.
+- `FRONT_URL`: origen permitido para las solicitudes del frontend.
+- `DATABASE_URL`: conexión a PostgreSQL.
+- `FIREBASE_PROJECT_ID`: identificador del proyecto de Firebase.
+- `FIREBASE_CLIENT_EMAIL`: correo de la cuenta de servicio de Firebase.
+- `FIREBASE_PRIVATE_KEY`: clave privada de la cuenta de servicio de Firebase.
+
+La base de datos utilizada depende del entorno:
+
+| Entorno | Rama de Git | Base de datos |
+| --- | --- | --- |
+| Desarrollo local | Rama de trabajo | PostgreSQL de `docker-compose.yml` |
+| Desarrollo desplegado | `dev` | Branch `dev` de Neon |
+| Producción | `main` | Branch `main` de Neon |
+
+En los entornos desplegados, `DATABASE_URL` debe configurarse con la connection string de la branch correspondiente de Neon e incluir `sslmode=require`.
+
+Las credenciales reales deben configurarse como secretos del entorno y nunca deben guardarse en el repositorio.
+
 ## Prisma y migraciones
 
 Prisma está configurado dentro de `back/`.
