@@ -6,34 +6,9 @@
 @import "../design-system/tokens/fonts.css";
 @import "../design-system/tokens/typography.css";
 @import "../design-system/tokens/spacing.css";
+@import "../design-system/tokens/effects.css";
 
 @custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --shadow-glow: 0 0 28px -6px var(--color-brand);
-  --shadow-bevel: inset 0 0 0 1px var(--color-glass-border);
-  --shadow-bevel-lit: inset 0 0 0 1px var(--color-glass-border),
-    inset 0 1px 0 0 var(--color-glass-highlight);
-  --shadow-sheet: 0 6px 20px 0 color-mix(in srgb, var(--color-base) 45%, transparent),
-    inset 0 0 0 1px var(--color-glass-border),
-    inset 0 1px 0 0 var(--color-glass-highlight);
-  --shadow-brand-glow: 0 0 8px 0 color-mix(in srgb, var(--color-brand) 45%, transparent);
-  --drop-shadow-brand-glow: 0 3px 6px color-mix(in srgb, var(--color-brand) 45%, transparent);
-  --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
-  --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
-
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-:root {
-  --radius: 0.625rem;
-}
 
 @layer base {
   * {
@@ -44,15 +19,5 @@
   }
   html {
     @apply font-sans;
-  }
-}
-
-@keyframes logo-glow {
-  0%,
-  100% {
-    text-shadow: 0 0 0 transparent;
-  }
-  50% {
-    text-shadow: 0 0 26px var(--color-logo-glow);
   }
 }
