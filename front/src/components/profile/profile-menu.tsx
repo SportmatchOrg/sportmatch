@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 const LOGIN_ROUTE = '/login';
 
 const BEVEL =
-  'shadow-sheet';
+  'shadow-float-glass';
 
 const TRIGGER_BASE =
   'flex items-center justify-center bg-glass-strong text-white backdrop-blur-[12px] transition hover:bg-white/20';

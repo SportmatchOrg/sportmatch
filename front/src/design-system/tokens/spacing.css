@@ -1,0 +1,30 @@
+@theme inline {
+  --spacing-gutter: 20px;
+  --spacing-safe-top: 59px;
+  --spacing-safe-bottom: 34px;
+  --spacing-nav-height: 64px;
+
+  --spacing-button-sm: 40px;
+  --spacing-button-md: 52px;
+  --spacing-button-lg: 60px;
+
+  --spacing-icon-button-sm: 36px;
+  --spacing-icon-button-md: 44px;
+  --spacing-icon-button-lg: 60px;
+
+  --spacing-input-search: 48px;
+  --spacing-input: 56px;
+  --spacing-input-lg: 64px;
+
+  --spacing-chip: 38px;
+  --spacing-badge-md: 28px;
+  --spacing-badge-lg: 34px;
+  --spacing-segmented-option: 36px;
+
+  --spacing-nav-item: 50px;
+  --spacing-nav-create: 58px;
+  --spacing-nav-item-desktop: 42px;
+
+  --container-content: 1080px;
+  --container-reading: 720px;
+}

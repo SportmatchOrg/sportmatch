@@ -1,0 +1,111 @@
+@theme inline {
+  --color-base: #000000;
+  --color-raised: #0b0b0e;
+  --color-sunken: #060608;
+  --color-scrim: rgba(0, 0, 0, 0.55);
+  --color-glass-thin: rgba(255, 255, 255, 0.03);
+  --color-glass: rgba(255, 255, 255, 0.05);
+  --color-glass-strong: rgba(255, 255, 255, 0.1);
+  --color-glass-solid: rgba(22, 22, 26, 0.6);
+  --color-glass-border: rgba(255, 255, 255, 0.15);
+  --color-glass-border-strong: rgba(255, 255, 255, 0.26);
+  --color-glass-highlight: rgba(255, 255, 255, 0.4);
+
+  --color-ink-100: rgba(255, 255, 255, 1);
+  --color-ink-80: rgba(255, 255, 255, 0.8);
+  --color-ink-64: rgba(255, 255, 255, 0.64);
+  --color-ink-46: rgba(255, 255, 255, 0.46);
+  --color-ink-32: rgba(255, 255, 255, 0.32);
+  --color-ink-16: rgba(255, 255, 255, 0.16);
+
+  --color-brand: #4ea8ff;
+  --color-brand-bright: #7cc0ff;
+  --color-brand-deep: #2c84e0;
+  --color-brand-ink: #001226;
+  --color-brand-tint: rgba(78, 168, 255, 0.16);
+  --color-brand-glow: rgba(78, 168, 255, 0.45);
+  --color-success: #66d575;
+  --color-success-tint: rgba(102, 213, 117, 0.16);
+  --color-warning: #ffcb57;
+  --color-danger: #ff5a5f;
+  --color-danger-tint: rgba(255, 90, 95, 0.16);
+  --color-swipe-yes: #66d575;
+  --color-swipe-no: #ff5a6a;
+  --color-swipe-info: #4ea8ff;
+
+  --color-google-blue: #4285f4;
+  --color-google-green: #34a853;
+  --color-google-yellow: #fbbc05;
+  --color-google-red: #ea4335;
+  --color-logo-glow: rgba(76, 154, 255, 0.55);
+
+  --color-sheet: #16161a;
+  --color-midnight: var(--color-brand-ink);
+  --color-surface-glass: var(--color-glass);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --background: var(--color-base);
+  --foreground: var(--color-ink-100);
+  --card: var(--color-raised);
+  --card-foreground: var(--color-ink-100);
+  --popover: var(--color-raised);
+  --popover-foreground: var(--color-ink-100);
+  --primary: var(--color-brand);
+  --primary-foreground: var(--color-brand-ink);
+  --secondary: var(--color-glass-strong);
+  --secondary-foreground: var(--color-ink-100);
+  --muted: var(--color-glass);
+  --muted-foreground: var(--color-ink-64);
+  --accent: var(--color-glass-strong);
+  --accent-foreground: var(--color-ink-100);
+  --destructive: var(--color-danger);
+  --border: var(--color-glass-border);
+  --input: var(--color-glass-border);
+  --ring: var(--color-brand);
+  --chart-1: var(--color-brand);
+  --chart-2: var(--color-success);
+  --chart-3: var(--color-warning);
+  --chart-4: var(--color-danger);
+  --chart-5: var(--color-ink-46);
+  --sidebar: var(--color-raised);
+  --sidebar-foreground: var(--color-ink-100);
+  --sidebar-primary: var(--color-brand);
+  --sidebar-primary-foreground: var(--color-brand-ink);
+  --sidebar-accent: var(--color-glass-strong);
+  --sidebar-accent-foreground: var(--color-ink-100);
+  --sidebar-border: var(--color-glass-border);
+  --sidebar-ring: var(--color-brand);
+}

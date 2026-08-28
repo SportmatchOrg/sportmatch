@@ -1,0 +1,42 @@
+@theme inline {
+  --tracking-overline: 0.14em;
+
+  --text-hero: 56px;
+  --text-hero--line-height: 1.04;
+  --text-hero--font-weight: 800;
+  --text-hero--letter-spacing: -0.03em;
+
+  --text-display: 44px;
+  --text-display--line-height: 1.04;
+  --text-display--font-weight: 700;
+
+  --text-title: 28px;
+  --text-title--line-height: 1.16;
+  --text-title--font-weight: 700;
+
+  --text-headline: 22px;
+  --text-headline--line-height: 1.16;
+  --text-headline--font-weight: 600;
+
+  --text-body: 17px;
+  --text-body--line-height: 1.45;
+  --text-body--font-weight: 400;
+
+  --text-callout: 15px;
+  --text-callout--line-height: 1.45;
+  --text-callout--font-weight: 500;
+  --text-callout--letter-spacing: -0.15px;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 1.16;
+  --text-caption--font-weight: 500;
+
+  --text-overline: 11px;
+  --text-overline--line-height: 1.2;
+  --text-overline--font-weight: 700;
+  --text-overline--letter-spacing: var(--tracking-overline);
+
+  --text-stat: 44px;
+  --text-stat--line-height: 1;
+  --text-stat--font-weight: 800;
+}

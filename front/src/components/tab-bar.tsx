@@ -17,7 +17,7 @@ const LEFT_ITEMS = NAV_ITEMS.slice(0, 2);
 const RIGHT_ITEMS = NAV_ITEMS.slice(2);
 
 const SHEET_SHADOW =
-  'shadow-sheet';
+  'shadow-float-glass';
 
 function TabBarLink({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon;
