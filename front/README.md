@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SportMatch — Frontend
 
-## Getting Started
+Aplicación web de SportMatch, desarrollada con **Next.js** (App Router) y **Tailwind CSS**.
+Consume la API de `back/` y usa **Firebase Authentication** para el login.
 
-First, run the development server:
+## Requisitos
+
+* Node.js 24 (definido en `.nvmrc` en la raíz del repositorio)
+* El backend corriendo, si vas a usar pantallas que traen datos
+
+## Variables de entorno
+
+Copiar el archivo de ejemplo y completarlo:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Descripción |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | URL base de la API del backend. En local, `http://localhost:3001`. |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Credenciales del proyecto de Firebase. Se obtienen en la consola de Firebase, en la configuración de la app web. |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Todas son obligatorias. Si falta alguna, la aplicación falla al iniciar con un mensaje que indica cuál (ver `src/lib/env.ts`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Desarrollo
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+La aplicación queda disponible en `http://localhost:3000`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Levanta el servidor de desarrollo. |
+| `npm run build` | Genera el build de producción. |
+| `npm run start` | Sirve el build de producción. |
+| `npm run lint` | Ejecuta ESLint. |
 
-## Deploy on Vercel
+El hook `pre-push` de Husky corre `npm run verify` desde la raíz, que ejecuta el lint, los tests y el build del frontend y del backend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Estructura
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+front/
+├── public/              # Imágenes estáticas
+└── src/
+    ├── app/             # Rutas (App Router)
+    │   ├── (app)/       # Pantallas con sesión iniciada
+    │   ├── (auth)/      # Login, registro y recupero de contraseña
+    │   ├── layout.tsx   # Layout raíz: fuentes, metadata y AuthProvider
+    │   └── page.tsx     # Raíz: redirige según haya sesión o no
+    ├── components/      # Componentes de UI
+    ├── context/         # Contextos de React (auth)
+    ├── hooks/           # Hooks propios
+    ├── lib/             # Cliente de API, Firebase y utilidades
+    └── types/           # Tipos compartidos
+```
+
+Las carpetas entre paréntesis son *route groups* de Next: agrupan rutas para compartir un layout sin aparecer en la URL. Por eso la pantalla de perfil vive en `app/(app)/perfil/` y su URL es `/perfil`.
+
+## Autenticación
+
+`AuthProvider` (`src/context/auth-context.tsx`) escucha el estado de sesión de Firebase y lo expone con el hook `useAuth()`.
+
+* `src/app/page.tsx` redirige a `/login` o a la aplicación según haya sesión.
+* `src/app/(app)/layout.tsx` redirige a `/login` a quien entre sin sesión a una ruta privada.
+
+Esa verificación del frontend es de experiencia de usuario: evita mostrar pantallas vacías. La protección real de los datos está en el backend, que valida el token de Firebase en cada request. `apiFetch` (`src/lib/api.ts`) adjunta ese token automáticamente.
+
+## Diseño
+
+Los lineamientos visuales (colores, tipografía y espaciado) están documentados en `DESIGN.md`.

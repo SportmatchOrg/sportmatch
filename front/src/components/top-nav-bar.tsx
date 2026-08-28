@@ -77,7 +77,7 @@ export function TopNavBar() {
       <header className="fixed inset-x-0 top-0 z-50 hidden border-b border-glass-strong bg-raised/95 backdrop-blur-md lg:block">
         <div className="flex h-20 w-full items-center justify-between gap-4 px-6 xl:gap-6 xl:px-8">
           <div className="flex items-center gap-6 xl:gap-8">
-            <Link href="/home" className="shrink-0">
+            <Link href="/" className="shrink-0">
               <BrandLogo className="text-2xl xl:text-title" />
             </Link>
 
