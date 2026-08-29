@@ -5,9 +5,7 @@ name: Traductor de PR a negocio
 # del PR + aviso en Discord. LLM OpenAI-compatible (default Gemini free tier).
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [dev, main]
+  workflow_call:
 
 concurrency:
   group: pr-business-translator-${{ github.event.pull_request.number }}
