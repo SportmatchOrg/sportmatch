@@ -11,3 +11,13 @@ jobs:
   verificar:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
+
+  revisar:
+    if: github.event_name == 'pull_request'
+    needs: verificar
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: read
+    uses: ./.github/workflows/dod-checker.yml
+    secrets: inherit
