@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { useAuth } from '@/context/auth-context';
 import { fetchDeportes } from '@/lib/deportes';
 import type { Deporte } from '@/types/partido';
 
@@ -16,9 +17,12 @@ const ERROR_MESSAGE = 'No pudimos cargar los deportes. Probá de nuevo en un mom
 const INITIAL_STATE: DeportesState = { deportes: [], loading: true, error: null };
 
 export function useDeportes(): DeportesState {
+  const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<DeportesState>(INITIAL_STATE);
 
   useEffect(() => {
+    if (sessionLoading || !firebaseUser) return;
+
     let active = true;
 
     fetchDeportes()
@@ -32,7 +36,7 @@ export function useDeportes(): DeportesState {
     return () => {
       active = false;
     };
-  }, []);
+  }, [sessionLoading, firebaseUser]);
 
-  return state;
+  return { ...state, loading: sessionLoading || state.loading };
 }
