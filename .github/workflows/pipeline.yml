@@ -39,3 +39,12 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/qa-review.yml
     secrets: inherit
+
+  curar:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: verificar
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/context-curator.yml
+    secrets: inherit

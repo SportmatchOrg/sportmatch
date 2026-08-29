@@ -12,9 +12,7 @@ name: Curador de contexto (drift AGENTS.md)
 # duplicarlo.
 
 on:
-  push:
-    branches: [dev, main]
-  workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: context-curator-${{ github.ref }}
