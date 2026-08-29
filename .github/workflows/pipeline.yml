@@ -30,3 +30,12 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/pr-business-translator.yml
     secrets: inherit
+
+  qa-review:
+    if: github.event_name == 'pull_request'
+    needs: traducir
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/qa-review.yml
+    secrets: inherit
