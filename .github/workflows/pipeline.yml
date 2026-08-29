@@ -48,3 +48,37 @@ jobs:
       issues: write
     uses: ./.github/workflows/context-curator.yml
     secrets: inherit
+
+
+  detectar-cambios:
+    if: github.event_name == 'push'
+    needs: verificar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      back: ${{ steps.filter.outputs.back }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detectar cambios del backend
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            back:
+              - 'back/**'
+              - '.github/workflows/cd-back.yml'
+
+  publicar:
+    if: github.event_name == 'push'
+    needs: [ verificar, detectar-cambios ]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cd-back.yml
+    with:
+      back_changed: ${{ needs.detectar-cambios.outputs.back == 'true' }}
+    secrets: inherit
