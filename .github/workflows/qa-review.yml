@@ -28,9 +28,7 @@ name: QA Review
 # Para cambiar de modelo no hace falta tocar código: se pasa `llm_model` acá abajo.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches: [dev, main]
+  workflow_call:
 
 jobs:
   qa-review:

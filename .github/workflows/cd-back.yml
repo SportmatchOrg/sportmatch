@@ -1,14 +1,16 @@
 name: CD back
 
 on:
-  push:
-    branches: [dev]
-    paths:
-      - 'back/**'
-      - '.github/workflows/cd-back.yml'
+  workflow_call:
+    inputs:
+      back_changed:
+        description: Indica si cambiaron archivos del backend.
+        required: true
+        type: boolean
 
 jobs:
   publish:
+    if: inputs.back_changed
     name: Build & Publish Docker Image
     runs-on: ubuntu-latest
 

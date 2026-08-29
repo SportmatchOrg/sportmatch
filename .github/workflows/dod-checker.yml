@@ -14,9 +14,7 @@ name: DoD checker
 # Usa un LLM OpenAI-compatible (default Gemini free tier) vía .github/scripts/llm.sh.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    branches: [dev, main]
+  workflow_call:
 
 concurrency:
   group: dod-checker-${{ github.event.pull_request.number }}
