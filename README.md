@@ -170,6 +170,13 @@ La imagen de producción del backend se publica en:
 ghcr.io/sportmatchorg/sportmatch/back:latest
 ```
 
+### Pipeline de GitHub Actions
+
+- Una PR a `dev` o `main` ejecuta CI, DoD, traductor y QA Review; no publica imágenes.
+- Un push a `dev` ejecuta CI, publica la imagen con tag `dev` si cambió `back/` y ejecuta el Curador de contexto.
+- Un push a `main` ejecuta CI y publica la imagen con tag `latest` si cambió `back/`.
+- Un push a otra rama no ejecuta Pipeline; los workflows programados continúan ejecutándose por separado.
+
 ## Puertos
 
 | Servicio   | Puerto |
