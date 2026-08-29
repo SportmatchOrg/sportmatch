@@ -34,13 +34,13 @@ export class PartidosController {
   }
 
   @Get()
-  findAll() {
-    return this.partidosService.findUpcoming();
+  findAll(@CurrentUser() user: FirebaseUser) {
+    return this.partidosService.findUpcoming(user.uid);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.partidosService.findOne(id);
+  findOne(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
+    return this.partidosService.findOne(user.uid, id);
   }
 
   @Patch(':id')

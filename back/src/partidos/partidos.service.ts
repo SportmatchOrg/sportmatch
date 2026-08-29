@@ -11,7 +11,10 @@ import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
 
-type WithParticipantCount = { _count: { participantes: number } };
+type PartidoWithRelations = {
+  _count: { participantes: number };
+  participantes: { id: string }[];
+};
 
 @Injectable()
 export class PartidosService {
@@ -20,20 +23,18 @@ export class PartidosService {
     private readonly usersService: UsersService,
   ) {}
 
-  async findUpcoming() {
-    const partidos = await this.partidosRepository.findUpcoming();
+  async findUpcoming(firebaseUid: string) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partidos = await this.partidosRepository.findUpcoming(user.id);
 
-    return partidos.map((partido) => this.withParticipantCount(partido));
+    return partidos.map((partido) => this.toResponse(partido));
   }
 
-  async findOne(id: string) {
-    const partido = await this.partidosRepository.findById(id);
+  async findOne(firebaseUid: string, id: string) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.getOrFail(id, user.id);
 
-    if (!partido) {
-      throw new NotFoundException(`Partido with id ${id} was not found`);
-    }
-
-    return this.withParticipantCount(partido);
+    return this.toResponse(partido);
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
@@ -47,7 +48,7 @@ export class PartidosService {
         createPartidoDto,
       );
 
-      return this.withParticipantCount(partido);
+      return this.toResponse(partido);
     } catch (error) {
       throw this.toHttpException(error);
     }
@@ -62,38 +63,40 @@ export class PartidosService {
       this.assertFutureDate(updatePartidoDto.fecha);
     }
 
-    await this.assertIsOrganizer(firebaseUid, id);
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    await this.assertIsOrganizer(user.id, id);
 
     try {
       const partido = await this.partidosRepository.update(
         id,
+        user.id,
         updatePartidoDto,
       );
 
-      return this.withParticipantCount(partido);
+      return this.toResponse(partido);
     } catch (error) {
-      throw this.toHttpException(error);
+      throw this.toHttpException(error, id);
     }
   }
 
   async remove(firebaseUid: string, id: string) {
-    await this.assertIsOrganizer(firebaseUid, id);
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    await this.assertIsOrganizer(user.id, id);
 
     try {
       return await this.partidosRepository.remove(id);
     } catch (error) {
-      throw this.toHttpException(error);
+      throw this.toHttpException(error, id);
     }
   }
 
   async join(partidoId: string, firebaseUid: string) {
-    const partido = await this.findOne(partidoId);
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.getOrFail(partidoId, user.id);
 
     if (partido.fecha.getTime() <= Date.now()) {
       throw new BadRequestException('The partido has already been played');
     }
-
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
     if (partido.organizadorId === user.id) {
       throw new BadRequestException(
@@ -101,16 +104,11 @@ export class PartidosService {
       );
     }
 
-    if (partido.anotados >= partido.cupo) {
+    if (partido._count.participantes >= partido.cupo) {
       throw new ConflictException('The partido is full');
     }
 
-    const existingParticipant = await this.partidosRepository.findParticipant(
-      partidoId,
-      user.id,
-    );
-
-    if (existingParticipant) {
+    if (partido.participantes.length > 0) {
       throw new ConflictException('You already joined this partido');
     }
 
@@ -121,10 +119,24 @@ export class PartidosService {
     }
   }
 
-  private withParticipantCount<T extends WithParticipantCount>(partido: T) {
-    const { _count, ...rest } = partido;
+  private async getOrFail(id: string, usuarioId: string) {
+    const partido = await this.partidosRepository.findById(id, usuarioId);
 
-    return { ...rest, anotados: _count.participantes };
+    if (!partido) {
+      throw new NotFoundException(`Partido with id ${id} was not found`);
+    }
+
+    return partido;
+  }
+
+  private toResponse<T extends PartidoWithRelations>(partido: T) {
+    const { _count, participantes, ...rest } = partido;
+
+    return {
+      ...rest,
+      anotados: _count.participantes,
+      estoy_anotado: participantes.length > 0,
+    };
   }
 
   private assertFutureDate(fecha: Date) {
@@ -133,18 +145,17 @@ export class PartidosService {
     }
   }
 
-  private async assertIsOrganizer(firebaseUid: string, partidoId: string) {
-    const partido = await this.findOne(partidoId);
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+  private async assertIsOrganizer(usuarioId: string, partidoId: string) {
+    const partido = await this.getOrFail(partidoId, usuarioId);
 
-    if (partido.organizadorId !== user.id) {
+    if (partido.organizadorId !== usuarioId) {
       throw new ForbiddenException(
         'Only the organizer can modify this partido',
       );
     }
   }
 
-  private toHttpException(error: unknown): Error {
+  private toHttpException(error: unknown, reference?: string): Error {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return new ConflictException('You already joined this partido');
@@ -157,7 +168,11 @@ export class PartidosService {
       }
 
       if (error.code === 'P2025') {
-        return new NotFoundException('Partido was not found');
+        return new NotFoundException(
+          reference
+            ? `Partido with id ${reference} was not found`
+            : 'Partido was not found',
+        );
       }
     }
 
