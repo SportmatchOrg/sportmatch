@@ -82,3 +82,21 @@ jobs:
     with:
       back_changed: ${{ needs.detectar-cambios.outputs.back == 'true' }}
     secrets: inherit
+
+
+  resultado:
+    name: Resultado requerido
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmar resultado de CI
+        env:
+          CI_RESULT: ${{ needs.verificar.result }}
+        run: |
+          if [ "$CI_RESULT" != "success" ]; then
+            echo "CI no terminó correctamente: $CI_RESULT"
+            exit 1
+          fi
+
+          echo "CI terminó correctamente."
