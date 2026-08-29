@@ -84,6 +84,25 @@ jobs:
     secrets: inherit
 
 
+  desplegar:
+    if: github.event_name == 'push' && needs.detectar-cambios.outputs.back == 'true'
+    needs: [ publicar, detectar-cambios ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Redesplegar backend de dev en Azure
+        if: github.ref == 'refs/heads/dev'
+        env:
+          AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_DEV }}
+        run: curl --fail --show-error --silent --request POST "$AZURE_WEBHOOK_URL"
+
+      - name: Redesplegar backend de producción en Azure
+        if: github.ref == 'refs/heads/main'
+        env:
+          AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_PROD }}
+        run: curl --fail --show-error --silent --request POST "$AZURE_WEBHOOK_URL"
+
+
   resultado:
     name: Resultado requerido
     if: ${{ always() && github.event_name == 'pull_request' }}
