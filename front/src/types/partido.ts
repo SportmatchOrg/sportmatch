@@ -32,12 +32,15 @@ export type Organizador = {
 export type Partido = {
   id: string;
   deporteId: string;
+  deporte: Deporte;
   nivel: Nivel;
   fecha: string;
   ubicacion: string;
   cupo: number;
   descripcion: string | null;
   organizador: Organizador;
+  anotados: number;
+  estoy_anotado: boolean;
 };
 
 export const CUPO_MIN = 2;
