@@ -66,4 +66,9 @@ export class PartidosRepository {
       data: { partidoId, usuarioId },
     });
   }
+  removeParticipant(partidoId: string, usuarioId: string) {
+    return this.prisma.participante.delete({
+      where: { partidoId_usuarioId: { partidoId, usuarioId } },
+    });
+  }
 }

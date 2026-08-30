@@ -90,13 +90,11 @@ export class PartidosService {
     }
   }
 
-  async join(partidoId: string, firebaseUid: string) {
+  async join(firebaseUid: string, partidoId: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partido = await this.getOrFail(partidoId, user.id);
 
-    if (partido.fecha.getTime() <= Date.now()) {
-      throw new BadRequestException('The partido has already been played');
-    }
+    this.assertNotPlayed(partido.fecha);
 
     if (partido.organizadorId === user.id) {
       throw new BadRequestException(
@@ -116,6 +114,23 @@ export class PartidosService {
       return await this.partidosRepository.addParticipant(partidoId, user.id);
     } catch (error) {
       throw this.toHttpException(error);
+    }
+  }
+
+  async leave(firebaseUid: string, partidoId: string) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.getOrFail(partidoId, user.id);
+
+    this.assertNotPlayed(partido.fecha);
+
+    if (partido.participantes.length === 0) {
+      throw new NotFoundException('You are not joined to this partido');
+    }
+
+    try {
+      await this.partidosRepository.removeParticipant(partidoId, user.id);
+    } catch (error) {
+      throw this.toHttpException(error, partidoId);
     }
   }
 
@@ -142,6 +157,12 @@ export class PartidosService {
   private assertFutureDate(fecha: Date) {
     if (fecha.getTime() <= Date.now()) {
       throw new BadRequestException('fecha must be in the future');
+    }
+  }
+
+  private assertNotPlayed(fecha: Date) {
+    if (fecha.getTime() <= Date.now()) {
+      throw new BadRequestException('The partido has already been played');
     }
   }
 
