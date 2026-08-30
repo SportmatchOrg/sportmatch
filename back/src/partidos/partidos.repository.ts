@@ -15,14 +15,6 @@ const PARTICIPANT_COUNT = {
   select: { participantes: true },
 } as const;
 
-const partidoInclude = (usuarioId: string) =>
-  ({
-    organizador: PUBLIC_ORGANIZER,
-    deporte: PUBLIC_DEPORTE,
-    _count: PARTICIPANT_COUNT,
-    participantes: { where: { usuarioId }, select: { id: true } },
-  }) as const;
-
 const PUBLIC_PARTICIPANTS = {
   select: {
     usuario: { select: { id: true, nombre: true, fotoUrl: true } },
@@ -30,6 +22,14 @@ const PUBLIC_PARTICIPANTS = {
   },
   orderBy: { createdAt: 'asc' },
 } as const;
+
+const partidoInclude = (usuarioId: string) =>
+  ({
+    organizador: PUBLIC_ORGANIZER,
+    deporte: PUBLIC_DEPORTE,
+    _count: PARTICIPANT_COUNT,
+    participantes: { where: { usuarioId }, select: { id: true } },
+  }) as const;
 
 @Injectable()
 export class PartidosRepository {
@@ -86,6 +86,7 @@ export class PartidosRepository {
       data: { partidoId, usuarioId },
     });
   }
+
   removeParticipant(partidoId: string, usuarioId: string) {
     return this.prisma.participante.delete({
       where: { partidoId_usuarioId: { partidoId, usuarioId } },

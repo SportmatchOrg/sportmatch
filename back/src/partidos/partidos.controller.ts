@@ -31,7 +31,7 @@ export class PartidosController {
   }
 
   @Post(':id/participantes')
-  join(@Param('id') id: string, @CurrentUser() user: FirebaseUser) {
+  join(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
     return this.partidosService.join(user.uid, id);
   }
 
