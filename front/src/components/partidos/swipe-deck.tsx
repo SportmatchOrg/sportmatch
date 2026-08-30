@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Compass, Layers, X } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
+import { deportePhotoUrl } from '@/lib/deporte-photo';
 import { joinPartido } from '@/lib/partidos';
 import type { Partido } from '@/types/partido';
 
@@ -160,6 +162,7 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
     );
   }
 
+  const ambientPhoto = deportePhotoUrl(current.deporte.nombre, current.id);
   const offsetX = flyout ? (flyout === 'yes' ? FLYOUT_DISTANCE : -FLYOUT_DISTANCE) : drag.x;
   const offsetY = flyout ? FLYOUT_LIFT : drag.y;
   const decision =
@@ -167,6 +170,25 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-base lg:absolute lg:flex lg:flex-col lg:items-center lg:justify-center lg:gap-8">
+      <div
+        key={current.id}
+        aria-hidden="true"
+        style={{ animation: 'ambient-in 700ms ease both' }}
+        className="absolute inset-0 overflow-hidden"
+      >
+        {ambientPhoto && (
+          <Image
+            src={ambientPhoto}
+            alt=""
+            fill
+            sizes="100vw"
+            style={{ filter: 'blur(46px) saturate(1.35) brightness(0.6)', inset: '-12%' }}
+            className="scale-108 object-cover"
+          />
+        )}
+        <span className="absolute inset-0 bg-linear-to-b from-ambient-top via-scrim to-ambient-bottom" />
+      </div>
+
       <span className="relative hidden text-overline text-brand uppercase lg:block">
         Recomendado para vos
       </span>
