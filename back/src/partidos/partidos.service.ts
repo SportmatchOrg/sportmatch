@@ -10,23 +10,7 @@ import { UsersService } from '../users/users.service';
 import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
-
-type PublicUser = {
-  id: string;
-  nombre: string;
-  fotoUrl: string | null;
-};
-
-type ListedPartido = {
-  _count: { participantes: number };
-  participantes: { id: string }[];
-};
-
-type DetailedPartido = {
-  _count: { participantes: number };
-  participantes: { usuario: PublicUser; createdAt: Date }[];
-};
-
+import type { DetailedPartido, ListedPartido } from './types';
 @Injectable()
 export class PartidosService {
   constructor(
