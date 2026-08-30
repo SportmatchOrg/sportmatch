@@ -12,7 +12,7 @@ export const PROFILE_HREF = '/perfil';
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/mapa', label: 'Mapa', icon: Map, enabled: false },
-  { href: '/buscar', label: 'Descubrir', icon: Search, enabled: false },
+  { href: '/buscar', label: 'Descubrir', icon: Search, enabled: true },
   { href: '/mis-partidos', label: 'Partidos', icon: Calendar, enabled: false },
   { href: PROFILE_HREF, label: 'Perfil', icon: User, enabled: true },
 ];

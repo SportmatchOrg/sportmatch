@@ -1,27 +1,9 @@
 'use client';
 
-import type { ComponentType, SVGProps } from 'react';
-
+import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
 import { FieldError } from '@/components/partidos/field-error';
-import {
-  BasquetIcon,
-  FutbolIcon,
-  PadelIcon,
-  RunningIcon,
-  TenisIcon,
-} from '@/components/partidos/sport-icons';
 import { cn } from '@/lib/utils';
-import { DEPORTE_LABEL, type Deporte, type DeporteNombre } from '@/types/partido';
-
-type SportIcon = ComponentType<SVGProps<SVGSVGElement>>;
-
-const DEPORTE_ICON: Record<DeporteNombre, SportIcon> = {
-  FUTBOL: FutbolIcon,
-  BASQUET: BasquetIcon,
-  TENIS: TenisIcon,
-  PADEL: PadelIcon,
-  RUNNING: RunningIcon,
-};
+import { DEPORTE_LABEL, type Deporte } from '@/types/partido';
 
 const OPTION_BASE =
   'flex items-center gap-3 rounded-[20px] px-4 py-[18px] text-left text-[16.5px] font-bold tracking-[-0.34px] transition';
