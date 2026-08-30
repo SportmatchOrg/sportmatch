@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -30,7 +32,13 @@ export class PartidosController {
 
   @Post(':id/participantes')
   join(@Param('id') id: string, @CurrentUser() user: FirebaseUser) {
-    return this.partidosService.join(id, user.uid);
+    return this.partidosService.join(user.uid, id);
+  }
+
+  @Delete(':id/participantes/me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  leave(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
+    return this.partidosService.leave(user.uid, id);
   }
 
   @Get()
