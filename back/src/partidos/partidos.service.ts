@@ -11,9 +11,20 @@ import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
 
-type PartidoWithRelations = {
+type PublicUser = {
+  id: string;
+  nombre: string;
+  fotoUrl: string | null;
+};
+
+type ListedPartido = {
   _count: { participantes: number };
   participantes: { id: string }[];
+};
+
+type DetailedPartido = {
+  _count: { participantes: number };
+  participantes: { usuario: PublicUser; createdAt: Date }[];
 };
 
 @Injectable()
@@ -27,14 +38,18 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partidos = await this.partidosRepository.findUpcoming(user.id);
 
-    return partidos.map((partido) => this.toResponse(partido));
+    return partidos.map((partido) => this.toListResponse(partido));
   }
 
   async findOne(firebaseUid: string, id: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const partido = await this.getOrFail(id, user.id);
+    const partido = await this.partidosRepository.findDetailById(id);
 
-    return this.toResponse(partido);
+    if (!partido) {
+      throw new NotFoundException(`Partido with id ${id} was not found`);
+    }
+
+    return this.toDetailResponse(partido, user.id);
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
@@ -48,7 +63,7 @@ export class PartidosService {
         createPartidoDto,
       );
 
-      return this.toResponse(partido);
+      return this.toListResponse(partido);
     } catch (error) {
       throw this.toHttpException(error);
     }
@@ -73,7 +88,7 @@ export class PartidosService {
         updatePartidoDto,
       );
 
-      return this.toResponse(partido);
+      return this.toListResponse(partido);
     } catch (error) {
       throw this.toHttpException(error, id);
     }
@@ -129,13 +144,29 @@ export class PartidosService {
     return partido;
   }
 
-  private toResponse<T extends PartidoWithRelations>(partido: T) {
+  private toListResponse<T extends ListedPartido>(partido: T) {
     const { _count, participantes, ...rest } = partido;
 
     return {
       ...rest,
       anotados: _count.participantes,
       estoy_anotado: participantes.length > 0,
+    };
+  }
+
+  private toDetailResponse<T extends DetailedPartido>(
+    partido: T,
+    usuarioId: string,
+  ) {
+    const { _count, participantes, ...rest } = partido;
+
+    return {
+      ...rest,
+      anotados: _count.participantes,
+      estoy_anotado: participantes.some(
+        ({ usuario }) => usuario.id === usuarioId,
+      ),
+      participantes: participantes.map(({ usuario }) => usuario),
     };
   }
 

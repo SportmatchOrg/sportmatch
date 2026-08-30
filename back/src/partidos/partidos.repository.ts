@@ -23,6 +23,14 @@ const partidoInclude = (usuarioId: string) =>
     participantes: { where: { usuarioId }, select: { id: true } },
   }) as const;
 
+const PUBLIC_PARTICIPANTS = {
+  select: {
+    usuario: { select: { id: true, nombre: true, fotoUrl: true } },
+    createdAt: true,
+  },
+  orderBy: { createdAt: 'asc' },
+} as const;
+
 @Injectable()
 export class PartidosRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -39,6 +47,18 @@ export class PartidosRepository {
     return this.prisma.partido.findUnique({
       where: { id },
       include: partidoInclude(usuarioId),
+    });
+  }
+
+  findDetailById(id: string) {
+    return this.prisma.partido.findUnique({
+      where: { id },
+      include: {
+        organizador: PUBLIC_ORGANIZER,
+        deporte: PUBLIC_DEPORTE,
+        _count: PARTICIPANT_COUNT,
+        participantes: PUBLIC_PARTICIPANTS,
+      },
     });
   }
 
