@@ -1,8 +1,8 @@
 import { UserAvatar } from '@/components/user-avatar';
 import type { PublicUser } from '@/types/partido';
 
-const AVATAR_SIZE = 44;
-const OVERLAP = 12;
+const AVATAR_SIZE = 64;
+const OVERLAP = 16;
 const STEP = AVATAR_SIZE - OVERLAP;
 
 type AvatarStackProps = {
@@ -29,16 +29,16 @@ export function AvatarStack({ usuarios, max = 6 }: AvatarStackProps) {
           <UserAvatar
             name={usuario.nombre}
             photoUrl={usuario.fotoUrl}
-            sizes="44px"
-            className="size-11"
-            initialsClassName="text-caption"
+            sizes="64px"
+            className="size-16"
+            initialsClassName="text-callout"
           />
         </span>
       ))}
 
       {overflow > 0 && (
         <span
-          className="absolute top-0 flex size-11 items-center justify-center rounded-full bg-glass-strong text-caption font-bold text-ink-64 ring-2 ring-base"
+          className="absolute top-0 flex size-16 items-center justify-center rounded-full bg-glass-strong text-callout font-bold text-ink-64 ring-2 ring-base"
           style={{ left: shown.length * STEP }}
         >
           +{overflow}

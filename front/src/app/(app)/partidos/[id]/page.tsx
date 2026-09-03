@@ -7,17 +7,11 @@ import { useRouter } from 'next/navigation';
 import { use, useState, type ComponentType, type SVGProps } from 'react';
 
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
+import { OrganizadorCard } from '@/components/partidos/organizador-card';
 import { PartidoActions } from '@/components/partidos/partido-actions';
 import { PartidoPlayers } from '@/components/partidos/partido-players';
 import { LoadingScreen } from '@/components/loading-screen';
 import { EmptyState } from '@/components/ui/empty-state';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { UserAvatar } from '@/components/user-avatar';
 import { usePartido } from '@/hooks/use-partido';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { deportePhotoUrl } from '@/lib/deporte-photo';
@@ -41,13 +35,13 @@ function MetaTile({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-glass-strong text-brand">
+    <div className="flex flex-col gap-3 rounded-md bg-glass p-4 shadow-bevel-lit lg:flex-row lg:items-center lg:p-3">
+      <span className="flex shrink-0 items-center rounded-sm text-brand lg:size-10 lg:justify-center lg:bg-glass-strong">
         <Icon className="size-[18px]" aria-hidden="true" />
       </span>
 
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-overline text-ink-46 uppercase">{label}</span>
+        <span className="text-caption text-ink-46 lg:text-overline lg:uppercase">{label}</span>
         <span className="text-callout font-bold text-white">{value}</span>
       </span>
     </div>
@@ -103,7 +97,6 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
 
   const Icon = DEPORTE_ICON[partido.deporte.nombre];
   const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
-  const libres = Math.max(0, partido.cupo - partido.anotados);
   const isOrganizer = user?.id === partido.organizador.id;
 
   return (
@@ -152,10 +145,6 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
                     {NIVEL_LABEL[partido.nivel]}
                   </span>
 
-                  <span className="flex items-center gap-2 rounded-full bg-success-tint px-4 py-2 text-caption font-semibold text-success ring-1 ring-success/40 backdrop-blur-chip lg:text-callout">
-                    <span className="size-2 rounded-full bg-success" aria-hidden="true" />
-                    {libres === 1 ? '1 lugar' : `${libres} lugares`}
-                  </span>
                 </div>
 
                 <h1 className="hidden text-display font-extrabold text-white lg:block">
@@ -168,9 +157,13 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
               <PartidoTitle partido={partido} />
             </div>
 
+            <div className="px-5 lg:hidden">
+              <OrganizadorCard organizador={partido.organizador} />
+            </div>
+
             <div className="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-0">
-              <MetaTile icon={Calendar} label="Día" value={formatMatchDay(partido.fecha)} />
-              <MetaTile icon={Clock} label="Hora" value={formatMatchTime(partido.fecha)} />
+              <MetaTile icon={Calendar} label="Fecha" value={formatMatchDay(partido.fecha)} />
+              <MetaTile icon={Clock} label="Arranca" value={formatMatchTime(partido.fecha)} />
               <MetaTile
                 icon={Users}
                 label="Jugadores"
@@ -188,38 +181,11 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
           </div>
 
           <aside className="flex flex-col gap-4 px-5 lg:px-0">
-            <div className="flex items-center gap-4 rounded-md bg-glass p-4 shadow-bevel-lit lg:rounded-lg">
-              <UserAvatar
-                name={partido.organizador.nombre}
-                photoUrl={partido.organizador.fotoUrl}
-                sizes="56px"
-                className="size-14 ring-2 ring-brand"
-                initialsClassName="text-callout"
-              />
-
-              <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-overline text-ink-46 uppercase">Organiza</span>
-                <span className="text-headline font-bold text-white">
-                  {partido.organizador.nombre}
-                </span>
-              </span>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    type="button"
-                    aria-disabled="true"
-                    className="shrink-0 rounded-full bg-glass-strong px-5 py-3 text-callout font-semibold text-white shadow-bevel-lit aria-disabled:cursor-not-allowed"
-                  >
-                    Ver perfil
-                  </TooltipTrigger>
-                  <TooltipContent>Próximamente</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="hidden lg:block">
+              <OrganizadorCard organizador={partido.organizador} />
             </div>
 
             <PartidoPlayers
-              organizador={partido.organizador}
               participantes={partido.participantes}
               anotados={partido.anotados}
               cupo={partido.cupo}
