@@ -128,7 +128,9 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
                 />
               )}
 
-              <span className="absolute inset-0 bg-linear-to-t from-scrim-strong via-scrim-soft to-transparent" />
+              <span className="absolute inset-0 bg-linear-to-t from-scrim via-scrim-soft to-transparent" />
+
+              <span className="absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-base via-base/70 to-transparent lg:hidden" />
 
               <button
                 type="button"
