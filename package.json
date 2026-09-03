@@ -1,0 +1,14 @@
+{
+  "name": "sportmatch",
+  "private": true,
+  "scripts": {
+    "lint": "npm --prefix front run lint && npm --prefix back run lint",
+    "test": "npm --prefix back run test",
+    "build": "npm --prefix front run build && npm --prefix back run build",
+    "verify": "npm run lint && npm run test && npm run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

@@ -1,0 +1,76 @@
+@theme inline {
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-2xl: 44px;
+
+  --shadow-bevel: inset 0 0 0 1px var(--color-glass-border);
+  --shadow-bevel-strong: inset 0 0 0 1px var(--color-glass-border-strong);
+  --shadow-bevel-lit: inset 0 0 0 1px var(--color-glass-border),
+    inset 0 1px 0 0 var(--color-glass-highlight);
+
+  --shadow-float: 0 6px 20px 0 rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 18px 50px 0 rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 -12px 60px 0 rgba(0, 0, 0, 0.6);
+  --shadow-float-glass: 0 6px 20px 0 rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px var(--color-glass-border),
+    inset 0 1px 0 0 var(--color-glass-highlight);
+
+  --shadow-glow: 0 0 28px -6px var(--color-brand-glow);
+  --shadow-brand-glow: 0 0 8px 0 var(--color-brand-glow);
+  --drop-shadow-brand-glow: 0 3px 6px var(--color-brand-glow);
+  --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
+
+  --blur-chip: 12px;
+  --blur-card: 24px;
+  --blur-sheet: 40px;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
+}
+
+:root {
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+
+  --press-scale: 0.96;
+  --press-scale-chip: 0.95;
+  --press-scale-card: 0.985;
+  --press-scale-nav: 0.9;
+}
+
+@keyframes logo-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 26px var(--color-logo-glow);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ambient-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

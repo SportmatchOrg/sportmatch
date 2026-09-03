@@ -1,0 +1,30 @@
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
+
+import { requireEnv } from './env';
+
+const config = {
+  apiKey: requireEnv(
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    'NEXT_PUBLIC_FIREBASE_API_KEY',
+  ),
+  authDomain: requireEnv(
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+  ),
+  projectId: requireEnv(
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  ),
+  appId: requireEnv(
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    'NEXT_PUBLIC_FIREBASE_APP_ID',
+  ),
+};
+
+export const app = getApps().length ? getApp() : initializeApp(config);
+export const auth = getAuth(app);
+
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Could not set auth persistence:', error);
+});

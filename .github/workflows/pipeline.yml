@@ -1,0 +1,121 @@
+name: Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+jobs:
+  verificar:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  revisar:
+    if: github.event_name == 'pull_request'
+    needs: verificar
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: read
+    uses: ./.github/workflows/dod-checker.yml
+    secrets: inherit
+
+  traducir:
+    if: github.event_name == 'pull_request'
+    needs: revisar
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: ./.github/workflows/pr-business-translator.yml
+    secrets: inherit
+
+  qa-review:
+    if: github.event_name == 'pull_request'
+    needs: traducir
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/qa-review.yml
+    secrets: inherit
+
+  curar:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: verificar
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/context-curator.yml
+    secrets: inherit
+
+
+  detectar-cambios:
+    if: github.event_name == 'push'
+    needs: verificar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      back: ${{ steps.filter.outputs.back }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detectar cambios del backend
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            back:
+              - 'back/**'
+              - '.github/workflows/cd-back.yml'
+
+  publicar:
+    if: github.event_name == 'push'
+    needs: [ verificar, detectar-cambios ]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/cd-back.yml
+    with:
+      back_changed: ${{ needs.detectar-cambios.outputs.back == 'true' }}
+    secrets: inherit
+
+
+  desplegar:
+    if: github.event_name == 'push' && needs.detectar-cambios.outputs.back == 'true'
+    needs: [ publicar, detectar-cambios ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Redesplegar backend de dev en Azure
+        if: github.ref == 'refs/heads/dev'
+        env:
+          AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_DEV }}
+        run: curl --fail --show-error --silent --request POST "$AZURE_WEBHOOK_URL"
+
+      - name: Redesplegar backend de producción en Azure
+        if: github.ref == 'refs/heads/main'
+        env:
+          AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_PROD }}
+        run: curl --fail --show-error --silent --request POST "$AZURE_WEBHOOK_URL"
+
+
+  resultado:
+    name: Resultado requerido
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmar resultado de CI
+        env:
+          CI_RESULT: ${{ needs.verificar.result }}
+        run: |
+          if [ "$CI_RESULT" != "success" ]; then
+            echo "CI no terminó correctamente: $CI_RESULT"
+            exit 1
+          fi
+
+          echo "CI terminó correctamente."
