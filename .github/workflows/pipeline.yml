@@ -57,7 +57,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      back: ${{ steps.filter.outputs.back }}
+      back: ${{ steps.filter.outputs.back == 'true' || github.ref == 'refs/heads/main' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,6 +68,7 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          base: ${{ github.event.before }}
           filters: |
             back:
               - 'back/**'
@@ -90,6 +91,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Verificar que el webhook esté configurado
+        env:
+          AZURE_WEBHOOK_URL: ${{ github.ref == 'refs/heads/main' && secrets.AZURE_WEBHOOK_PROD || secrets.AZURE_WEBHOOK_DEV }}
+        run: |
+          if [ -z "$AZURE_WEBHOOK_URL" ]; then
+            echo "Falta el secret del webhook de Azure para ${{ github.ref_name }}."
+            exit 1
+          fi
+
       - name: Redesplegar backend de dev en Azure
         if: github.ref == 'refs/heads/dev'
         env:
