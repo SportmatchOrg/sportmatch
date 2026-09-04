@@ -23,11 +23,13 @@ export const NIVEL_LABEL: Record<Nivel, string> = {
   AVANZADO: 'Avanzado',
 };
 
-export type Organizador = {
+export type PublicUser = {
   id: string;
   nombre: string;
   fotoUrl: string | null;
 };
+
+export type Organizador = PublicUser;
 
 export type Partido = {
   id: string;
@@ -41,6 +43,10 @@ export type Partido = {
   organizador: Organizador;
   anotados: number;
   estoy_anotado: boolean;
+};
+
+export type PartidoDetalle = Partido & {
+  participantes: PublicUser[];
 };
 
 export const CUPO_MIN = 2;

@@ -130,12 +130,10 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
     }
 
     setDrag(NO_DRAG);
-  }
 
-  function openDetail(partidoId: string) {
-    if (moved.current) return;
-
-    router.push(`/partidos/${partidoId}`);
+    if (!moved.current && current) {
+      router.push(`/partidos/${current.id}`);
+    }
   }
 
   if (!partidos.length || !current) {
@@ -212,16 +210,16 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
               onPointerMove={isTop ? handlePointerMove : undefined}
               onPointerUp={isTop ? handlePointerUp : undefined}
               onPointerCancel={isTop ? handlePointerUp : undefined}
-              onOpen={isTop ? () => openDetail(partido.id) : undefined}
               style={
                 isTop
                   ? {
                       transform: `translate(${offsetX}px, ${offsetY}px) rotate(${offsetX / ROTATION_DIVISOR}deg)`,
                       transition: drag.active ? 'none' : RETURN_TRANSITION,
                       touchAction: 'none',
-                      cursor: 'grab',
+                      cursor: 'pointer',
+                      zIndex: 10,
                     }
-                  : undefined
+                  : { zIndex: 10 - depth }
               }
             />
           );
