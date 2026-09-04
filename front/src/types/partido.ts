@@ -51,6 +51,8 @@ export type PartidoDetalle = Partido & {
 
 export const CUPO_MIN = 2;
 export const CUPO_MAX = 30;
+export const CUPO_DEFAULT = 10;
 export const UBICACION_MIN = 3;
 export const UBICACION_MAX = 120;
+export const TITULO_MAX = 60;
 export const DESCRIPCION_MAX = 500;
