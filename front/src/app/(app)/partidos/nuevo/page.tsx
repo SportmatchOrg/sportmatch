@@ -117,13 +117,14 @@ export default function NewPartidoPage() {
   function handleBack() {
     if (submitting) return;
 
-    if (step === 0) {
-      router.back();
-      return;
-    }
-
     setErrors({});
     setStep(step - 1);
+  }
+
+  function handleExit() {
+    if (submitting) return;
+
+    router.back();
   }
 
   return (
@@ -132,6 +133,7 @@ export default function NewPartidoPage() {
         step={step}
         submitting={submitting}
         onBack={handleBack}
+        onExit={handleExit}
         onContinue={handleContinue}
       >
         {step === 0 && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Type, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useState, type ComponentType, type SVGProps } from 'react';
 
@@ -57,8 +57,8 @@ export function PartidoSummary({ form, deporte, organizador }: PartidoSummaryPro
   const nivelLabel = form.nivel ? NIVEL_LABEL[form.nivel] : '—';
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="relative h-[180px] overflow-hidden rounded-lg bg-sunken">
+    <section className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4">
+      <div className="relative h-[180px] overflow-hidden rounded-lg bg-sunken lg:h-auto lg:min-h-[280px]">
         {photo && !photoFailed ? (
           <Image
             src={photo}
@@ -82,40 +82,42 @@ export function PartidoSummary({ form, deporte, organizador }: PartidoSummaryPro
           <span className={CHIP}>{deporteLabel}</span>
 
           <h2 className="text-headline font-bold text-white">
-            {deporteLabel} · {nivelLabel}
+            {form.titulo.trim() || `${deporteLabel} · ${nivelLabel}`}
           </h2>
         </div>
       </div>
 
-      <SummaryRow icon={MapPin} label="Lugar" value={form.ubicacion} />
+      <div className="flex flex-col gap-3">
+        {form.titulo.trim() && <SummaryRow icon={Type} label="Título" value={form.titulo} />}
 
-      <SummaryRow
-        icon={Calendar}
-        label="Cuándo"
-        value={
-          form.fecha ? `${formatMatchDay(form.fecha)} · ${formatMatchTime(form.fecha)}` : '—'
-        }
-      />
+        <SummaryRow icon={MapPin} label="Lugar" value={form.ubicacion} />
 
-      <SummaryRow icon={Users} label="Jugadores" value={`${form.cupo} · ${nivelLabel}`} />
+        <SummaryRow
+          icon={Calendar}
+          label="Cuándo"
+          value={form.fecha ? `${formatMatchDay(form.fecha)} · ${formatMatchTime(form.fecha)}` : '—'}
+        />
 
-      <div className={ROW}>
-        {organizador && (
-          <UserAvatar
-            name={organizador.nombre}
-            photoUrl={organizador.fotoUrl}
-            sizes="40px"
-            className="size-10"
-            initialsClassName="text-caption"
-          />
-        )}
+        <SummaryRow icon={Users} label="Jugadores" value={`${form.cupo} · ${nivelLabel}`} />
 
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-overline text-ink-46 uppercase">Anfitrión</span>
-          <span className="truncate text-callout font-bold text-white">
-            {organizador ? `Vos · ${organizador.nombre}` : '—'}
+        <div className={ROW}>
+          {organizador && (
+            <UserAvatar
+              name={organizador.nombre}
+              photoUrl={organizador.fotoUrl}
+              sizes="40px"
+              className="size-10"
+              initialsClassName="text-caption"
+            />
+          )}
+
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-overline text-ink-46 uppercase">Anfitrión</span>
+            <span className="truncate text-callout font-bold text-white">
+              {organizador ? `Vos · ${organizador.nombre}` : '—'}
+            </span>
           </span>
-        </span>
+        </div>
       </div>
     </section>
   );
