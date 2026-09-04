@@ -36,6 +36,20 @@ export class PartidosService {
     return this.toDetailResponse(partido, user.id);
   }
 
+  async findMine(firebaseUid: string) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+
+    const [organizo, juego] = await Promise.all([
+      this.partidosRepository.findOrganizedBy(user.id),
+      this.partidosRepository.findJoinedBy(user.id),
+    ]);
+
+    return {
+      organizo: organizo.map((partido) => this.toListResponse(partido)),
+      juego: juego.map((partido) => this.toListResponse(partido)),
+    };
+  }
+
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
     this.assertFutureDate(createPartidoDto.fecha);
 
