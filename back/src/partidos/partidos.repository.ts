@@ -62,6 +62,25 @@ export class PartidosRepository {
     });
   }
 
+  findOrganizedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: { organizadorId: usuarioId, fecha: { gte: new Date() } },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findJoinedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { gte: new Date() },
+        participantes: { some: { usuarioId } },
+      },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
   create(organizadorId: string, data: CreatePartidoDto) {
     return this.prisma.partido.create({
       data: { ...data, organizadorId },
