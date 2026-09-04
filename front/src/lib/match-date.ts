@@ -6,6 +6,10 @@ function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+export function weekdayLabel(date: Date): string {
+  return WEEKDAYS[date.getDay()];
+}
+
 export function formatMatchDay(fecha: string): string {
   const date = new Date(fecha);
   const days = Math.round((startOfDay(date) - startOfDay(new Date())) / MS_PER_DAY);

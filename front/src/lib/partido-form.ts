@@ -1,7 +1,9 @@
 import {
+  CUPO_DEFAULT,
   CUPO_MAX,
   CUPO_MIN,
   DESCRIPCION_MAX,
+  TITULO_MAX,
   UBICACION_MAX,
   UBICACION_MIN,
   type Nivel,
@@ -13,6 +15,7 @@ export type PartidoForm = {
   fecha: string;
   ubicacion: string;
   cupo: string;
+  titulo: string;
   descripcion: string;
 };
 
@@ -23,7 +26,8 @@ export const EMPTY_PARTIDO_FORM: PartidoForm = {
   nivel: '',
   fecha: '',
   ubicacion: '',
-  cupo: '',
+  cupo: String(CUPO_DEFAULT),
+  titulo: '',
   descripcion: '',
 };
 
@@ -59,6 +63,10 @@ export function validatePartidoForm(form: PartidoForm): PartidoFormErrors {
     errors.cupo = `El cupo va de ${CUPO_MIN} a ${CUPO_MAX} jugadores.`;
   }
 
+  if (form.titulo.length > TITULO_MAX) {
+    errors.titulo = `El título no puede superar los ${TITULO_MAX} caracteres.`;
+  }
+
   if (form.descripcion.length > DESCRIPCION_MAX) {
     errors.descripcion = `La descripción no puede superar los ${DESCRIPCION_MAX} caracteres.`;
   }
@@ -80,14 +88,6 @@ export function localDateTimeValue(date: Date = new Date()): string {
     ':',
     pad(date.getMinutes()),
   ].join('');
-}
-
-export function clampCupoInput(raw: string, previous: string): string {
-  const digits = raw.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
-
-  if (digits === '') return '';
-
-  return Number(digits) > CUPO_MAX ? previous : digits;
 }
 
 export function toCreatePartidoBody(form: PartidoForm) {

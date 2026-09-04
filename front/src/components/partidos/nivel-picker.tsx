@@ -4,15 +4,17 @@ import { FieldError } from '@/components/partidos/field-error';
 import { cn } from '@/lib/utils';
 import { NIVELES, NIVEL_LABEL, type Nivel } from '@/types/partido';
 
-const CHIP_BASE =
-  'rounded-full px-4 py-2 text-callout transition';
+const TRACK = 'flex gap-1 rounded-full bg-glass p-1 shadow-bevel';
 
-const CHIP_SELECTED = 'bg-brand text-midnight';
+const OPTION = 'flex-1 rounded-full py-2 text-callout transition';
 
-const CHIP_IDLE =
-  'bg-glass text-white/46 shadow-bevel hover:text-white';
+const OPTION_SELECTED = 'bg-white font-bold text-midnight';
+
+const OPTION_IDLE = 'text-ink-46 hover:text-white';
 
 const ERROR_ID = 'error-nivel';
+
+const LABEL_ID = 'label-nivel';
 
 type NivelPickerProps = {
   value: Nivel | '';
@@ -22,10 +24,12 @@ type NivelPickerProps = {
 
 export function NivelPicker({ value, onChange, error }: NivelPickerProps) {
   return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="text-callout text-white">Nivel</legend>
+    <div role="group" aria-labelledby={LABEL_ID} className="flex flex-col gap-3">
+      <span id={LABEL_ID} className="text-overline text-ink-46 uppercase">
+        Nivel
+      </span>
 
-      <div className="flex flex-wrap gap-2">
+      <div className={TRACK}>
         {NIVELES.map((nivel) => {
           const selected = value === nivel;
 
@@ -36,7 +40,7 @@ export function NivelPicker({ value, onChange, error }: NivelPickerProps) {
               onClick={() => onChange(nivel)}
               aria-pressed={selected}
               aria-describedby={error ? ERROR_ID : undefined}
-              className={cn(CHIP_BASE, selected ? CHIP_SELECTED : CHIP_IDLE)}
+              className={cn(OPTION, selected ? OPTION_SELECTED : OPTION_IDLE)}
             >
               {NIVEL_LABEL[nivel]}
             </button>
@@ -45,6 +49,6 @@ export function NivelPicker({ value, onChange, error }: NivelPickerProps) {
       </div>
 
       <FieldError id={ERROR_ID} message={error} />
-    </fieldset>
+    </div>
   );
 }
