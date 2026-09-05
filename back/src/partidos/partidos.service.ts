@@ -58,21 +58,32 @@ export class PartidosService {
     id: string,
     updatePartidoDto: UpdatePartidoDto,
   ) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.assertIsOrganizer(user.id, id);
+
+    this.assertNotPlayed(partido.fecha);
+
     if (updatePartidoDto.fecha) {
       this.assertFutureDate(updatePartidoDto.fecha);
     }
 
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    await this.assertIsOrganizer(user.id, id);
+    if (
+      updatePartidoDto.cupo !== undefined &&
+      updatePartidoDto.cupo < partido._count.participantes
+    ) {
+      throw new BadRequestException(
+        `cupo cannot be lower than the ${partido._count.participantes} participants already joined`,
+      );
+    }
 
     try {
-      const partido = await this.partidosRepository.update(
+      const updated = await this.partidosRepository.update(
         id,
         user.id,
         updatePartidoDto,
       );
 
-      return this.toListResponse(partido);
+      return this.toListResponse(updated);
     } catch (error) {
       throw this.toHttpException(error, id);
     }
@@ -189,6 +200,7 @@ export class PartidosService {
         'Only the organizer can modify this partido',
       );
     }
+    return partido;
   }
 
   private toHttpException(error: unknown, reference?: string): Error {
