@@ -2,7 +2,7 @@
 
 import { MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CupoStepper } from '@/components/partidos/cupo-stepper';
 import { DeportePicker } from '@/components/partidos/deporte-picker';
@@ -51,6 +51,7 @@ export default function NewPartidoPage() {
   const [errors, setErrors] = useState<PartidoFormErrors>({});
   const [toast, setToast] = useState<WizardToast | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -59,6 +60,12 @@ export default function NewPartidoPage() {
 
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const deporte = deportes.find((candidate) => candidate.id === form.deporteId);
 
@@ -88,7 +95,7 @@ export default function NewPartidoPage() {
       await createPartido(form);
 
       setToast({ message: publishedMessage(), tone: 'success' });
-      setTimeout(() => router.replace(AFTER_PUBLISH_ROUTE), TOAST_DURATION);
+      redirectTimer.current = setTimeout(() => router.replace(AFTER_PUBLISH_ROUTE), TOAST_DURATION);
     } catch (caught) {
       setToast({
         message: caught instanceof ApiError ? caught.message : GENERIC_ERROR,
