@@ -37,7 +37,7 @@ export function ConfirmAction({
         onClick={() => setConfirming(true)}
         className="w-full"
       >
-        {variant === 'ghost' && <X className="size-4" aria-hidden="true" />}
+        <X className="size-4" aria-hidden="true" />
         {label}
       </PillButton>
     );
