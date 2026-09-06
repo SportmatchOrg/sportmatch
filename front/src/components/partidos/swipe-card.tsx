@@ -43,7 +43,6 @@ type SwipeCardProps = {
   onPointerMove?: PointerEventHandler<HTMLDivElement>;
   onPointerUp?: PointerEventHandler<HTMLDivElement>;
   onPointerCancel?: PointerEventHandler<HTMLDivElement>;
-  onOpen?: () => void;
 };
 
 export function SwipeCard({
@@ -56,7 +55,6 @@ export function SwipeCard({
   onPointerMove,
   onPointerUp,
   onPointerCancel,
-  onOpen,
 }: SwipeCardProps) {
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const Icon = DEPORTE_ICON[partido.deporte.nombre];
@@ -123,11 +121,8 @@ export function SwipeCard({
         </span>
       )}
 
-      <button
-        type="button"
-        onClick={onOpen}
-        disabled={!interactive}
-        className="absolute inset-x-4 bottom-4 flex flex-col items-start gap-4 rounded-md bg-glass-solid p-5 text-left shadow-bevel backdrop-blur-card lg:inset-x-6 lg:bottom-6 lg:gap-3 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none"
+      <div
+        className="absolute inset-x-4 bottom-4 flex flex-col items-start gap-4 rounded-md bg-glass-solid p-5 shadow-bevel backdrop-blur-card lg:inset-x-6 lg:bottom-6 lg:gap-3 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none"
       >
         <span className="text-title font-bold text-white">{partido.ubicacion}</span>
 
@@ -141,7 +136,7 @@ export function SwipeCard({
             <SpotsPill libres={libres} />
           </span>
         </span>
-      </button>
+      </div>
     </div>
   );
 }

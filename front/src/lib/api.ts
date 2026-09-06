@@ -3,6 +3,8 @@ import { auth } from './firebase';
 
 const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_URL');
 
+const NO_CONTENT = 204;
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -40,6 +42,10 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (!response.ok) {
     throw new ApiError(await readErrorMessage(response, path), response.status);
+  }
+
+  if (response.status === NO_CONTENT) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
