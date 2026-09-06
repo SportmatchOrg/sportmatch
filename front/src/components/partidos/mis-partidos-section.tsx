@@ -28,7 +28,7 @@ export function MisPartidosSection({
           <span className="text-callout tabular-nums text-ink-46">{partidos.length}</span>
         </span>
 
-        <p className="text-callout text-ink-46">{subtitle}</p>
+        <p className="text-callout text-ink-46 lg:hidden">{subtitle}</p>
       </div>
 
       {partidos.length === 0 ? (

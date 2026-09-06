@@ -71,20 +71,20 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
   const deporte = DEPORTE_LABEL[partido.deporte.nombre];
 
   return (
-    <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel-lit transition active:scale-[var(--press-scale-card)] lg:flex lg:items-stretch">
+    <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel transition active:scale-[var(--press-scale-card)] lg:flex lg:min-h-[126px] lg:items-stretch lg:rounded-md">
       <Link
         href={`/partidos/${partido.id}`}
         aria-label={`Ver el partido de ${deporte} en ${partido.ubicacion}`}
         className="absolute inset-0 z-[1]"
       />
 
-      <div className="relative aspect-[16/11] shrink-0 overflow-hidden bg-sunken lg:aspect-auto lg:w-[190px]">
+      <div className="relative aspect-[16/11] shrink-0 overflow-hidden bg-sunken lg:aspect-auto lg:w-[132px]">
         {photo && !photoFailed ? (
           <Image
             src={photo}
             alt=""
             fill
-            sizes="(min-width: 1024px) 190px, 100vw"
+            sizes="(min-width: 1024px) 132px, 100vw"
             onError={() => setPhotoFailed(true)}
             className="object-cover"
           />
@@ -110,17 +110,14 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
         </h3>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 lg:justify-center lg:p-5">
-        <div className="hidden items-center justify-between gap-3 lg:flex">
-          <span className="flex items-center gap-3">
-            <span className="text-overline text-ink-46 uppercase">{deporte}</span>
-            <span className={cn(CHIP, ROLE_CHIP[role])}>{ROLE_LABEL[role]}</span>
-          </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 lg:justify-center lg:gap-2 lg:p-4">
+        <div className="hidden shrink-0 items-center justify-between gap-3 lg:flex">
+          <span className="text-overline text-ink-46 uppercase">{deporte}</span>
 
           <SpotsBadge libres={libres} />
         </div>
 
-        <h3 className="hidden truncate text-headline font-bold text-white lg:block">
+        <h3 className="hidden shrink-0 truncate text-headline font-bold text-white lg:block">
           {partido.ubicacion}
         </h3>
 
@@ -149,7 +146,7 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
           </div>
 
           {action && (
-            <div className="relative z-10 border-t border-glass-strong pt-3 lg:border-0 lg:pt-0">
+            <div className="relative z-10 border-t border-glass-strong pt-3 lg:shrink-0 lg:border-0 lg:pt-0">
               {action}
             </div>
           )}

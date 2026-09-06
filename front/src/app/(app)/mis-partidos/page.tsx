@@ -86,7 +86,7 @@ export default function MisPartidosPage() {
         <h1 className="text-display text-[36px] text-white lg:text-[44px]">Tus partidos</h1>
 
         {!sinPartidos && (
-          <p className="text-callout text-ink-46">
+          <p className="text-callout text-ink-46 lg:hidden">
             {organizo.length} organizando · {juego.length} anotado
           </p>
         )}
