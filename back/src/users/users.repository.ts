@@ -4,16 +4,25 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
 
+const PUBLIC_USER = {
+  id: true,
+  nombre: true,
+  fotoUrl: true,
+} as const;
+
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({ select: PUBLIC_USER });
   }
 
   findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: PUBLIC_USER,
+    });
   }
 
   findByFirebaseUid(firebaseUid: string) {
