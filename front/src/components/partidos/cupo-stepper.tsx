@@ -3,16 +3,10 @@
 import { Minus, Plus } from 'lucide-react';
 
 import { FieldError } from '@/components/partidos/field-error';
+import { IconButton } from '@/components/ui/icon-button';
 import { CUPO_DEFAULT, CUPO_MAX, CUPO_MIN } from '@/types/partido';
 
 const ERROR_ID = 'error-cupo';
-
-const STEPPER_BUTTON =
-  'flex size-11 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40';
-
-const MINUS_BUTTON = 'bg-glass text-white shadow-bevel-lit hover:bg-glass-strong';
-
-const PLUS_BUTTON = 'bg-brand text-brand-ink shadow-glow hover:bg-brand-bright';
 
 type CupoStepperProps = {
   value: string;
@@ -36,15 +30,14 @@ export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
         </span>
 
         <div className="flex shrink-0 items-center gap-3">
-          <button
-            type="button"
-            aria-label="Quitar un jugador"
+          <IconButton
+            label="Quitar un jugador"
+            variant="soft"
             disabled={cupo <= CUPO_MIN}
             onClick={() => shift(-1)}
-            className={`${STEPPER_BUTTON} ${MINUS_BUTTON}`}
           >
             <Minus className="size-5" aria-hidden="true" />
-          </button>
+          </IconButton>
 
           <span
             aria-live="polite"
@@ -54,15 +47,14 @@ export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
             {cupo}
           </span>
 
-          <button
-            type="button"
-            aria-label="Sumar un jugador"
+          <IconButton
+            label="Sumar un jugador"
+            variant="brand"
             disabled={cupo >= CUPO_MAX}
             onClick={() => shift(1)}
-            className={`${STEPPER_BUTTON} ${PLUS_BUTTON}`}
           >
             <Plus className="size-5" aria-hidden="true" />
-          </button>
+          </IconButton>
         </div>
       </div>
 
