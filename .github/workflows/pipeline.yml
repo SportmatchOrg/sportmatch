@@ -12,44 +12,6 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
-  revisar:
-    if: github.event_name == 'pull_request'
-    needs: verificar
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: read
-    uses: ./.github/workflows/dod-checker.yml
-    secrets: inherit
-
-  traducir:
-    if: github.event_name == 'pull_request'
-    needs: revisar
-    permissions:
-      contents: read
-      pull-requests: write
-    uses: ./.github/workflows/pr-business-translator.yml
-    secrets: inherit
-
-  qa-review:
-    if: github.event_name == 'pull_request'
-    needs: traducir
-    permissions:
-      contents: read
-      pull-requests: read
-    uses: ./.github/workflows/qa-review.yml
-    secrets: inherit
-
-  curar:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: verificar
-    permissions:
-      contents: read
-      issues: write
-    uses: ./.github/workflows/context-curator.yml
-    secrets: inherit
-
-
   detectar-cambios:
     if: github.event_name == 'push'
     needs: verificar
@@ -76,7 +38,7 @@ jobs:
 
   publicar:
     if: github.event_name == 'push'
-    needs: [ verificar, detectar-cambios ]
+    needs: [verificar, detectar-cambios]
     permissions:
       contents: read
     uses: ./.github/workflows/cd-back.yml
@@ -84,10 +46,9 @@ jobs:
       back_changed: ${{ needs.detectar-cambios.outputs.back == 'true' }}
     secrets: inherit
 
-
   desplegar:
     if: github.event_name == 'push' && needs.detectar-cambios.outputs.back == 'true'
-    needs: [ publicar, detectar-cambios ]
+    needs: [publicar, detectar-cambios]
     runs-on: ubuntu-latest
 
     steps:
@@ -111,7 +72,6 @@ jobs:
         env:
           AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_PROD }}
         run: curl --fail --show-error --silent --request POST "$AZURE_WEBHOOK_URL"
-
 
   resultado:
     name: Resultado requerido
