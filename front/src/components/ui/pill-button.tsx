@@ -10,6 +10,8 @@ const BASE =
 const VARIANT = {
   brand: 'bg-brand font-bold text-brand-ink shadow-glow hover:bg-brand-bright disabled:shadow-none',
   glass: 'bg-glass font-semibold text-white shadow-bevel-lit hover:bg-glass-strong',
+  danger: 'bg-danger font-bold text-white hover:brightness-110',
+  dangerGhost: 'font-bold text-danger hover:brightness-110',
 } as const;
 
 const SIZE = {
