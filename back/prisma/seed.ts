@@ -104,15 +104,36 @@ async function main() {
         cupo: 14,
         organizadorId: luis.id,
       },
+      {
+        deporteId: deporteId('FUTBOL'),
+        nivel: 'INTERMEDIO',
+        fecha: inDays(-3, 20),
+        ubicacion: 'Parque Sur',
+        cupo: 10,
+        descripcion: 'Partido ya jugado',
+        organizadorId: ana.id,
+      },
+      {
+        deporteId: deporteId('PADEL'),
+        nivel: 'PRINCIPIANTE',
+        fecha: inDays(-10, 19),
+        ubicacion: 'Club Norte · Cancha 1',
+        cupo: 4,
+        organizadorId: luis.id,
+      },
     ],
   });
 
-  const partidosCreados = await prisma.partido.findMany({
+  const createdPartidos = await prisma.partido.findMany({
     orderBy: { fecha: 'asc' },
   });
 
+  const now = new Date();
+  const played = createdPartidos.filter((partido) => partido.fecha < now);
+  const upcoming = createdPartidos.filter((partido) => partido.fecha >= now);
+
   await prisma.participante.createMany({
-    data: partidosCreados.slice(0, 3).map((partido) => ({
+    data: [...played, ...upcoming.slice(0, 3)].map((partido) => ({
       partidoId: partido.id,
       usuarioId: partido.organizadorId === ana.id ? luis.id : ana.id,
     })),

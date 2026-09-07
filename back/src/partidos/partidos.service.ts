@@ -39,14 +39,16 @@ export class PartidosService {
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
-    const [organizo, juego] = await Promise.all([
+    const [organizo, juego, jugados] = await Promise.all([
       this.partidosRepository.findOrganizedBy(user.id),
       this.partidosRepository.findJoinedBy(user.id),
+      this.partidosRepository.findPlayedBy(user.id),
     ]);
 
     return {
       organizo: organizo.map((partido) => this.toListResponse(partido)),
       juego: juego.map((partido) => this.toListResponse(partido)),
+      jugados: jugados.map((partido) => this.toListResponse(partido)),
     };
   }
 
