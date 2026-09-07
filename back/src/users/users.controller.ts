@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { FirebaseUser } from '../auth/types';
+import { OwnAccountGuard } from '../auth/own-account.guard';
 
 @UseGuards(FirebaseAuthGuard)
 @Controller('users')
@@ -41,11 +42,13 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(OwnAccountGuard)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
+  @UseGuards(OwnAccountGuard)
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
