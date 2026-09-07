@@ -22,7 +22,9 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partidos = await this.partidosRepository.findUpcoming(user.id);
 
-    return partidos.map((partido) => this.toListResponse(partido));
+    return partidos
+      .filter((partido) => partido._count.participantes < partido.cupo)
+      .map((partido) => this.toListResponse(partido));
   }
 
   async findOne(firebaseUid: string, id: string) {

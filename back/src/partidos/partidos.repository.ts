@@ -37,7 +37,11 @@ export class PartidosRepository {
 
   findUpcoming(usuarioId: string) {
     return this.prisma.partido.findMany({
-      where: { fecha: { gte: new Date() } },
+      where: {
+        fecha: { gte: new Date() },
+        organizadorId: { not: usuarioId },
+        participantes: { none: { usuarioId } },
+      },
       orderBy: { fecha: 'asc' },
       include: partidoInclude(usuarioId),
     });
