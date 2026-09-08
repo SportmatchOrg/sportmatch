@@ -22,7 +22,9 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partidos = await this.partidosRepository.findUpcoming(user.id);
 
-    return partidos.map((partido) => this.toListResponse(partido));
+    return partidos
+      .filter((partido) => partido._count.participantes < partido.cupo)
+      .map((partido) => this.toListResponse(partido));
   }
 
   async findOne(firebaseUid: string, id: string) {
@@ -39,14 +41,16 @@ export class PartidosService {
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
-    const [organizo, juego] = await Promise.all([
+    const [organizo, juego, jugados] = await Promise.all([
       this.partidosRepository.findOrganizedBy(user.id),
       this.partidosRepository.findJoinedBy(user.id),
+      this.partidosRepository.findPlayedBy(user.id),
     ]);
 
     return {
       organizo: organizo.map((partido) => this.toListResponse(partido)),
       juego: juego.map((partido) => this.toListResponse(partido)),
+      jugados: jugados.map((partido) => this.toListResponse(partido)),
     };
   }
 
@@ -72,21 +76,32 @@ export class PartidosService {
     id: string,
     updatePartidoDto: UpdatePartidoDto,
   ) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.assertIsOrganizer(user.id, id);
+
+    this.assertNotPlayed(partido.fecha);
+
     if (updatePartidoDto.fecha) {
       this.assertFutureDate(updatePartidoDto.fecha);
     }
 
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    await this.assertIsOrganizer(user.id, id);
+    if (
+      updatePartidoDto.cupo !== undefined &&
+      updatePartidoDto.cupo < partido._count.participantes
+    ) {
+      throw new BadRequestException(
+        `cupo cannot be lower than the ${partido._count.participantes} participants already joined`,
+      );
+    }
 
     try {
-      const partido = await this.partidosRepository.update(
+      const updated = await this.partidosRepository.update(
         id,
         user.id,
         updatePartidoDto,
       );
 
-      return this.toListResponse(partido);
+      return this.toListResponse(updated);
     } catch (error) {
       throw this.toHttpException(error, id);
     }
@@ -203,6 +218,7 @@ export class PartidosService {
         'Only the organizer can modify this partido',
       );
     }
+    return partido;
   }
 
   private toHttpException(error: unknown, reference?: string): Error {

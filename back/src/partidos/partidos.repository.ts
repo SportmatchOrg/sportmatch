@@ -37,7 +37,11 @@ export class PartidosRepository {
 
   findUpcoming(usuarioId: string) {
     return this.prisma.partido.findMany({
-      where: { fecha: { gte: new Date() } },
+      where: {
+        fecha: { gte: new Date() },
+        organizadorId: { not: usuarioId },
+        participantes: { none: { usuarioId } },
+      },
       orderBy: { fecha: 'asc' },
       include: partidoInclude(usuarioId),
     });
@@ -77,6 +81,20 @@ export class PartidosRepository {
         participantes: { some: { usuarioId } },
       },
       orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findPlayedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { lt: new Date() },
+        OR: [
+          { organizadorId: usuarioId },
+          { participantes: { some: { usuarioId } } },
+        ],
+      },
+      orderBy: { fecha: 'desc' },
       include: partidoInclude(usuarioId),
     });
   }
