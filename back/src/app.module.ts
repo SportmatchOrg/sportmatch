@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { PartidosModule } from './partidos/partidos.module';
 import { DeportesModule } from './deportes/deportes.module';
+import { JoinRequestsModule } from './join-requests/join-requests.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DeportesModule } from './deportes/deportes.module';
     UsersModule,
     PartidosModule,
     DeportesModule,
+    JoinRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
