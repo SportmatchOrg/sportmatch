@@ -8,13 +8,11 @@ import { MisPartidosSection } from '@/components/partidos/mis-partidos-section';
 import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Toast, type ToastTone } from '@/components/ui/toast';
+import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { usePartidosMios } from '@/hooks/use-partidos-mios';
 import { NEW_MATCH_HREF } from '@/lib/nav-items';
 import { cancelPartido, leavePartido } from '@/lib/partidos';
 import { DEPORTE_LABEL, type Partido } from '@/types/partido';
-
-const TOAST_DURATION = 2800;
 
 const CANCEL_ERROR = 'No pudimos cancelar el partido. Probá de nuevo.';
 
@@ -80,7 +78,7 @@ export default function MisPartidosPage() {
   const sinPartidos = organizo.length === 0 && juego.length === 0;
 
   return (
-    <main className="mx-auto w-full max-w-[1400px] px-5 py-8 lg:px-8">
+    <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-5 py-8 lg:px-8">
       <header className="flex flex-col gap-2">
         <span className="text-overline text-brand uppercase">Tu agenda</span>
         <h1 className="text-display text-[36px] text-white lg:text-[44px]">Tus partidos</h1>
@@ -107,7 +105,7 @@ export default function MisPartidosPage() {
           />
         </div>
       ) : (
-        <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-8">
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
           <MisPartidosSection
             title="Organizás"
             subtitle="Los partidos que creaste"
