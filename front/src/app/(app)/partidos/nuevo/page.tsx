@@ -12,7 +12,7 @@ import { PartidoSummary } from '@/components/partidos/partido-summary';
 import { TextField } from '@/components/partidos/text-field';
 import { TextareaField } from '@/components/partidos/textarea-field';
 import { WizardShell } from '@/components/partidos/wizard-shell';
-import { Toast, type ToastTone } from '@/components/ui/toast';
+import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useDeportes } from '@/hooks/use-deportes';
 import { ApiError } from '@/lib/api';
@@ -34,8 +34,6 @@ import {
 } from '@/types/partido';
 
 const GENERIC_ERROR = 'No pudimos crear el partido. Probá de nuevo.';
-
-const TOAST_DURATION = 2800;
 
 const AFTER_PUBLISH_ROUTE = '/buscar';
 
