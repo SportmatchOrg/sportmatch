@@ -12,7 +12,10 @@ const PUBLIC_DEPORTE = {
 } as const;
 
 const PARTICIPANT_COUNT = {
-  select: { participantes: true },
+  select: {
+    participantes: true,
+    joinRequests: { where: { status: 'PENDING' } },
+  },
 } as const;
 
 const PUBLIC_PARTICIPANTS = {

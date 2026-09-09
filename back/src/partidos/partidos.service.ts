@@ -24,7 +24,7 @@ export class PartidosService {
 
     return partidos
       .filter((partido) => partido._count.participantes < partido.cupo)
-      .map((partido) => this.toListResponse(partido));
+      .map((partido) => this.toListResponse(partido, user.id));
   }
 
   async findOne(firebaseUid: string, id: string) {
@@ -48,9 +48,11 @@ export class PartidosService {
     ]);
 
     return {
-      organizo: organizo.map((partido) => this.toListResponse(partido)),
-      juego: juego.map((partido) => this.toListResponse(partido)),
-      jugados: jugados.map((partido) => this.toListResponse(partido)),
+      organizo: organizo.map((partido) =>
+        this.toListResponse(partido, user.id),
+      ),
+      juego: juego.map((partido) => this.toListResponse(partido, user.id)),
+      jugados: jugados.map((partido) => this.toListResponse(partido, user.id)),
     };
   }
 
@@ -65,7 +67,7 @@ export class PartidosService {
         createPartidoDto,
       );
 
-      return this.toListResponse(partido);
+      return this.toListResponse(partido, organizer.id);
     } catch (error) {
       throw this.toHttpException(error);
     }
@@ -101,7 +103,7 @@ export class PartidosService {
         updatePartidoDto,
       );
 
-      return this.toListResponse(updated);
+      return this.toListResponse(updated, user.id);
     } catch (error) {
       throw this.toHttpException(error, id);
     }
@@ -145,7 +147,10 @@ export class PartidosService {
     return partido;
   }
 
-  private toListResponse<T extends ListedPartido>(partido: T) {
+  private toListResponse<T extends ListedPartido>(
+    partido: T,
+    usuarioId: string,
+  ) {
     const { _count, participantes, joinRequests, ...rest } = partido;
 
     return {
@@ -153,6 +158,8 @@ export class PartidosService {
       anotados: _count.participantes,
       estoy_anotado: participantes.length > 0,
       my_join_request: joinRequests[0]?.status ?? null,
+      pending_requests:
+        rest.organizadorId === usuarioId ? _count.joinRequests : null,
     };
   }
 
@@ -169,6 +176,8 @@ export class PartidosService {
         ({ usuario }) => usuario.id === usuarioId,
       ),
       my_join_request: joinRequests[0]?.status ?? null,
+      pending_requests:
+        rest.organizadorId === usuarioId ? _count.joinRequests : null,
       participantes: participantes.map(({ usuario }) => usuario),
     };
   }
