@@ -31,9 +31,11 @@
   --color-brand-glow: rgba(78, 168, 255, 0.45);
   --color-success: #66d575;
   --color-success-tint: rgba(102, 213, 117, 0.16);
+  --color-success-ring: rgba(102, 213, 117, 0.35);
   --color-warning: #ffcb57;
   --color-danger: #ff5a5f;
   --color-danger-tint: rgba(255, 90, 95, 0.16);
+  --color-danger-ring: rgba(255, 90, 95, 0.35);
   --color-swipe-yes: #66d575;
   --color-swipe-no: #ff5a6a;
   --color-swipe-info: #4ea8ff;

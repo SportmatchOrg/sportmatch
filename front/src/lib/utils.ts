@@ -5,6 +5,8 @@ const DESIGN_SYSTEM_TEXT_SIZES = [
   "hero",
   "display",
   "title",
+  "headline",
+  "subhead",
   "body",
   "callout",
   "caption",
