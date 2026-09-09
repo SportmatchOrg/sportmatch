@@ -1,17 +1,17 @@
 'use client';
 
-import { Calendar, ChevronRight, MapPin } from 'lucide-react';
+import { ChevronRight, Clock, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
+import { DeporteChip } from '@/components/partidos/deporte-chip';
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
+import { SpotsBadge } from '@/components/partidos/spots-badge';
 import { deportePhotoUrl } from '@/lib/deporte-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { cn } from '@/lib/utils';
 import { DEPORTE_LABEL, type Partido } from '@/types/partido';
-
-const LOW_SPOTS = 2;
 
 export type MatchCardRole = 'host' | 'player';
 
@@ -26,35 +26,6 @@ const ROLE_CHIP: Record<MatchCardRole, string> = {
 };
 
 const CHIP = 'rounded-full px-3 py-1 text-caption font-semibold';
-
-const GLASS_CHIP = 'bg-glass-solid text-white shadow-bevel backdrop-blur-chip';
-
-function SpotsBadge({ libres, onPhoto = false }: { libres: number; onPhoto?: boolean }) {
-  const low = libres <= LOW_SPOTS;
-
-  const fill = onPhoto
-    ? 'bg-glass-solid shadow-bevel backdrop-blur-chip'
-    : low
-      ? 'bg-danger-tint'
-      : 'bg-success-tint';
-
-  return (
-    <span
-      className={cn(
-        'flex shrink-0 items-center gap-2',
-        CHIP,
-        fill,
-        low ? 'text-danger' : 'text-success'
-      )}
-    >
-      <span
-        className={cn('size-2 rounded-full', low ? 'bg-danger' : 'bg-success')}
-        aria-hidden="true"
-      />
-      {libres === 1 ? '1 lugar' : `${libres} lugares`}
-    </span>
-  );
-}
 
 type MatchCardProps = {
   partido: Partido;
@@ -98,14 +69,14 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
 
         <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2 lg:hidden">
           <span className="flex flex-wrap gap-2">
-            <span className={cn(CHIP, GLASS_CHIP)}>{deporte}</span>
+            <DeporteChip nombre={partido.deporte.nombre} />
             <span className={cn(CHIP, ROLE_CHIP[role])}>{ROLE_LABEL[role]}</span>
           </span>
 
           <SpotsBadge libres={libres} onPhoto />
         </div>
 
-        <h3 className="absolute inset-x-4 bottom-4 text-headline font-bold text-white lg:hidden">
+        <h3 className="absolute inset-x-4 bottom-4 truncate text-[18.4px] leading-[29px] font-bold tracking-[-0.5px] text-white lg:hidden">
           {partido.ubicacion}
         </h3>
       </div>
@@ -117,7 +88,7 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
           <SpotsBadge libres={libres} />
         </div>
 
-        <h3 className="hidden shrink-0 truncate text-headline font-bold text-white lg:block">
+        <h3 className="hidden shrink-0 truncate text-[18.4px] leading-[29px] font-bold tracking-[-0.5px] text-white lg:block">
           {partido.ubicacion}
         </h3>
 
@@ -125,7 +96,7 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
           <div className="flex min-w-0 items-center justify-between gap-3">
             <span className="flex min-w-0 items-center gap-3">
               <span className="flex shrink-0 items-center gap-2 text-callout text-ink-64">
-                <Calendar className="size-4 shrink-0 text-brand" aria-hidden="true" />
+                <Clock className="size-4 shrink-0 text-brand" aria-hidden="true" />
                 {formatMatchDay(partido.fecha)} · {formatMatchTime(partido.fecha)}
               </span>
 
