@@ -5,11 +5,17 @@ import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 import { ProfileStats } from '@/components/profile/profile-stats';
 import { RecentMatches } from '@/components/profile/recent-matches';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { usePartidosMios } from '@/hooks/use-partidos-mios';
 
 export default function ProfilePage() {
   const { user, loading, error } = useCurrentUser();
+  const {
+    jugados,
+    loading: partidosLoading,
+    error: partidosError,
+  } = usePartidosMios();
 
-  if (loading) {
+  if (loading || partidosLoading) {
     return (
       <main className="w-full">
         <ProfileSkeleton />
@@ -29,8 +35,8 @@ export default function ProfilePage() {
   return (
     <main className="w-full pb-10">
       <ProfileHeader user={user} />
-      <ProfileStats />
-      <RecentMatches />
+      <ProfileStats partidosJugados={partidosError ? null : jugados.length} />
+      <RecentMatches partidos={jugados} error={partidosError} />
     </main>
   );
 }
