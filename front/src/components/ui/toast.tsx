@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 
 export type ToastTone = 'success' | 'info' | 'danger';
 
+export const TOAST_DURATION = 2800;
+
 const TONE_ICON: Record<ToastTone, ComponentType<SVGProps<SVGSVGElement>>> = {
   success: Check,
   info: Zap,

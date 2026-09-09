@@ -45,6 +45,11 @@ export type Partido = {
   estoy_anotado: boolean;
 };
 
+export type PartidosMios = {
+  organizo: Partido[];
+  juego: Partido[];
+};
+
 export type PartidoDetalle = Partido & {
   participantes: PublicUser[];
 };

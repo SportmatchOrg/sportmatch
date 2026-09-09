@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'rea
 import { SwipeCard, type SwipeDecision } from '@/components/partidos/swipe-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Toast } from '@/components/ui/toast';
+import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
 import { deportePhotoUrl } from '@/lib/deporte-photo';
 import { joinPartido } from '@/lib/partidos';
@@ -21,7 +21,6 @@ const FLYOUT_DISTANCE = 600;
 const FLYOUT_LIFT = -40;
 const FLYOUT_DURATION = 300;
 const TAP_TOLERANCE = 8;
-const TOAST_DURATION = 2800;
 
 const CONFLICT_MESSAGE = 'No pudimos sumarte: el partido está lleno o ya estás anotado.';
 const JOIN_ERROR_MESSAGE = 'No pudimos sumarte al partido. Probá de nuevo.';
