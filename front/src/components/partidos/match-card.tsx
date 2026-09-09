@@ -76,7 +76,7 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
           <SpotsBadge libres={libres} onPhoto />
         </div>
 
-        <h3 className="absolute inset-x-4 bottom-4 truncate text-[18.4px] leading-[29px] font-bold tracking-[-0.5px] text-white lg:hidden">
+        <h3 className="absolute inset-x-4 bottom-4 truncate text-subhead text-white lg:hidden">
           {partido.ubicacion}
         </h3>
       </div>
@@ -88,7 +88,7 @@ export function MatchCard({ partido, role, action }: MatchCardProps) {
           <SpotsBadge libres={libres} />
         </div>
 
-        <h3 className="hidden shrink-0 truncate text-[18.4px] leading-[29px] font-bold tracking-[-0.5px] text-white lg:block">
+        <h3 className="hidden shrink-0 truncate text-subhead text-white lg:block">
           {partido.ubicacion}
         </h3>
 

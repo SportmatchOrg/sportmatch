@@ -14,7 +14,7 @@ import { DEPORTE_LABEL, NIVEL_LABEL, type Partido } from '@/types/partido';
 const CARD =
   'flex h-[100px] gap-[14px] overflow-hidden rounded-md bg-glass shadow-bevel backdrop-blur-card transition hover:bg-glass-strong active:scale-[var(--press-scale-card)] lg:h-[300px] lg:flex-col lg:gap-0 lg:rounded-lg lg:shadow-card-glass';
 
-const TITLE = 'truncate text-[18.4px] leading-[29px] font-bold tracking-[-0.5px] text-white';
+const TITLE = 'truncate text-subhead text-white';
 
 const META = 'flex items-center gap-2 text-caption text-ink-64';
 
