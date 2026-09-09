@@ -1,7 +1,7 @@
 'use client';
 
 import { signOut } from 'firebase/auth';
-import { LogOut, SlidersHorizontal } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -45,7 +45,7 @@ export function ProfileMenu({ variant = 'icon', className }: ProfileMenuProps) {
         aria-label="Opciones de perfil"
         className={cn(TRIGGER_BASE, BEVEL, TRIGGER_VARIANTS[variant], className)}
       >
-        <SlidersHorizontal className="size-[22px] shrink-0" aria-hidden="true" />
+        <Settings className="size-[22px] shrink-0" aria-hidden="true" />
         {variant === 'labelled' && 'Ajustes'}
       </DropdownMenuTrigger>
 
