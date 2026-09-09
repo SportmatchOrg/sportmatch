@@ -29,7 +29,7 @@ export class PartidosService {
 
   async findOne(firebaseUid: string, id: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const partido = await this.partidosRepository.findDetailById(id);
+    const partido = await this.partidosRepository.findDetailById(id, user.id);
 
     if (!partido) {
       throw new NotFoundException(`Partido with id ${id} was not found`);
@@ -118,33 +118,6 @@ export class PartidosService {
     }
   }
 
-  async join(firebaseUid: string, partidoId: string) {
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const partido = await this.getOrFail(partidoId, user.id);
-
-    this.assertNotPlayed(partido.fecha);
-
-    if (partido.organizadorId === user.id) {
-      throw new BadRequestException(
-        'The organizer is already part of the partido',
-      );
-    }
-
-    if (partido._count.participantes >= partido.cupo) {
-      throw new ConflictException('The partido is full');
-    }
-
-    if (partido.participantes.length > 0) {
-      throw new ConflictException('You already joined this partido');
-    }
-
-    try {
-      return await this.partidosRepository.addParticipant(partidoId, user.id);
-    } catch (error) {
-      throw this.toHttpException(error);
-    }
-  }
-
   async leave(firebaseUid: string, partidoId: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partido = await this.getOrFail(partidoId, user.id);
@@ -173,12 +146,13 @@ export class PartidosService {
   }
 
   private toListResponse<T extends ListedPartido>(partido: T) {
-    const { _count, participantes, ...rest } = partido;
+    const { _count, participantes, joinRequests, ...rest } = partido;
 
     return {
       ...rest,
       anotados: _count.participantes,
       estoy_anotado: participantes.length > 0,
+      my_join_request: joinRequests[0]?.status ?? null,
     };
   }
 
@@ -186,7 +160,7 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, ...rest } = partido;
+    const { _count, participantes, joinRequests, ...rest } = partido;
 
     return {
       ...rest,
@@ -194,6 +168,7 @@ export class PartidosService {
       estoy_anotado: participantes.some(
         ({ usuario }) => usuario.id === usuarioId,
       ),
+      my_join_request: joinRequests[0]?.status ?? null,
       participantes: participantes.map(({ usuario }) => usuario),
     };
   }

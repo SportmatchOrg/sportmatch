@@ -29,6 +29,10 @@ const partidoInclude = (usuarioId: string) =>
     deporte: PUBLIC_DEPORTE,
     _count: PARTICIPANT_COUNT,
     participantes: { where: { usuarioId }, select: { id: true } },
+    joinRequests: {
+      where: { userId: usuarioId },
+      select: { status: true },
+    },
   }) as const;
 
 @Injectable()
@@ -41,6 +45,9 @@ export class PartidosRepository {
         fecha: { gte: new Date() },
         organizadorId: { not: usuarioId },
         participantes: { none: { usuarioId } },
+        joinRequests: {
+          none: { userId: usuarioId, status: 'PENDING' },
+        },
       },
       orderBy: { fecha: 'asc' },
       include: partidoInclude(usuarioId),
@@ -54,7 +61,7 @@ export class PartidosRepository {
     });
   }
 
-  findDetailById(id: string) {
+  findDetailById(id: string, usuarioId: string) {
     return this.prisma.partido.findUnique({
       where: { id },
       include: {
@@ -62,6 +69,10 @@ export class PartidosRepository {
         deporte: PUBLIC_DEPORTE,
         _count: PARTICIPANT_COUNT,
         participantes: PUBLIC_PARTICIPANTS,
+        joinRequests: {
+          where: { userId: usuarioId },
+          select: { status: true },
+        },
       },
     });
   }
@@ -116,12 +127,6 @@ export class PartidosRepository {
 
   remove(id: string) {
     return this.prisma.partido.delete({ where: { id } });
-  }
-
-  addParticipant(partidoId: string, usuarioId: string) {
-    return this.prisma.participante.create({
-      data: { partidoId, usuarioId },
-    });
   }
 
   removeParticipant(partidoId: string, usuarioId: string) {
