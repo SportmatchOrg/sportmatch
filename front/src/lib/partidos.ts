@@ -21,8 +21,12 @@ export async function createPartido(form: PartidoForm): Promise<Partido> {
   });
 }
 
-export async function joinPartido(partidoId: string): Promise<void> {
-  await apiFetch(`/partidos/${partidoId}/participantes`, { method: 'POST' });
+export async function requestToJoin(partidoId: string): Promise<void> {
+  await apiFetch(`/partidos/${partidoId}/join-requests`, { method: 'POST' });
+}
+
+export async function cancelJoinRequest(partidoId: string): Promise<void> {
+  await apiFetch<void>(`/partidos/${partidoId}/join-requests/me`, { method: 'DELETE' });
 }
 
 export async function cancelPartido(partidoId: string): Promise<void> {
