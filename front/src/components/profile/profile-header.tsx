@@ -4,16 +4,15 @@ import Image from 'next/image';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
 import { ProfileMenu } from '@/components/profile/profile-menu';
+import { IMAGES } from '@/lib/images';
 import type { User } from '@/types/user';
-
-const COVER_IMAGE = '/football-sunset.jpg';
 
 export function ProfileHeader({ user }: { user: User }) {
   return (
     <header>
       <div className="relative h-[196px] w-full overflow-hidden bg-raised lg:h-[206px]">
         <Image
-          src={COVER_IMAGE}
+          src={IMAGES.profileCover}
           alt=""
           fill
           priority

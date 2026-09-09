@@ -9,7 +9,7 @@ const DEPORTE_PHOTOS: Record<DeporteNombre, string[]> = {
   ],
   TENIS: ['/deportes/tennis-clay.jpg', '/deportes/tennis-net.jpg'],
   PADEL: ['/deportes/padel-bw.jpg'],
-  RUNNING: ['/deportes/runnig-bw.jpg'],
+  RUNNING: ['/deportes/running-bw.jpg'],
 };
 
 function hash(value: string): number {
