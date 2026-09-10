@@ -151,7 +151,7 @@ export function JoinRequestsPanel({
   }
 
   return (
-    <section className="flex flex-col gap-4 rounded-md bg-glass p-5 shadow-bevel-lit">
+    <section className="flex flex-col gap-4">
       {toast && (
         <div className="fixed inset-x-0 top-16 z-50 flex justify-center px-4">
           <Toast message={toast} tone="danger" />
@@ -165,7 +165,7 @@ export function JoinRequestsPanel({
             className={cn(
               'rounded-full px-3 py-1 text-caption font-semibold',
               pendingCount > 0
-                ? 'bg-brand-tint text-brand'
+                ? 'bg-brand text-brand-ink'
                 : 'bg-success-tint text-success'
             )}
           >

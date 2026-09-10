@@ -9,6 +9,7 @@ type MisPartidosSectionProps = {
   partidos: Partido[];
   role: MatchCardRole;
   empty: ReactNode;
+  renderPanel?: (partido: Partido) => ReactNode;
   renderAction: (partido: Partido) => ReactNode;
 };
 
@@ -18,6 +19,7 @@ export function MisPartidosSection({
   partidos,
   role,
   empty,
+  renderPanel,
   renderAction,
 }: MisPartidosSectionProps) {
   return (
@@ -40,6 +42,7 @@ export function MisPartidosSection({
               key={partido.id}
               partido={partido}
               role={role}
+              panel={renderPanel?.(partido)}
               action={renderAction(partido)}
             />
           ))}

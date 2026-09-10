@@ -4,6 +4,7 @@ import { CalendarDays, Compass, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { JoinRequestsPanel } from '@/components/partidos/join-requests-panel';
 import { MisPartidosSection } from '@/components/partidos/mis-partidos-section';
 import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
@@ -108,7 +109,7 @@ export default function MisPartidosPage() {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
           <MisPartidosSection
             title="Organizás"
-            subtitle="Los partidos que creaste"
+            subtitle="Aprobá quién se suma a los partidos que creaste"
             partidos={organizo}
             role="host"
             empty={
@@ -124,6 +125,15 @@ export default function MisPartidosPage() {
                 }
               />
             }
+            renderPanel={(partido) => (
+              <JoinRequestsPanel
+                partidoId={partido.id}
+                cupo={partido.cupo}
+                anotados={partido.anotados}
+                isOrganizer
+                onResolved={reload}
+              />
+            )}
             renderAction={(partido) => (
               <ConfirmAction
                 variant="ghost"

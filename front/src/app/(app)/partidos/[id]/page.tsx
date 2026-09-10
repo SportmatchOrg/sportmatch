@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { use, useState, type ComponentType, type SVGProps } from 'react';
 
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { JoinRequestsPanel } from '@/components/partidos/join-requests-panel';
 import { OrganizadorCard } from '@/components/partidos/organizador-card';
 import { PartidoActions } from '@/components/partidos/partido-actions';
 import { PartidoPlayers } from '@/components/partidos/partido-players';
@@ -191,16 +190,6 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
               anotados={partido.anotados}
               cupo={partido.cupo}
             />
-
-            {isOrganizer && (
-              <JoinRequestsPanel
-                partidoId={partido.id}
-                cupo={partido.cupo}
-                anotados={partido.anotados}
-                isOrganizer={isOrganizer}
-                onResolved={reload}
-              />
-            )}
 
             <div className="hidden lg:block">
               <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
