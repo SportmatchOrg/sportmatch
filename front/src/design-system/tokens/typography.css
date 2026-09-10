@@ -18,6 +18,11 @@
   --text-headline--line-height: 1.16;
   --text-headline--font-weight: 600;
 
+  --text-subhead: 18px;
+  --text-subhead--line-height: 1.6;
+  --text-subhead--font-weight: 700;
+  --text-subhead--letter-spacing: -0.03em;
+
   --text-body: 17px;
   --text-body--line-height: 1.45;
   --text-body--font-weight: 400;
