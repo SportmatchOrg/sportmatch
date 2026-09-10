@@ -33,6 +33,7 @@
   --color-success-tint: rgba(102, 213, 117, 0.16);
   --color-success-ring: rgba(102, 213, 117, 0.35);
   --color-warning: #ffcb57;
+  --color-warning-tint: rgba(255, 203, 87, 0.16);
   --color-danger: #ff5a5f;
   --color-danger-tint: rgba(255, 90, 95, 0.16);
   --color-danger-ring: rgba(255, 90, 95, 0.35);

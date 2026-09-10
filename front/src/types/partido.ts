@@ -31,6 +31,8 @@ export type PublicUser = {
 
 export type Organizador = PublicUser;
 
+export type JoinRequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
 export type Partido = {
   id: string;
   deporteId: string;
@@ -43,6 +45,8 @@ export type Partido = {
   organizador: Organizador;
   anotados: number;
   estoy_anotado: boolean;
+  my_join_request: JoinRequestStatus | null;
+  pending_requests: number | null;
 };
 
 export type PartidosMios = {
