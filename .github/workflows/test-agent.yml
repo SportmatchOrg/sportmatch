@@ -49,4 +49,5 @@ jobs:
       service_root: back
     secrets:
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_API_KEY_FALLBACK: ${{ secrets.LLM_API_KEY_FALLBACK }}
       LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
