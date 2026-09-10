@@ -10,6 +10,7 @@ const BASE =
 const VARIANT = {
   glass: 'bg-glass-solid text-white shadow-bevel backdrop-blur-chip hover:bg-glass-strong',
   soft: 'bg-glass text-white shadow-bevel-lit hover:bg-glass-strong',
+  strong: 'bg-glass-strong text-white shadow-bevel-lit hover:bg-glass-solid',
   brand: 'bg-brand text-brand-ink shadow-glow hover:bg-brand-bright',
 } as const;
 
