@@ -3,6 +3,7 @@
 import { ArrowRight, Check, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
 import { cancelJoinRequest, leavePartido, requestToJoin } from '@/lib/partidos';
@@ -20,18 +21,6 @@ const LEAVE_FALLBACK = 'No pudimos darte de baja. Probá de nuevo.';
 const NOT_JOINED_MESSAGE = 'Ya no estabas anotado en este partido';
 const CANCEL_REQUEST_FALLBACK = 'No pudimos cancelar tu solicitud. Probá de nuevo.';
 const REQUEST_NOT_FOUND_MESSAGE = 'Ya no tenías una solicitud pendiente';
-
-const PRIMARY_CTA =
-  'flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-callout font-bold text-midnight shadow-glow transition hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none';
-
-const GLASS_CTA =
-  'flex-1 rounded-full bg-glass-strong px-6 py-4 text-callout font-semibold text-white shadow-bevel-lit transition hover:bg-glass disabled:cursor-not-allowed disabled:opacity-60';
-
-const DANGER_CTA =
-  'flex-1 rounded-full bg-danger px-6 py-4 text-callout font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
-
-const DANGER_TEXT_CTA =
-  'w-full rounded-full bg-danger px-6 py-4 text-callout font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
 
 export function joinRequestErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return JOIN_REQUEST_FALLBACK;
@@ -78,6 +67,54 @@ type OptimisticRequestStatus = {
   from: JoinRequestStatus | null;
   to: JoinRequestStatus | null;
 };
+
+type ConfirmationBlockProps = {
+  message: string;
+  cancelLabel: string;
+  confirmLabel: string;
+  pendingLabel: string;
+  pending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function ConfirmationBlock({
+  message,
+  cancelLabel,
+  confirmLabel,
+  pendingLabel,
+  pending,
+  onCancel,
+  onConfirm,
+}: ConfirmationBlockProps) {
+  return (
+    <div className="flex flex-col gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
+      <p className="px-2 text-caption text-ink-64">{message}</p>
+
+      <div className="flex gap-3">
+        <PillButton
+          variant="glass"
+          size="lg"
+          disabled={pending}
+          onClick={onCancel}
+          className="flex-1"
+        >
+          {cancelLabel}
+        </PillButton>
+
+        <PillButton
+          variant="danger"
+          size="lg"
+          disabled={pending}
+          onClick={onConfirm}
+          className="flex-1"
+        >
+          {pending ? pendingLabel : confirmLabel}
+        </PillButton>
+      </div>
+    </div>
+  );
+}
 
 export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsProps) {
   const [submitting, setSubmitting] = useState(false);
@@ -152,44 +189,29 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-midnight">
               <Check className="size-4" aria-hidden="true" />
             </span>
-            Estás dentro
+            Estás adentro
           </p>
 
           {!confirming ? (
-            <button
-              type="button"
+            <PillButton
+              variant="danger"
+              size="lg"
               disabled={submitting}
               onClick={() => setConfirming(true)}
-              className={DANGER_TEXT_CTA}
+              className="w-full"
             >
               Cancelar mi lugar
-            </button>
+            </PillButton>
           ) : (
-            <div className="flex flex-col gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
-              <p className="px-2 text-caption text-ink-64">
-                Se libera tu lugar para que lo tome otra persona.
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setConfirming(false)}
-                  className={GLASS_CTA}
-                >
-                  Mejor no
-                </button>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => void run(() => leavePartido(partido.id), leaveErrorMessage)}
-                  className={DANGER_CTA}
-                >
-                  {submitting ? 'Saliendo…' : 'Salirme'}
-                </button>
-              </div>
-            </div>
+            <ConfirmationBlock
+              message="Se libera tu lugar para que lo tome otra persona."
+              cancelLabel="Mejor no"
+              confirmLabel="Salirme"
+              pendingLabel="Saliendo…"
+              pending={submitting}
+              onCancel={() => setConfirming(false)}
+              onConfirm={() => void run(() => leavePartido(partido.id), leaveErrorMessage)}
+            />
           )}
         </>
       ) : requestStatus === 'PENDING' ? (
@@ -202,50 +224,31 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
           </p>
 
           {!confirming ? (
-            <button
-              type="button"
+            <PillButton
+              variant="dangerGhost"
+              size="md"
               disabled={submitting}
               onClick={() => setConfirming(true)}
-              className="w-full px-6 py-2 text-callout font-semibold text-danger transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full"
             >
               Cancelar solicitud
-            </button>
+            </PillButton>
           ) : (
-            <div className="flex flex-col gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
-              <p className="px-2 text-caption text-ink-64">
-                Podés volver a pedir sumarte más adelante.
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => setConfirming(false)}
-                  className={GLASS_CTA}
-                >
-                  Mejor no
-                </button>
-
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() =>
-                    void run(
-                      () => cancelJoinRequest(partido.id),
-                      cancelRequestErrorMessage,
-                      {
-                        onSuccess: () =>
-                          setOptimisticRequestStatus({ from: 'PENDING', to: null }),
-                        successMessage: 'Solicitud cancelada',
-                      }
-                    )
-                  }
-                  className={DANGER_CTA}
-                >
-                  {submitting ? 'Cancelando…' : 'Cancelar'}
-                </button>
-              </div>
-            </div>
+            <ConfirmationBlock
+              message="Podés volver a pedir sumarte más adelante."
+              cancelLabel="Mejor no"
+              confirmLabel="Cancelar"
+              pendingLabel="Cancelando…"
+              pending={submitting}
+              onCancel={() => setConfirming(false)}
+              onConfirm={() =>
+                void run(() => cancelJoinRequest(partido.id), cancelRequestErrorMessage, {
+                  onSuccess: () =>
+                    setOptimisticRequestStatus({ from: 'PENDING', to: null }),
+                  successMessage: 'Solicitud cancelada',
+                })
+              }
+            />
           )}
         </>
       ) : (
@@ -256,8 +259,9 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
             </p>
           )}
 
-          <button
-            type="button"
+          <PillButton
+            variant="brand"
+            size="lg"
             disabled={lleno || submitting}
             onClick={() =>
               void run(() => requestToJoin(partido.id), joinRequestErrorMessage, {
@@ -265,11 +269,11 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
                   setOptimisticRequestStatus({ from: requestStatus, to: 'PENDING' }),
               })
             }
-            className={PRIMARY_CTA}
+            className="w-full"
           >
             {submitting ? 'Enviando…' : 'Pedir sumarme'}
             {!submitting && <ArrowRight className="size-[18px]" aria-hidden="true" />}
-          </button>
+          </PillButton>
 
           {lleno && (
             <p className="text-center text-caption text-ink-46">
