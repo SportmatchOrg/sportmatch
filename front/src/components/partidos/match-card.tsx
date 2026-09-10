@@ -43,7 +43,7 @@ export function MatchCard({ partido, role, panel, action }: MatchCardProps) {
   const deporte = DEPORTE_LABEL[partido.deporte.nombre];
 
   return (
-    <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel transition active:scale-[var(--press-scale-card)] lg:rounded-md">
+    <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel-lit transition active:scale-[var(--press-scale-card)] lg:rounded-md">
       <Link
         href={`/partidos/${partido.id}`}
         aria-label={`Ver el partido de ${deporte} en ${partido.ubicacion}`}
@@ -130,7 +130,14 @@ export function MatchCard({ partido, role, panel, action }: MatchCardProps) {
       )}
 
       {action && (
-        <div className="relative z-10 border-t border-glass-strong p-4">{action}</div>
+        <div
+          className={cn(
+            'relative z-10 border-t border-glass-strong px-4',
+            role === 'host' ? 'py-2' : 'py-4'
+          )}
+        >
+          {action}
+        </div>
       )}
     </article>
   );

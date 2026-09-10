@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 
 import { PillButton } from '@/components/ui/pill-button';
+import { cn } from '@/lib/utils';
 
 type ConfirmActionProps = {
   label: string;
@@ -35,7 +36,7 @@ export function ConfirmAction({
         size="md"
         disabled={pending}
         onClick={() => setConfirming(true)}
-        className="w-full"
+        className={cn('w-full', variant === 'ghost' && 'py-2')}
       >
         <X className="size-4" aria-hidden="true" />
         {label}
