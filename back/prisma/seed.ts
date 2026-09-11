@@ -29,25 +29,20 @@ async function main() {
     return deporte.id;
   };
 
-  const ana = await prisma.user.upsert({
-    where: { firebaseUid: 'seed-uid-1' },
-    update: {},
-    create: {
-      firebaseUid: 'seed-uid-1',
-      email: 'ana@sportmatch.dev',
-      nombre: 'Ana Gómez',
-    },
-  });
+  const seedUser = (firebaseUid: string, email: string, nombre: string) =>
+    prisma.user.upsert({
+      where: { firebaseUid },
+      update: {},
+      create: { firebaseUid, email, nombre },
+    });
 
-  const luis = await prisma.user.upsert({
-    where: { firebaseUid: 'seed-uid-2' },
-    update: {},
-    create: {
-      firebaseUid: 'seed-uid-2',
-      email: 'luis@sportmatch.dev',
-      nombre: 'Luis Pérez',
-    },
-  });
+  const [ana, luis, marta, pablo, sofia] = await Promise.all([
+    seedUser('seed-uid-1', 'ana@sportmatch.dev', 'Ana Gómez'),
+    seedUser('seed-uid-2', 'luis@sportmatch.dev', 'Luis Pérez'),
+    seedUser('seed-uid-3', 'marta@sportmatch.dev', 'Marta Ruiz'),
+    seedUser('seed-uid-4', 'pablo@sportmatch.dev', 'Pablo Díaz'),
+    seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
+  ]);
 
   await prisma.partido.deleteMany();
 
@@ -137,6 +132,48 @@ async function main() {
       partidoId: partido.id,
       usuarioId: partido.organizadorId === ana.id ? luis.id : ana.id,
     })),
+  });
+
+  await prisma.partido.create({
+    data: {
+      deporteId: deporteId('FUTBOL'),
+      nivel: 'INTERMEDIO',
+      fecha: inDays(-2, 19),
+      ubicacion: 'Cancha Central',
+      cupo: 10,
+      descripcion: 'Partido jugado con cinco jugadores',
+      organizadorId: ana.id,
+      participantes: {
+        create: [luis, marta, pablo, sofia].map(({ id }) => ({
+          usuarioId: id,
+        })),
+      },
+    },
+  });
+
+  const demoEmail = process.env.SEED_DEMO_EMAIL;
+
+  if (!demoEmail) {
+    return;
+  }
+
+  const demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
+
+  if (!demoUser) {
+    return;
+  }
+
+  const playedMatches = await prisma.partido.findMany({
+    where: { fecha: { lt: new Date() }, organizadorId: { not: demoUser.id } },
+    select: { id: true },
+  });
+
+  await prisma.participante.createMany({
+    data: playedMatches.map(({ id }) => ({
+      partidoId: id,
+      usuarioId: demoUser.id,
+    })),
+    skipDuplicates: true,
   });
 }
 
