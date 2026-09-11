@@ -30,11 +30,6 @@ export class PartidosController {
     return this.partidosService.create(user.uid, createPartidoDto);
   }
 
-  @Post(':id/participantes')
-  join(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
-    return this.partidosService.join(user.uid, id);
-  }
-
   @Delete(':id/participantes/me')
   @HttpCode(HttpStatus.NO_CONTENT)
   leave(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
@@ -44,6 +39,11 @@ export class PartidosController {
   @Get()
   findAll(@CurrentUser() user: FirebaseUser) {
     return this.partidosService.findUpcoming(user.uid);
+  }
+
+  @Get('mios')
+  findMine(@CurrentUser() user: FirebaseUser) {
+    return this.partidosService.findMine(user.uid);
   }
 
   @Get(':id')

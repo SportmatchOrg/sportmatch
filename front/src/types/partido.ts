@@ -31,6 +31,8 @@ export type PublicUser = {
 
 export type Organizador = PublicUser;
 
+export type JoinRequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
 export type Partido = {
   id: string;
   deporteId: string;
@@ -43,6 +45,14 @@ export type Partido = {
   organizador: Organizador;
   anotados: number;
   estoy_anotado: boolean;
+  my_join_request: JoinRequestStatus | null;
+  pending_requests: number | null;
+};
+
+export type PartidosMios = {
+  organizo: Partido[];
+  juego: Partido[];
+  jugados: Partido[];
 };
 
 export type PartidoDetalle = Partido & {
@@ -51,6 +61,8 @@ export type PartidoDetalle = Partido & {
 
 export const CUPO_MIN = 2;
 export const CUPO_MAX = 30;
+export const CUPO_DEFAULT = 10;
 export const UBICACION_MIN = 3;
 export const UBICACION_MAX = 120;
+export const TITULO_MAX = 60;
 export const DESCRIPCION_MAX = 500;

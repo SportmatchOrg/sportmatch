@@ -34,7 +34,7 @@ export function DeportePicker({
 }: DeportePickerProps) {
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="text-callout text-white">¿A qué vas a jugar?</legend>
+      <legend className="sr-only">Deporte</legend>
 
       {loading && <p className="text-caption text-white/46">Cargando deportes…</p>}
 
@@ -45,7 +45,7 @@ export function DeportePicker({
       )}
 
       {!loading && !loadError && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {deportes.map((deporte) => {
             const Icon = DEPORTE_ICON[deporte.nombre];
             const selected = value === deporte.id;

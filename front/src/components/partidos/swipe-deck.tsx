@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 
 import { SwipeCard, type SwipeDecision } from '@/components/partidos/swipe-card';
+import { joinRequestErrorMessage } from '@/components/partidos/partido-actions';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Toast } from '@/components/ui/toast';
-import { ApiError } from '@/lib/api';
+import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { deportePhotoUrl } from '@/lib/deporte-photo';
-import { joinPartido } from '@/lib/partidos';
+import { requestToJoin } from '@/lib/partidos';
 import type { Partido } from '@/types/partido';
 
 const DECISION_THRESHOLD = 110;
@@ -21,10 +21,6 @@ const FLYOUT_DISTANCE = 600;
 const FLYOUT_LIFT = -40;
 const FLYOUT_DURATION = 300;
 const TAP_TOLERANCE = 8;
-const TOAST_DURATION = 2800;
-
-const CONFLICT_MESSAGE = 'No pudimos sumarte: el partido está lleno o ya estás anotado.';
-const JOIN_ERROR_MESSAGE = 'No pudimos sumarte al partido. Probá de nuevo.';
 
 const RETURN_TRANSITION = 'transform 320ms var(--ease-spring)';
 
@@ -48,12 +44,17 @@ type SwipeDeckProps = {
   partidos: Partido[];
 };
 
+type DeckToast = {
+  message: string;
+  tone: ToastTone;
+};
+
 export function SwipeDeck({ partidos }: SwipeDeckProps) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
   const [flyout, setFlyout] = useState<SwipeDecision | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<DeckToast | null>(null);
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
 
@@ -73,13 +74,11 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
       setDrag((previous) => ({ ...previous, active: false }));
 
       if (direction === 'yes' && current) {
-        joinPartido(current.id).catch((error: unknown) => {
-          setToast(
-            error instanceof ApiError && error.status === 409
-              ? CONFLICT_MESSAGE
-              : JOIN_ERROR_MESSAGE
+        requestToJoin(current.id)
+          .then(() => setToast({ message: 'Solicitud enviada ⚡', tone: 'success' }))
+          .catch((error: unknown) =>
+            setToast({ message: joinRequestErrorMessage(error), tone: 'danger' })
           );
-        });
       }
 
       setTimeout(() => {
@@ -248,7 +247,7 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
 
       {toast && (
         <div className="absolute inset-x-0 top-16 flex justify-center px-4">
-          <Toast message={toast} tone="danger" />
+          <Toast message={toast.message} tone={toast.tone} />
         </div>
       )}
     </div>

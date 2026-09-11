@@ -1,3 +1,5 @@
+import type { JoinRequestStatus } from '../generated/prisma/client';
+
 export type PublicUser = {
   id: string;
   nombre: string;
@@ -5,11 +7,15 @@ export type PublicUser = {
 };
 
 export type ListedPartido = {
-  _count: { participantes: number };
+  organizadorId: string;
+  _count: { participantes: number; joinRequests: number };
   participantes: { id: string }[];
+  joinRequests: { status: JoinRequestStatus }[];
 };
 
 export type DetailedPartido = {
-  _count: { participantes: number };
+  organizadorId: string;
+  _count: { participantes: number; joinRequests: number };
   participantes: { usuario: PublicUser; createdAt: Date }[];
+  joinRequests: { status: JoinRequestStatus }[];
 };

@@ -26,7 +26,8 @@ model User {
   updatedAt   DateTime @updatedAt
 
   partidosOrganizados Partido[]
-  participaciones Participante[]
+  participaciones     Participante[]
+  joinRequests        JoinRequest[]
 
   @@map("users")
 }
@@ -43,19 +44,20 @@ model Deporte {
 }
 
 model Partido {
-  id            String   @id @default(cuid())
+  id            String         @id @default(cuid())
   deporteId     String
-  deporte       Deporte  @relation(fields: [deporteId], references: [id])
+  deporte       Deporte        @relation(fields: [deporteId], references: [id])
   nivel         Nivel
   fecha         DateTime
   ubicacion     String
   cupo          Int
   descripcion   String?
   organizadorId String
-  organizador   User     @relation(fields: [organizadorId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  organizador   User           @relation(fields: [organizadorId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   participantes Participante[]
+  joinRequests  JoinRequest[]
 
   @@index([fecha])
   @@index([deporteId])
@@ -73,4 +75,27 @@ model Participante {
   @@unique([partidoId, usuarioId])
   @@index([usuarioId])
   @@map("participantes")
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+
+  @@map("join_request_status")
+}
+
+model JoinRequest {
+  id        String            @id @default(cuid())
+  matchId   String
+  match     Partido           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  status    JoinRequestStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([matchId, userId])
+  @@index([userId])
+  @@map("join_requests")
 }

@@ -22,18 +22,38 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partidos = await this.partidosRepository.findUpcoming(user.id);
 
-    return partidos.map((partido) => this.toListResponse(partido));
+    return partidos
+      .filter((partido) => partido._count.participantes < partido.cupo)
+      .map((partido) => this.toListResponse(partido, user.id));
   }
 
   async findOne(firebaseUid: string, id: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const partido = await this.partidosRepository.findDetailById(id);
+    const partido = await this.partidosRepository.findDetailById(id, user.id);
 
     if (!partido) {
       throw new NotFoundException(`Partido with id ${id} was not found`);
     }
 
     return this.toDetailResponse(partido, user.id);
+  }
+
+  async findMine(firebaseUid: string) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+
+    const [organizo, juego, jugados] = await Promise.all([
+      this.partidosRepository.findOrganizedBy(user.id),
+      this.partidosRepository.findJoinedBy(user.id),
+      this.partidosRepository.findPlayedBy(user.id),
+    ]);
+
+    return {
+      organizo: organizo.map((partido) =>
+        this.toListResponse(partido, user.id),
+      ),
+      juego: juego.map((partido) => this.toListResponse(partido, user.id)),
+      jugados: jugados.map((partido) => this.toListResponse(partido, user.id)),
+    };
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
@@ -47,7 +67,7 @@ export class PartidosService {
         createPartidoDto,
       );
 
-      return this.toListResponse(partido);
+      return this.toListResponse(partido, organizer.id);
     } catch (error) {
       throw this.toHttpException(error);
     }
@@ -58,21 +78,32 @@ export class PartidosService {
     id: string,
     updatePartidoDto: UpdatePartidoDto,
   ) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const partido = await this.assertIsOrganizer(user.id, id);
+
+    this.assertNotPlayed(partido.fecha);
+
     if (updatePartidoDto.fecha) {
       this.assertFutureDate(updatePartidoDto.fecha);
     }
 
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    await this.assertIsOrganizer(user.id, id);
+    if (
+      updatePartidoDto.cupo !== undefined &&
+      updatePartidoDto.cupo < partido._count.participantes
+    ) {
+      throw new BadRequestException(
+        `cupo cannot be lower than the ${partido._count.participantes} participants already joined`,
+      );
+    }
 
     try {
-      const partido = await this.partidosRepository.update(
+      const updated = await this.partidosRepository.update(
         id,
         user.id,
         updatePartidoDto,
       );
 
-      return this.toListResponse(partido);
+      return this.toListResponse(updated, user.id);
     } catch (error) {
       throw this.toHttpException(error, id);
     }
@@ -86,33 +117,6 @@ export class PartidosService {
       return await this.partidosRepository.remove(id);
     } catch (error) {
       throw this.toHttpException(error, id);
-    }
-  }
-
-  async join(firebaseUid: string, partidoId: string) {
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const partido = await this.getOrFail(partidoId, user.id);
-
-    this.assertNotPlayed(partido.fecha);
-
-    if (partido.organizadorId === user.id) {
-      throw new BadRequestException(
-        'The organizer is already part of the partido',
-      );
-    }
-
-    if (partido._count.participantes >= partido.cupo) {
-      throw new ConflictException('The partido is full');
-    }
-
-    if (partido.participantes.length > 0) {
-      throw new ConflictException('You already joined this partido');
-    }
-
-    try {
-      return await this.partidosRepository.addParticipant(partidoId, user.id);
-    } catch (error) {
-      throw this.toHttpException(error);
     }
   }
 
@@ -143,13 +147,19 @@ export class PartidosService {
     return partido;
   }
 
-  private toListResponse<T extends ListedPartido>(partido: T) {
-    const { _count, participantes, ...rest } = partido;
+  private toListResponse<T extends ListedPartido>(
+    partido: T,
+    usuarioId: string,
+  ) {
+    const { _count, participantes, joinRequests, ...rest } = partido;
 
     return {
       ...rest,
       anotados: _count.participantes,
       estoy_anotado: participantes.length > 0,
+      my_join_request: joinRequests[0]?.status ?? null,
+      pending_requests:
+        rest.organizadorId === usuarioId ? _count.joinRequests : null,
     };
   }
 
@@ -157,7 +167,7 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, ...rest } = partido;
+    const { _count, participantes, joinRequests, ...rest } = partido;
 
     return {
       ...rest,
@@ -165,6 +175,9 @@ export class PartidosService {
       estoy_anotado: participantes.some(
         ({ usuario }) => usuario.id === usuarioId,
       ),
+      my_join_request: joinRequests[0]?.status ?? null,
+      pending_requests:
+        rest.organizadorId === usuarioId ? _count.joinRequests : null,
       participantes: participantes.map(({ usuario }) => usuario),
     };
   }
@@ -189,6 +202,7 @@ export class PartidosService {
         'Only the organizer can modify this partido',
       );
     }
+    return partido;
   }
 
   private toHttpException(error: unknown, reference?: string): Error {

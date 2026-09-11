@@ -12,7 +12,10 @@ const PUBLIC_DEPORTE = {
 } as const;
 
 const PARTICIPANT_COUNT = {
-  select: { participantes: true },
+  select: {
+    participantes: true,
+    joinRequests: { where: { status: 'PENDING' } },
+  },
 } as const;
 
 const PUBLIC_PARTICIPANTS = {
@@ -29,6 +32,10 @@ const partidoInclude = (usuarioId: string) =>
     deporte: PUBLIC_DEPORTE,
     _count: PARTICIPANT_COUNT,
     participantes: { where: { usuarioId }, select: { id: true } },
+    joinRequests: {
+      where: { userId: usuarioId },
+      select: { status: true },
+    },
   }) as const;
 
 @Injectable()
@@ -37,7 +44,14 @@ export class PartidosRepository {
 
   findUpcoming(usuarioId: string) {
     return this.prisma.partido.findMany({
-      where: { fecha: { gte: new Date() } },
+      where: {
+        fecha: { gte: new Date() },
+        organizadorId: { not: usuarioId },
+        participantes: { none: { usuarioId } },
+        joinRequests: {
+          none: { userId: usuarioId, status: 'PENDING' },
+        },
+      },
       orderBy: { fecha: 'asc' },
       include: partidoInclude(usuarioId),
     });
@@ -50,7 +64,7 @@ export class PartidosRepository {
     });
   }
 
-  findDetailById(id: string) {
+  findDetailById(id: string, usuarioId: string) {
     return this.prisma.partido.findUnique({
       where: { id },
       include: {
@@ -58,7 +72,44 @@ export class PartidosRepository {
         deporte: PUBLIC_DEPORTE,
         _count: PARTICIPANT_COUNT,
         participantes: PUBLIC_PARTICIPANTS,
+        joinRequests: {
+          where: { userId: usuarioId },
+          select: { status: true },
+        },
       },
+    });
+  }
+
+  findOrganizedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: { organizadorId: usuarioId, fecha: { gte: new Date() } },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findJoinedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { gte: new Date() },
+        participantes: { some: { usuarioId } },
+      },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findPlayedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { lt: new Date() },
+        OR: [
+          { organizadorId: usuarioId },
+          { participantes: { some: { usuarioId } } },
+        ],
+      },
+      orderBy: { fecha: 'desc' },
+      include: partidoInclude(usuarioId),
     });
   }
 
@@ -79,12 +130,6 @@ export class PartidosRepository {
 
   remove(id: string) {
     return this.prisma.partido.delete({ where: { id } });
-  }
-
-  addParticipant(partidoId: string, usuarioId: string) {
-    return this.prisma.participante.create({
-      data: { partidoId, usuarioId },
-    });
   }
 
   removeParticipant(partidoId: string, usuarioId: string) {

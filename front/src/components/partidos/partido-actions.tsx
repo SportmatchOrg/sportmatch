@@ -1,45 +1,39 @@
 'use client';
 
-import { ArrowRight, Check } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowRight, Check, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
+import { PillButton } from '@/components/ui/pill-button';
+import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
-import { joinPartido, leavePartido } from '@/lib/partidos';
-import type { PartidoDetalle } from '@/types/partido';
+import { cancelJoinRequest, leavePartido, requestToJoin } from '@/lib/partidos';
+import type { JoinRequestStatus, PartidoDetalle } from '@/types/partido';
 
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 
 const FULL_MESSAGE = 'El partido se llenó';
-const ALREADY_JOINED_MESSAGE = 'Ya estás anotado';
+const ALREADY_REQUESTED_MESSAGE = 'Ya pediste sumarte';
 const PLAYED_MESSAGE = 'Este partido ya se jugó';
-const JOIN_FALLBACK = 'No pudimos sumarte al partido. Probá de nuevo.';
+const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
 const LEAVE_FALLBACK = 'No pudimos darte de baja. Probá de nuevo.';
 const NOT_JOINED_MESSAGE = 'Ya no estabas anotado en este partido';
+const CANCEL_REQUEST_FALLBACK = 'No pudimos cancelar tu solicitud. Probá de nuevo.';
+const REQUEST_NOT_FOUND_MESSAGE = 'Ya no tenías una solicitud pendiente';
 
-const PRIMARY_CTA =
-  'flex w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-4 text-callout font-bold text-midnight shadow-glow transition hover:bg-brand-bright disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none';
-
-const GLASS_CTA =
-  'flex-1 rounded-full bg-glass-strong px-6 py-4 text-callout font-semibold text-white shadow-bevel-lit transition hover:bg-glass disabled:cursor-not-allowed disabled:opacity-60';
-
-const DANGER_CTA =
-  'flex-1 rounded-full bg-danger px-6 py-4 text-callout font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
-
-const DANGER_TEXT_CTA =
-  'w-full rounded-full bg-danger px-6 py-4 text-callout font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
-
-function joinErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return JOIN_FALLBACK;
+export function joinRequestErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return JOIN_REQUEST_FALLBACK;
 
   if (error.status === CONFLICT) {
-    return error.message.includes('full') ? FULL_MESSAGE : ALREADY_JOINED_MESSAGE;
+    return error.message.toLowerCase().includes('full')
+      ? FULL_MESSAGE
+      : ALREADY_REQUESTED_MESSAGE;
   }
 
   if (error.status === BAD_REQUEST) return PLAYED_MESSAGE;
 
-  return JOIN_FALLBACK;
+  return JOIN_REQUEST_FALLBACK;
 }
 
 function leaveErrorMessage(error: unknown): string {
@@ -50,20 +44,105 @@ function leaveErrorMessage(error: unknown): string {
   return LEAVE_FALLBACK;
 }
 
+function cancelRequestErrorMessage(error: unknown): string {
+  if (error instanceof ApiError && error.status === NOT_FOUND) {
+    return REQUEST_NOT_FOUND_MESSAGE;
+  }
+
+  return CANCEL_REQUEST_FALLBACK;
+}
+
 type PartidoActionsProps = {
   partido: PartidoDetalle;
   isOrganizer: boolean;
   onDone: () => void;
 };
 
+type RunOptions = {
+  onSuccess?: () => void;
+  successMessage?: string;
+};
+
+type OptimisticRequestStatus = {
+  from: JoinRequestStatus | null;
+  to: JoinRequestStatus | null;
+};
+
+type ConfirmationBlockProps = {
+  message: string;
+  cancelLabel: string;
+  confirmLabel: string;
+  pendingLabel: string;
+  pending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+function ConfirmationBlock({
+  message,
+  cancelLabel,
+  confirmLabel,
+  pendingLabel,
+  pending,
+  onCancel,
+  onConfirm,
+}: ConfirmationBlockProps) {
+  return (
+    <div className="flex flex-col gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
+      <p className="px-2 text-caption text-ink-64">{message}</p>
+
+      <div className="flex gap-3">
+        <PillButton
+          variant="glass"
+          size="lg"
+          disabled={pending}
+          onClick={onCancel}
+          className="flex-1"
+        >
+          {cancelLabel}
+        </PillButton>
+
+        <PillButton
+          variant="danger"
+          size="lg"
+          disabled={pending}
+          onClick={onConfirm}
+          className="flex-1"
+        >
+          {pending ? pendingLabel : confirmLabel}
+        </PillButton>
+      </div>
+    </div>
+  );
+}
+
 export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [optimisticRequestStatus, setOptimisticRequestStatus] =
+    useState<OptimisticRequestStatus | null>(null);
 
   const lleno = partido.anotados >= partido.cupo;
+  const requestStatus =
+    optimisticRequestStatus?.from === partido.my_join_request
+      ? optimisticRequestStatus.to
+      : partido.my_join_request;
 
-  async function run(action: () => Promise<void>, toMessage: (error: unknown) => string) {
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => setToast(null), TOAST_DURATION);
+
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  async function run(
+    action: () => Promise<void>,
+    toMessage: (error: unknown) => string,
+    options: RunOptions = {}
+  ) {
     if (submitting) return;
 
     setSubmitting(true);
@@ -71,6 +150,8 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
 
     try {
       await action();
+      options.onSuccess?.();
+      if (options.successMessage) setToast(options.successMessage);
       onDone();
     } catch (caught) {
       setError(toMessage(caught));
@@ -90,23 +171,109 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
 
   return (
     <div className="flex flex-col gap-3">
+      {toast && (
+        <div className="fixed inset-x-0 top-16 z-50 flex justify-center px-4">
+          <Toast message={toast} tone="success" />
+        </div>
+      )}
+
       {error && (
         <p role="alert" className="text-center text-caption text-danger">
           {error}
         </p>
       )}
 
-      {!partido.estoy_anotado && (
+      {partido.estoy_anotado ? (
         <>
-          <button
-            type="button"
+          <p className="flex items-center gap-3 rounded-full bg-glass px-4 py-3 text-callout font-bold text-white shadow-bevel-lit">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-midnight">
+              <Check className="size-4" aria-hidden="true" />
+            </span>
+            Estás adentro
+          </p>
+
+          {!confirming ? (
+            <PillButton
+              variant="danger"
+              size="lg"
+              disabled={submitting}
+              onClick={() => setConfirming(true)}
+              className="w-full"
+            >
+              Cancelar mi lugar
+            </PillButton>
+          ) : (
+            <ConfirmationBlock
+              message="Se libera tu lugar para que lo tome otra persona."
+              cancelLabel="Mejor no"
+              confirmLabel="Salirme"
+              pendingLabel="Saliendo…"
+              pending={submitting}
+              onCancel={() => setConfirming(false)}
+              onConfirm={() => void run(() => leavePartido(partido.id), leaveErrorMessage)}
+            />
+          )}
+        </>
+      ) : requestStatus === 'PENDING' ? (
+        <>
+          <p className="flex items-center gap-3 rounded-full bg-glass px-4 py-3 text-callout font-bold text-white shadow-bevel-lit">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warning-tint text-warning">
+              <Clock className="size-4" aria-hidden="true" />
+            </span>
+            Esperando al organizador
+          </p>
+
+          {!confirming ? (
+            <PillButton
+              variant="dangerGhost"
+              size="md"
+              disabled={submitting}
+              onClick={() => setConfirming(true)}
+              className="w-full"
+            >
+              Cancelar solicitud
+            </PillButton>
+          ) : (
+            <ConfirmationBlock
+              message="Podés volver a pedir sumarte más adelante."
+              cancelLabel="Mejor no"
+              confirmLabel="Cancelar"
+              pendingLabel="Cancelando…"
+              pending={submitting}
+              onCancel={() => setConfirming(false)}
+              onConfirm={() =>
+                void run(() => cancelJoinRequest(partido.id), cancelRequestErrorMessage, {
+                  onSuccess: () =>
+                    setOptimisticRequestStatus({ from: 'PENDING', to: null }),
+                  successMessage: 'Solicitud cancelada',
+                })
+              }
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {requestStatus === 'REJECTED' && (
+            <p className="text-center text-caption text-ink-46">
+              El organizador rechazó tu solicitud. Podés volver a pedirlo.
+            </p>
+          )}
+
+          <PillButton
+            variant="brand"
+            size="lg"
             disabled={lleno || submitting}
-            onClick={() => void run(() => joinPartido(partido.id), joinErrorMessage)}
-            className={PRIMARY_CTA}
+            onClick={() =>
+              void run(() => requestToJoin(partido.id), joinRequestErrorMessage, {
+                onSuccess: () =>
+                  setOptimisticRequestStatus({ from: requestStatus, to: 'PENDING' }),
+              })
+            }
+            className="w-full"
           >
-            {submitting ? 'Sumándote…' : 'Unirme al partido'}
+            {submitting ? 'Enviando…' : 'Pedir sumarme'}
             {!submitting && <ArrowRight className="size-[18px]" aria-hidden="true" />}
-          </button>
+          </PillButton>
 
           {lleno && (
             <p className="text-center text-caption text-ink-46">
@@ -114,54 +281,6 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
             </p>
           )}
         </>
-      )}
-
-      {partido.estoy_anotado && (
-        <p className="flex items-center gap-3 rounded-full bg-glass px-4 py-3 text-callout font-bold text-white shadow-bevel-lit">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-midnight">
-            <Check className="size-4" aria-hidden="true" />
-          </span>
-          Estás dentro
-        </p>
-      )}
-
-      {partido.estoy_anotado && !confirming && (
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={() => setConfirming(true)}
-          className={DANGER_TEXT_CTA}
-        >
-          Cancelar mi lugar
-        </button>
-      )}
-
-      {partido.estoy_anotado && confirming && (
-        <div className="flex flex-col gap-3 rounded-md bg-glass p-3 shadow-bevel-lit">
-          <p className="px-2 text-caption text-ink-64">
-            Se libera tu lugar para que lo tome otra persona.
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => setConfirming(false)}
-              className={GLASS_CTA}
-            >
-              Mejor no
-            </button>
-
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => void run(() => leavePartido(partido.id), leaveErrorMessage)}
-              className={DANGER_CTA}
-            >
-              {submitting ? 'Saliendo…' : 'Salirme'}
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );
