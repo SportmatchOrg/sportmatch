@@ -1,6 +1,15 @@
 'use client';
 
-import { Calendar, ChevronLeft, Clock, MapPin, Search, SignalHigh, Users } from 'lucide-react';
+import {
+  Calendar,
+  CalendarCheck,
+  ChevronLeft,
+  Clock,
+  MapPin,
+  Search,
+  SignalHigh,
+  Users,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -48,6 +57,10 @@ function MetaTile({
   );
 }
 
+function playersLabel(players: number): string {
+  return players === 1 ? '1 jugó' : `${players} jugaron`;
+}
+
 function PartidoTitle({ partido }: { partido: PartidoDetalle }) {
   return (
     <div className="flex flex-col gap-2">
@@ -66,6 +79,7 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
   const { partido, loading, notFound, error, reload } = usePartido(id);
   const { user } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [now] = useState(() => Date.now());
 
   if (loading) {
     return <LoadingScreen />;
@@ -98,9 +112,10 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
   const Icon = DEPORTE_ICON[partido.deporte.nombre];
   const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
   const isOrganizer = user?.id === partido.organizador.id;
+  const played = new Date(partido.fecha).getTime() <= now;
 
   return (
-    <main className="pb-44 lg:pb-10">
+    <main className={cn('lg:pb-10', played ? 'pb-10' : 'pb-44')}>
       <div className="flex justify-center lg:px-8 lg:pt-6">
         <div className="grid w-full max-w-[1400px] gap-6 lg:grid-cols-[1fr_380px]">
           <div className="flex flex-col gap-6">
@@ -163,11 +178,13 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
 
             <div className="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-0">
               <MetaTile icon={Calendar} label="Fecha" value={formatMatchDay(partido.fecha)} />
-              <MetaTile icon={Clock} label="Arranca" value={formatMatchTime(partido.fecha)} />
+              <MetaTile icon={Clock} label="Hora" value={formatMatchTime(partido.fecha)} />
               <MetaTile
                 icon={Users}
                 label="Jugadores"
-                value={`${partido.anotados}/${partido.cupo}`}
+                value={
+                  played ? playersLabel(partido.anotados + 1) : `${partido.anotados}/${partido.cupo}`
+                }
               />
               <MetaTile icon={SignalHigh} label="Nivel" value={NIVEL_LABEL[partido.nivel]} />
             </div>
@@ -187,20 +204,33 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
 
             <PartidoPlayers
               participantes={partido.participantes}
+              organizador={partido.organizador}
               anotados={partido.anotados}
               cupo={partido.cupo}
+              played={played}
             />
 
-            <div className="hidden lg:block">
-              <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
-            </div>
+            {played ? (
+              <div className="flex items-center gap-3 rounded-md bg-glass p-4 shadow-bevel-lit">
+                <CalendarCheck className="size-5 shrink-0 text-brand" aria-hidden="true" />
+                <span className="text-callout font-semibold text-white">
+                  Este partido ya se jugó
+                </span>
+              </div>
+            ) : (
+              <div className="hidden lg:block">
+                <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
+              </div>
+            )}
           </aside>
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
-        <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
-      </div>
+      {!played && (
+        <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
+          <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
+        </div>
+      )}
     </main>
   );
 }
