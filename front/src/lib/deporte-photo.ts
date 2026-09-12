@@ -25,7 +25,7 @@ function hash(value: string): number {
 export function deportePhotoUrl(nombre: DeporteNombre, seed: string): string | null {
   const photos = DEPORTE_PHOTOS[nombre];
 
-  if (!photos.length) return null;
+  if (!photos?.length) return null;
 
   return photos[hash(seed) % photos.length];
 }
