@@ -1,10 +1,5 @@
 import type { JoinRequestStatus } from '../generated/prisma/client';
-
-export type PublicUser = {
-  id: string;
-  nombre: string;
-  fotoUrl: string | null;
-};
+import type { PublicUser } from '../users/types';
 
 export type ListedPartido = {
   organizadorId: string;
