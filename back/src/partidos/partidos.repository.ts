@@ -36,6 +36,7 @@ const partidoInclude = (usuarioId: string) =>
       where: { userId: usuarioId },
       select: { status: true },
     },
+    ratings: { where: { raterId: usuarioId }, select: { id: true }, take: 1 },
   }) as const;
 
 @Injectable()
@@ -76,6 +77,11 @@ export class PartidosRepository {
           where: { userId: usuarioId },
           select: { status: true },
         },
+        ratings: {
+          where: { raterId: usuarioId },
+          select: { id: true },
+          take: 1,
+        },
       },
     });
   }
@@ -93,6 +99,17 @@ export class PartidosRepository {
       where: {
         fecha: { gte: new Date() },
         participantes: { some: { usuarioId } },
+      },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findRequestedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { gte: new Date() },
+        joinRequests: { some: { userId: usuarioId, status: 'PENDING' } },
       },
       orderBy: { fecha: 'asc' },
       include: partidoInclude(usuarioId),
