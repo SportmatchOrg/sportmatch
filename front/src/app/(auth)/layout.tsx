@@ -23,7 +23,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <h1>
             <BrandLogo className="text-[42px] md:text-6xl" />
           </h1>
-          <p className="text-sm text-neutral-300 md:text-base">
+          <p className="text-sm text-ink-80 md:text-body">
             Encontrá tu próximo partido
           </p>
         </div>
