@@ -19,9 +19,24 @@ const SIZE = {
   lg: 'py-4',
 } as const;
 
+type PillVariant = keyof typeof VARIANT;
+type PillSize = keyof typeof SIZE;
+
+export function pillButtonClassName({
+  variant = 'brand',
+  size = 'lg',
+  className,
+}: {
+  variant?: PillVariant;
+  size?: PillSize;
+  className?: string;
+} = {}): string {
+  return cn(BASE, VARIANT[variant], SIZE[size], className);
+}
+
 type PillButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: keyof typeof VARIANT;
-  size?: keyof typeof SIZE;
+  variant?: PillVariant;
+  size?: PillSize;
 };
 
 export function PillButton({
@@ -31,6 +46,6 @@ export function PillButton({
   ...props
 }: PillButtonProps) {
   return (
-    <button type="button" className={cn(BASE, VARIANT[variant], SIZE[size], className)} {...props} />
+    <button type="button" className={pillButtonClassName({ variant, size, className })} {...props} />
   );
 }

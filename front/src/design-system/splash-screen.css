@@ -1,0 +1,125 @@
+@keyframes sm-vignette-in {
+  from { opacity: 0; }
+  to   { opacity: 0.85; }
+}
+@keyframes sm-fly-left {
+  0%   { transform: translateX(-46%); opacity: 0; }
+  22%  { opacity: 1; }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+@keyframes sm-fly-right {
+  0%   { transform: translateX(46%);  opacity: 0; }
+  22%  { opacity: 1; }
+  100% { transform: translateX(0);    opacity: 1; }
+}
+@keyframes sm-settle {
+  0%   { transform: scale(1.10); }
+  65%  { transform: scale(0.995); }
+  100% { transform: scale(1); }
+}
+@keyframes sm-rise {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-16%); }
+}
+@keyframes sm-flare {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.75; }
+  100% { transform: translate(-50%, -50%) scale(7.5); opacity: 0; }
+}
+@keyframes sm-glow-bloom {
+  0%   { opacity: 0; }
+  25%  { opacity: 0.85; }
+  100% { opacity: 0.38; }
+}
+@keyframes sm-word-in {
+  0%   { clip-path: inset(-40% 102% -40% -8%); transform: translateY(22px); }
+  100% { clip-path: inset(-40% -14% -40% -8%); transform: translateY(0); }
+}
+@keyframes sm-word-glow {
+  0% {
+    filter: drop-shadow(0 0 0 transparent)
+            drop-shadow(0 0 0 transparent);
+  }
+  43% {
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-ink-100) 35%, transparent))
+            drop-shadow(0 0 34px color-mix(in srgb, var(--color-brand) 55%, transparent));
+  }
+  100% {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-ink-100) 16%, transparent))
+            drop-shadow(0 0 15px color-mix(in srgb, var(--color-brand) 25%, transparent));
+  }
+}
+@keyframes sm-tag-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 0.85; transform: translateY(0); }
+}
+
+.sm-vignette {
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--color-brand) 10%, transparent) 0%,
+    color-mix(in srgb, var(--color-brand) 3%, transparent) 34%,
+    transparent 60%
+  );
+  animation: sm-vignette-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.sm-tri-l { animation: sm-fly-left  0.62s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.sm-tri-r { animation: sm-fly-right 0.62s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.sm-mark {
+  animation:
+    sm-settle 0.44s cubic-bezier(0.34, 1.4, 0.64, 1) 0.58s both,
+    sm-rise   0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.95s both;
+}
+
+.sm-glow {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-brand) 42%, transparent) 0%,
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 40%,
+    transparent 70%
+  );
+  animation: sm-glow-bloom 0.87s cubic-bezier(0.22, 1, 0.36, 1) 0.58s both;
+}
+
+.sm-flare {
+  background: radial-gradient(
+    circle,
+    var(--color-ink-100) 0%,
+    color-mix(in srgb, var(--color-brand) 27%, var(--color-ink-100)) 16%,
+    color-mix(in srgb, var(--color-brand) 70%, transparent) 32%,
+    transparent 68%
+  );
+  animation: sm-flare 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+.sm-word {
+  animation:
+    sm-word-in   0.60s cubic-bezier(0.22, 1, 0.36, 1) 0.95s both,
+    sm-word-glow 0.70s cubic-bezier(0.22, 1, 0.36, 1) 1.25s both;
+}
+
+.sm-tag { animation: sm-tag-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.55s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sm-vignette,
+  .sm-tri-l,
+  .sm-tri-r,
+  .sm-mark,
+  .sm-glow,
+  .sm-word,
+  .sm-tag {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+  .sm-vignette { opacity: 0.85; }
+  .sm-glow { opacity: 0.38; }
+  .sm-word {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-ink-100) 16%, transparent))
+            drop-shadow(0 0 15px color-mix(in srgb, var(--color-brand) 25%, transparent));
+  }
+  .sm-tag { opacity: 0.85; }
+  .sm-flare { display: none; }
+}
