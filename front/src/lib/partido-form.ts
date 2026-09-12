@@ -7,6 +7,7 @@ import {
   UBICACION_MAX,
   UBICACION_MIN,
   type Nivel,
+  type Partido,
 } from '@/types/partido';
 
 export type PartidoForm = {
@@ -98,5 +99,28 @@ export function toCreatePartidoBody(form: PartidoForm) {
     ubicacion: form.ubicacion.trim(),
     cupo: Number(form.cupo),
     ...(form.descripcion.trim() ? { descripcion: form.descripcion.trim() } : {}),
+  };
+}
+
+export function toPartidoForm(partido: Partido): PartidoForm {
+  return {
+    deporteId: partido.deporteId,
+    nivel: partido.nivel,
+    fecha: localDateTimeValue(new Date(partido.fecha)),
+    ubicacion: partido.ubicacion,
+    cupo: String(partido.cupo),
+    titulo: '',
+    descripcion: partido.descripcion ?? '',
+  };
+}
+
+export function toUpdatePartidoBody(form: PartidoForm) {
+  return {
+    deporteId: form.deporteId,
+    nivel: form.nivel as Nivel,
+    fecha: new Date(form.fecha).toISOString(),
+    ubicacion: form.ubicacion.trim(),
+    cupo: Number(form.cupo),
+    descripcion: form.descripcion.trim(),
   };
 }
