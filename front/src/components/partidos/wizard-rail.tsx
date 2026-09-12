@@ -18,18 +18,21 @@ const MARK_ACTIVE = 'bg-brand text-brand-ink shadow-glow';
 const MARK_PENDING = 'bg-glass text-ink-46 shadow-bevel';
 
 type WizardRailProps = {
+  mode: 'create' | 'edit';
   step: number;
 };
 
-export function WizardRail({ step }: WizardRailProps) {
+export function WizardRail({ mode, step }: WizardRailProps) {
   const total = WIZARD_STEPS.length;
+  const overline = mode === 'edit' ? 'Partido existente' : 'Nuevo partido';
+  const title = mode === 'edit' ? 'Editar partido' : 'Crear partido';
 
   return (
     <aside className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:flex-col lg:justify-between lg:gap-8 lg:border-r lg:border-glass-strong lg:p-8">
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <span className="text-overline text-brand uppercase">Nuevo partido</span>
-          <p className="text-title font-bold text-white">Crear partido</p>
+          <span className="text-overline text-brand uppercase">{overline}</span>
+          <p className="text-title font-bold text-white">{title}</p>
         </div>
 
         <ol className="flex flex-col gap-1">

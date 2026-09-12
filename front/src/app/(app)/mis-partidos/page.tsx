@@ -135,23 +135,32 @@ export default function MisPartidosPage() {
               />
             )}
             renderAction={(partido) => (
-              <ConfirmAction
-                variant="ghost"
-                label="Cancelar partido"
-                message="Se cancela para todos los jugadores. No se puede deshacer."
-                cancelLabel="Volver"
-                confirmLabel="Sí, cancelar"
-                pendingLabel="Cancelando…"
-                pending={pendingId === partido.id}
-                onConfirm={() =>
-                  void run(
-                    partido,
-                    cancelPartido,
-                    { message: `Partido cancelado · ${partidoLabel(partido)}`, tone: 'danger' },
-                    CANCEL_ERROR
-                  )
-                }
-              />
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/partidos/${partido.id}/editar`}
+                  className="shrink-0 text-callout font-semibold text-brand transition hover:text-brand-bright"
+                >
+                  Editar
+                </Link>
+
+                <ConfirmAction
+                  variant="ghost"
+                  label="Cancelar partido"
+                  message="Se cancela para todos los jugadores. No se puede deshacer."
+                  cancelLabel="Volver"
+                  confirmLabel="Sí, cancelar"
+                  pendingLabel="Cancelando…"
+                  pending={pendingId === partido.id}
+                  onConfirm={() =>
+                    void run(
+                      partido,
+                      cancelPartido,
+                      { message: `Partido cancelado · ${partidoLabel(partido)}`, tone: 'danger' },
+                      CANCEL_ERROR
+                    )
+                  }
+                />
+              </div>
             )}
           />
 
