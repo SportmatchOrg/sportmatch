@@ -41,10 +41,11 @@ export class PartidosService {
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
-    const [organizo, juego, jugados] = await Promise.all([
+    const [organizo, juego, jugados, requested] = await Promise.all([
       this.partidosRepository.findOrganizedBy(user.id),
       this.partidosRepository.findJoinedBy(user.id),
       this.partidosRepository.findPlayedBy(user.id),
+      this.partidosRepository.findRequestedBy(user.id),
     ]);
 
     return {
@@ -53,6 +54,9 @@ export class PartidosService {
       ),
       juego: juego.map((partido) => this.toListResponse(partido, user.id)),
       jugados: jugados.map((partido) => this.toListResponse(partido, user.id)),
+      requested: requested.map((partido) =>
+        this.toListResponse(partido, user.id),
+      ),
     };
   }
 
@@ -151,15 +155,22 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, joinRequests, ...rest } = partido;
+    const { _count, participantes, joinRequests, ratings, ...rest } = partido;
+    const estoyAnotado = participantes.length > 0;
 
     return {
       ...rest,
       anotados: _count.participantes,
-      estoy_anotado: participantes.length > 0,
+      estoy_anotado: estoyAnotado,
       my_join_request: joinRequests[0]?.status ?? null,
       pending_requests:
         rest.organizadorId === usuarioId ? _count.joinRequests : null,
+      rating_pending: this.toRatingPending({
+        fecha: rest.fecha,
+        isPlayer: rest.organizadorId === usuarioId || estoyAnotado,
+        participantes: _count.participantes,
+        ratings: ratings.length,
+      }),
     };
   }
 
@@ -167,19 +178,41 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, joinRequests, ...rest } = partido;
+    const { _count, participantes, joinRequests, ratings, ...rest } = partido;
+    const estoyAnotado = participantes.some(
+      ({ usuario }) => usuario.id === usuarioId,
+    );
 
     return {
       ...rest,
       anotados: _count.participantes,
-      estoy_anotado: participantes.some(
-        ({ usuario }) => usuario.id === usuarioId,
-      ),
+      estoy_anotado: estoyAnotado,
       my_join_request: joinRequests[0]?.status ?? null,
       pending_requests:
         rest.organizadorId === usuarioId ? _count.joinRequests : null,
+      rating_pending: this.toRatingPending({
+        fecha: rest.fecha,
+        isPlayer: rest.organizadorId === usuarioId || estoyAnotado,
+        participantes: _count.participantes,
+        ratings: ratings.length,
+      }),
       participantes: participantes.map(({ usuario }) => usuario),
     };
+  }
+
+  private toRatingPending(input: {
+    fecha: Date;
+    isPlayer: boolean;
+    participantes: number;
+    ratings: number;
+  }): boolean | null {
+    const played = input.fecha.getTime() <= Date.now();
+
+    if (!played || !input.isPlayer) {
+      return null;
+    }
+
+    return input.participantes >= 1 && input.ratings === 0;
   }
 
   private assertFutureDate(fecha: Date) {
