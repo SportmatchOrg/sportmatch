@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { PartidosModule } from './partidos/partidos.module';
 import { DeportesModule } from './deportes/deportes.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
+import { RatingsModule } from './ratings/ratings.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JoinRequestsModule } from './join-requests/join-requests.module';
     PartidosModule,
     DeportesModule,
     JoinRequestsModule,
+    RatingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
