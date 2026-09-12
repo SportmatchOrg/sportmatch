@@ -12,9 +12,9 @@ async function main() {
   const deportes = await Promise.all(
     NOMBRES_DEPORTES.map((nombre) =>
       prisma.deporte.upsert({
-        where: { nombre },
+        where: {nombre},
         update: {},
-        create: { nombre },
+        create: {nombre},
       }),
     ),
   );
@@ -31,9 +31,9 @@ async function main() {
 
   const seedUser = (firebaseUid: string, email: string, nombre: string) =>
     prisma.user.upsert({
-      where: { firebaseUid },
+      where: {firebaseUid},
       update: {},
-      create: { firebaseUid, email, nombre },
+      create: {firebaseUid, email, nombre},
     });
 
   const [ana, luis, marta, pablo, sofia] = await Promise.all([
@@ -120,7 +120,7 @@ async function main() {
   });
 
   const createdPartidos = await prisma.partido.findMany({
-    orderBy: { fecha: 'asc' },
+    orderBy: {fecha: 'asc'},
   });
 
   const now = new Date();
@@ -144,7 +144,7 @@ async function main() {
       descripcion: 'Partido jugado con cinco jugadores',
       organizadorId: ana.id,
       participantes: {
-        create: [luis, marta, pablo, sofia].map(({ id }) => ({
+        create: [luis, marta, pablo, sofia].map(({id}) => ({
           usuarioId: id,
         })),
       },
@@ -157,23 +157,39 @@ async function main() {
     return;
   }
 
-  const demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
+  const demoUser = await prisma.user.findUnique({where: {email: demoEmail}});
 
   if (!demoUser) {
     return;
   }
 
   const playedMatches = await prisma.partido.findMany({
-    where: { fecha: { lt: new Date() }, organizadorId: { not: demoUser.id } },
-    select: { id: true },
+    where: {fecha: {lt: new Date()}, organizadorId: {not: demoUser.id}},
+    orderBy: {fecha: 'asc'},
+    select: {id: true, organizadorId: true},
   });
 
   await prisma.participante.createMany({
-    data: playedMatches.map(({ id }) => ({
+    data: playedMatches.map(({id}) => ({
       partidoId: id,
       usuarioId: demoUser.id,
     })),
     skipDuplicates: true,
+  });
+
+  const [ratedMatch] = playedMatches;
+
+  if (!ratedMatch) {
+    return;
+  }
+
+  await prisma.rating.create({
+    data: {
+      matchId: ratedMatch.id,
+      raterId: demoUser.id,
+      ratedUserId: ratedMatch.organizadorId,
+      score: 5,
+    },
   });
 }
 
