@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
+import { weekStreak } from '../utils/time/week-streak';
 
 @Injectable()
 export class UsersService {
@@ -24,7 +25,7 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} was not found`);
     }
 
-    return user;
+    return this.withStats(user);
   }
 
   async findByFirebaseUid(firebaseUid: string) {
@@ -55,8 +56,10 @@ export class UsersService {
     }
   }
 
-  upsertFromFirebase(user: FirebaseUser) {
-    return this.usersRepository.upsertByFirebaseUid(user);
+  async upsertFromFirebase(user: FirebaseUser) {
+    const saved = await this.usersRepository.upsertByFirebaseUid(user);
+
+    return this.withStats(saved);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -73,6 +76,25 @@ export class UsersService {
     } catch (error) {
       throw this.toHttpException(error, id);
     }
+  }
+
+  private async withStats<T extends { id: string }>(user: T) {
+    const [received, playedDates] = await Promise.all([
+      this.usersRepository.aggregateReceivedRatings(user.id),
+      this.usersRepository.findPlayedDates(user.id),
+    ]);
+
+    const average = received._avg.score;
+
+    return {
+      ...user,
+      stats: {
+        rating: average === null ? null : Math.round(average * 10) / 10,
+        ratingCount: received._count,
+        playedCount: playedDates.length,
+        weekStreak: weekStreak(playedDates.map(({ fecha }) => fecha)),
+      },
+    };
   }
 
   private toHttpException(error: unknown, reference: string): Error {
