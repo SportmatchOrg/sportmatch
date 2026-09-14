@@ -1,16 +1,16 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
 import type { DetailedPartido, ListedPartido } from './types';
+
 @Injectable()
 export class PartidosService {
   constructor(
@@ -58,6 +58,19 @@ export class PartidosService {
         this.toListResponse(partido, user.id),
       ),
     };
+  }
+
+  async findPlayedByUser(firebaseUid: string, userId: string) {
+    const viewer = await this.usersService.findByFirebaseUid(firebaseUid);
+
+    await this.usersService.findOne(userId);
+
+    const partidos = await this.partidosRepository.findPlayedBy(
+      userId,
+      viewer.id,
+    );
+
+    return partidos.map((partido) => this.toListResponse(partido, viewer.id));
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
@@ -235,30 +248,17 @@ export class PartidosService {
         'Only the organizer can modify this partido',
       );
     }
+
     return partido;
   }
 
   private toHttpException(error: unknown, reference?: string): Error {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return new ConflictException('You already joined this partido');
-      }
-
-      if (error.code === 'P2003') {
-        return new BadRequestException(
-          'deporteId does not match a known sport',
-        );
-      }
-
-      if (error.code === 'P2025') {
-        return new NotFoundException(
-          reference
-            ? `Partido with id ${reference} was not found`
-            : 'Partido was not found',
-        );
-      }
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
+    return toPrismaHttpException(error, {
+      P2002: 'You already joined this partido',
+      P2003: 'deporteId does not match a known sport',
+      P2025: reference
+        ? `Partido with id ${reference} was not found`
+        : 'Partido was not found',
+    });
   }
 }

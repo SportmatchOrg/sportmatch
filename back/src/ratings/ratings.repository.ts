@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { RatingItemDto } from './dto/create-ratings.dto';
 
 const PUBLIC_USER = {
   select: { id: true, nombre: true, fotoUrl: true },
@@ -23,5 +24,17 @@ export class RatingsRepository {
 
   countGivenBy(matchId: string, raterId: string) {
     return this.prisma.rating.count({ where: { matchId, raterId } });
+  }
+
+  createMany(matchId: string, raterId: string, items: RatingItemDto[]) {
+    return this.prisma.rating.createMany({
+      data: items.map(({ ratedUserId, score, comment }) => ({
+        matchId,
+        raterId,
+        ratedUserId,
+        score,
+        comment,
+      })),
+    });
   }
 }

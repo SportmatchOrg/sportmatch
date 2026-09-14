@@ -9,3 +9,12 @@
     @apply font-sans;
   }
 }
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-ink-100);
+  -webkit-background-clip: text;
+  background-clip: text;
+  caret-color: var(--color-ink-100);
+  border: 0;
+}
