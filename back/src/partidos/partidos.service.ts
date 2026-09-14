@@ -11,6 +11,7 @@ import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
 import type { DetailedPartido, ListedPartido } from './types';
+
 @Injectable()
 export class PartidosService {
   constructor(
@@ -54,6 +55,19 @@ export class PartidosService {
       juego: juego.map((partido) => this.toListResponse(partido, user.id)),
       jugados: jugados.map((partido) => this.toListResponse(partido, user.id)),
     };
+  }
+
+  async findPlayedByUser(firebaseUid: string, userId: string) {
+    const viewer = await this.usersService.findByFirebaseUid(firebaseUid);
+
+    await this.usersService.findOne(userId);
+
+    const partidos = await this.partidosRepository.findPlayedBy(
+      userId,
+      viewer.id,
+    );
+
+    return partidos.map((partido) => this.toListResponse(partido, viewer.id));
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
@@ -202,6 +216,7 @@ export class PartidosService {
         'Only the organizer can modify this partido',
       );
     }
+
     return partido;
   }
 
