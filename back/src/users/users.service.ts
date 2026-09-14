@@ -1,13 +1,9 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { weekStreak } from '../utils/time/week-streak';
 
 @Injectable()
@@ -98,20 +94,9 @@ export class UsersService {
   }
 
   private toHttpException(error: unknown, reference: string): Error {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2002: unique constraint violation (duplicated email or firebaseUid)
-      if (error.code === 'P2002') {
-        return new ConflictException(
-          'A user with that email or firebaseUid already exists',
-        );
-      }
-
-      // P2025: the record to update or delete does not exist
-      if (error.code === 'P2025') {
-        return new NotFoundException(`User with id ${reference} was not found`);
-      }
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
+    return toPrismaHttpException(error, {
+      P2002: 'A user with that email or firebaseUid already exists',
+      P2025: `User with id ${reference} was not found`,
+    });
   }
 }
