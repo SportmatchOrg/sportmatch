@@ -1,12 +1,11 @@
 import {
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CreatePartidoDto } from './dto/create-partido.dto';
 import { UpdatePartidoDto } from './dto/update-partido.dto';
 import { PartidosRepository } from './partidos.repository';
@@ -221,26 +220,12 @@ export class PartidosService {
   }
 
   private toHttpException(error: unknown, reference?: string): Error {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        return new ConflictException('You already joined this partido');
-      }
-
-      if (error.code === 'P2003') {
-        return new BadRequestException(
-          'deporteId does not match a known sport',
-        );
-      }
-
-      if (error.code === 'P2025') {
-        return new NotFoundException(
-          reference
-            ? `Partido with id ${reference} was not found`
-            : 'Partido was not found',
-        );
-      }
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
+    return toPrismaHttpException(error, {
+      P2002: 'You already joined this partido',
+      P2003: 'deporteId does not match a known sport',
+      P2025: reference
+        ? `Partido with id ${reference} was not found`
+        : 'Partido was not found',
+    });
   }
 }

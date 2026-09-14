@@ -5,9 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
 import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { assignRatingTargets } from '../utils/ratings/assign-rating-targets';
 import type { CreateRatingsDto, RatingItemDto } from './dto/create-ratings.dto';
 import { RatingsRepository } from './ratings.repository';
@@ -55,7 +55,9 @@ export class RatingsService {
 
       return { matchId, count };
     } catch (error) {
-      throw this.toHttpException(error);
+      throw toPrismaHttpException(error, {
+        P2002: 'You already rated this match',
+      });
     }
   }
 
@@ -107,16 +109,5 @@ export class RatingsService {
     if (!isExactMatch) {
       throw new BadRequestException('Ratings must match the assigned players');
     }
-  }
-
-  private toHttpException(error: unknown): Error {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      return new ConflictException('You already rated this match');
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
   }
 }
