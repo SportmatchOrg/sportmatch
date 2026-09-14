@@ -46,6 +46,14 @@ export class PartidosController {
     return this.partidosService.findMine(user.uid);
   }
 
+  @Get('played-by/:userId')
+  findPlayedByUser(
+    @CurrentUser() user: FirebaseUser,
+    @Param('userId') userId: string,
+  ) {
+    return this.partidosService.findPlayedByUser(user.uid, userId);
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
     return this.partidosService.findOne(user.uid, id);
