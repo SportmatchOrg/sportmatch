@@ -8,5 +8,6 @@
 @import "../design-system/tokens/spacing.css";
 @import "../design-system/tokens/effects.css";
 @import "../design-system/base.css";
+@import "../design-system/splash-screen.css";
 
 @custom-variant dark (&:is(.dark *));
