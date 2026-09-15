@@ -1,1 +1,1 @@
-export const LANDING_CONTAINER = 'mx-auto w-full max-w-[1152px] px-6 md:px-12 xl:px-0';
+export const LANDING_CONTAINER = 'w-full px-6 md:px-12 lg:px-[10%]';
