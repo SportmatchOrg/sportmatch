@@ -36,6 +36,7 @@ const partidoInclude = (usuarioId: string) =>
       where: { userId: usuarioId },
       select: { status: true },
     },
+    ratings: { where: { raterId: usuarioId }, select: { id: true }, take: 1 },
   }) as const;
 
 @Injectable()
@@ -76,6 +77,11 @@ export class PartidosRepository {
           where: { userId: usuarioId },
           select: { status: true },
         },
+        ratings: {
+          where: { raterId: usuarioId },
+          select: { id: true },
+          take: 1,
+        },
       },
     });
   }
@@ -99,17 +105,28 @@ export class PartidosRepository {
     });
   }
 
-  findPlayedBy(usuarioId: string) {
+  findRequestedBy(usuarioId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { gte: new Date() },
+        joinRequests: { some: { userId: usuarioId, status: 'PENDING' } },
+      },
+      orderBy: { fecha: 'asc' },
+      include: partidoInclude(usuarioId),
+    });
+  }
+
+  findPlayedBy(playerId: string, viewerId: string = playerId) {
     return this.prisma.partido.findMany({
       where: {
         fecha: { lt: new Date() },
         OR: [
-          { organizadorId: usuarioId },
-          { participantes: { some: { usuarioId } } },
+          { organizadorId: playerId },
+          { participantes: { some: { usuarioId: playerId } } },
         ],
       },
       orderBy: { fecha: 'desc' },
-      include: partidoInclude(usuarioId),
+      include: partidoInclude(viewerId),
     });
   }
 

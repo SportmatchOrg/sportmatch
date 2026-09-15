@@ -5,8 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
 
@@ -58,7 +58,9 @@ export class JoinRequestsService {
 
       return await this.joinRequestsRepository.create(matchId, user.id);
     } catch (error) {
-      throw this.toHttpException(error);
+      throw toPrismaHttpException(error, {
+        P2002: 'You already requested to join this partido',
+      });
     }
   }
 
@@ -124,7 +126,9 @@ export class JoinRequestsService {
 
       return acceptedRequest;
     } catch (error) {
-      throw this.toResolveHttpException(error);
+      throw toPrismaHttpException(error, {
+        P2002: 'The user is already a participant',
+      });
     }
   }
 
@@ -152,29 +156,5 @@ export class JoinRequestsService {
     }
 
     return { match };
-  }
-
-  private toHttpException(error: unknown): Error {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      return new ConflictException(
-        'You already requested to join this partido',
-      );
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
-  }
-
-  private toResolveHttpException(error: unknown): Error {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      return new ConflictException('The user is already a participant');
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
   }
 }

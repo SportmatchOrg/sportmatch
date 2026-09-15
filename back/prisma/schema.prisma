@@ -28,6 +28,8 @@ model User {
   partidosOrganizados Partido[]
   participaciones     Participante[]
   joinRequests        JoinRequest[]
+  ratingsGiven        Rating[]       @relation("RatingsGiven")
+  ratingsReceived     Rating[]       @relation("RatingsReceived")
 
   @@map("users")
 }
@@ -58,6 +60,7 @@ model Partido {
   updatedAt     DateTime       @updatedAt
   participantes Participante[]
   joinRequests  JoinRequest[]
+  ratings       Rating[]
 
   @@index([fecha])
   @@index([deporteId])
@@ -98,4 +101,21 @@ model JoinRequest {
   @@unique([matchId, userId])
   @@index([userId])
   @@map("join_requests")
+}
+
+model Rating {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Partido  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  raterId     String
+  rater       User     @relation("RatingsGiven", fields: [raterId], references: [id])
+  ratedUserId String
+  ratedUser   User     @relation("RatingsReceived", fields: [ratedUserId], references: [id])
+  score       Int
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([matchId, raterId, ratedUserId])
+  @@index([ratedUserId])
+  @@map("ratings")
 }

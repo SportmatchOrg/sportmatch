@@ -31,6 +31,10 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   FIREBASE_PRIVATE_KEY: string;
+
+  @IsOptional()
+  @IsEmail()
+  SEED_DEMO_EMAIL?: string;
 }
 
 export function validateEnv(

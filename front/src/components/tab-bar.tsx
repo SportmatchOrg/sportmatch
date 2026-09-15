@@ -3,6 +3,7 @@
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import {
   Tooltip,
@@ -10,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS, NEW_MATCH_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 
@@ -19,7 +21,15 @@ const RIGHT_ITEMS = NAV_ITEMS.slice(2);
 const SHEET_SHADOW =
   'shadow-float-glass';
 
-function TabBarLink({ item, active }: { item: NavItem; active: boolean }) {
+function TabBarLink({
+  item,
+  active,
+  onUnavailable,
+}: {
+  item: NavItem;
+  active: boolean;
+  onUnavailable: () => void;
+}) {
   const Icon = item.icon;
 
   const itemClassName = cn(
@@ -47,6 +57,7 @@ function TabBarLink({ item, active }: { item: NavItem; active: boolean }) {
           aria-disabled="true"
           aria-label={item.label}
           className={cn(itemClassName, 'aria-disabled:cursor-not-allowed')}
+          onClick={onUnavailable}
         >
           {content}
         </TooltipTrigger>
@@ -69,9 +80,23 @@ function TabBarLink({ item, active }: { item: NavItem; active: boolean }) {
 
 export function TabBar() {
   const pathname = usePathname();
+  const [toast, setToast] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => setToast(false), TOAST_DURATION);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   return (
     <TooltipProvider>
+      {toast && (
+        <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4">
+          <Toast message="Próximamente" tone="info" />
+        </div>
+      )}
+
       <nav
         aria-label="Navegación principal"
         className={cn(
@@ -79,8 +104,14 @@ export function TabBar() {
           SHEET_SHADOW
         )}
       >
+
         {LEFT_ITEMS.map((item) => (
-          <TabBarLink key={item.href} item={item} active={isNavItemActive(pathname, item.href)} />
+          <TabBarLink
+            key={item.href}
+            item={item}
+            active={isNavItemActive(pathname, item.href)}
+            onUnavailable={() => setToast(true)}
+          />
         ))}
 
         <Link
@@ -93,7 +124,12 @@ export function TabBar() {
         </Link>
 
         {RIGHT_ITEMS.map((item) => (
-          <TabBarLink key={item.href} item={item} active={isNavItemActive(pathname, item.href)} />
+          <TabBarLink
+            key={item.href}
+            item={item}
+            active={isNavItemActive(pathname, item.href)}
+            onUnavailable={() => setToast(true)}
+          />
         ))}
       </nav>
     </TooltipProvider>
