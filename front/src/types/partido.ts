@@ -47,6 +47,7 @@ export type Partido = {
   estoy_anotado: boolean;
   my_join_request: JoinRequestStatus | null;
   pending_requests: number | null;
+  rating_pending: boolean | null;
 };
 
 export type PartidosMios = {

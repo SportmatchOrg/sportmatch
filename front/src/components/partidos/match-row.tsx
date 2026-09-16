@@ -18,6 +18,9 @@ const TITLE = 'truncate text-subhead text-white';
 
 const META = 'flex items-center gap-2 text-caption text-ink-64';
 
+const RATING_CHIP =
+  'shrink-0 rounded-full bg-warning-tint px-2 py-0.5 text-overline text-warning uppercase';
+
 export function MatchRow({ partido }: { partido: Partido }) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
@@ -50,14 +53,20 @@ export function MatchRow({ partido }: { partido: Partido }) {
           <SpotsBadge libres={libres} />
         </span>
 
-        <span className="absolute inset-x-4 bottom-4 hidden truncate text-overline text-white uppercase lg:block">
-          {deporte} · {NIVEL_LABEL[partido.nivel]}
+        <span className="absolute inset-x-4 bottom-4 hidden items-center gap-2 lg:flex">
+          <span className="truncate text-overline text-white uppercase">
+            {deporte} · {NIVEL_LABEL[partido.nivel]}
+          </span>
+          {partido.rating_pending && <span className={RATING_CHIP}>Calificar</span>}
         </span>
       </span>
 
       <span className="flex min-w-0 flex-1 items-center gap-3 pr-4 lg:items-start lg:p-4">
         <span className="flex min-w-0 flex-1 flex-col gap-1 lg:gap-1.5">
-          <span className="text-overline text-ink-46 uppercase lg:hidden">{deporte}</span>
+          <span className="flex items-center gap-2 lg:hidden">
+            <span className="truncate text-overline text-ink-46 uppercase">{deporte}</span>
+            {partido.rating_pending && <span className={RATING_CHIP}>Calificar</span>}
+          </span>
 
           <span className={TITLE}>{partido.ubicacion}</span>
 
