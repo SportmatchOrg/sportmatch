@@ -53,6 +53,7 @@ export type PartidosMios = {
   organizo: Partido[];
   juego: Partido[];
   jugados: Partido[];
+  requested: Partido[];
 };
 
 export type PartidoDetalle = Partido & {

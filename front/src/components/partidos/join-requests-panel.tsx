@@ -11,17 +11,10 @@ import { useJoinRequests } from '@/hooks/use-join-requests';
 import { ApiError } from '@/lib/api';
 import { resolveJoinRequest, type JoinRequest } from '@/lib/join-requests';
 import { cn } from '@/lib/utils';
-import type { JoinRequestStatus } from '@/types/partido';
 
 const CONFLICT = 409;
 const FULL_MESSAGE = 'No se pudo aceptar: el partido está lleno';
 const RESOLVE_FALLBACK = 'No pudimos resolver la solicitud. Probá de nuevo.';
-
-const STATUS_SUBTITLE: Record<JoinRequestStatus, string> = {
-  PENDING: 'quiere sumarse',
-  ACCEPTED: 'En el equipo',
-  REJECTED: 'Rechazado',
-};
 
 type JoinRequestsPanelProps = {
   partidoId: string;
@@ -50,10 +43,8 @@ function RequestRow({
   resolving: boolean;
   onResolve: (request: JoinRequest, status: 'ACCEPTED' | 'REJECTED') => void;
 }) {
-  const resolved = request.status !== 'PENDING';
-
   return (
-    <li className={cn('flex items-center gap-3', resolved && 'opacity-45')}>
+    <li className="flex items-center gap-3">
       <UserAvatar
         name={request.user.nombre}
         photoUrl={request.user.fotoUrl}
@@ -66,40 +57,29 @@ function RequestRow({
         <span className="truncate text-[15px] font-semibold text-white">
           {request.user.nombre}
         </span>
-        <span className="text-caption text-ink-46">{STATUS_SUBTITLE[request.status]}</span>
+        <span className="text-caption text-ink-46">quiere sumarse</span>
       </span>
 
-      {request.status === 'PENDING' ? (
-        <span className="flex shrink-0 gap-2">
-          <IconButton
-            label={`Rechazar a ${request.user.nombre}`}
-            variant="strong"
-            disabled={resolving}
-            onClick={() => onResolve(request, 'REJECTED')}
-            className="size-10"
-          >
-            <X className="size-[18px]" aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={`Aceptar a ${request.user.nombre}`}
-            variant="brand"
-            disabled={resolving}
-            onClick={() => onResolve(request, 'ACCEPTED')}
-            className="size-10"
-          >
-            <Check className="size-[18px]" aria-hidden="true" />
-          </IconButton>
-        </span>
-      ) : (
-        <span
-          className={cn(
-            'shrink-0 text-caption font-semibold',
-            request.status === 'ACCEPTED' ? 'text-success' : 'text-ink-46'
-          )}
+      <span className="flex shrink-0 gap-2">
+        <IconButton
+          label={`Rechazar a ${request.user.nombre}`}
+          variant="strong"
+          disabled={resolving}
+          onClick={() => onResolve(request, 'REJECTED')}
+          className="size-10"
         >
-          {request.status === 'ACCEPTED' ? 'Aceptado' : 'Rechazado'}
-        </span>
-      )}
+          <X className="size-[18px]" aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          label={`Aceptar a ${request.user.nombre}`}
+          variant="brand"
+          disabled={resolving}
+          onClick={() => onResolve(request, 'ACCEPTED')}
+          className="size-10"
+        >
+          <Check className="size-[18px]" aria-hidden="true" />
+        </IconButton>
+      </span>
     </li>
   );
 }
@@ -115,7 +95,8 @@ export function JoinRequestsPanel({
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const pendingCount = joinRequests.filter((request) => request.status === 'PENDING').length;
+  const pendingRequests = joinRequests.filter((request) => request.status === 'PENDING');
+  const pendingCount = pendingRequests.length;
 
   useEffect(() => {
     if (!toast) return;
@@ -186,16 +167,20 @@ export function JoinRequestsPanel({
           {error}
         </p>
       ) : (
-        <ul className="flex flex-col gap-4">
-          {joinRequests.map((request) => (
-            <RequestRow
-              key={request.id}
-              request={request}
-              resolving={resolvingId !== null}
-              onResolve={handleResolve}
-            />
-          ))}
-        </ul>
+        pendingRequests.length === 0 ? (
+          <p className="text-caption text-ink-46">No hay solicitudes pendientes</p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {pendingRequests.map((request) => (
+              <RequestRow
+                key={request.id}
+                request={request}
+                resolving={resolvingId !== null}
+                onResolve={handleResolve}
+              />
+            ))}
+          </ul>
+        )
       )}
     </section>
   );

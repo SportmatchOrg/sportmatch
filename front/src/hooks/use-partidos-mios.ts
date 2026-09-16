@@ -14,7 +14,7 @@ type PartidosMiosState = {
 
 const ERROR_MESSAGE = 'No pudimos cargar tus partidos. Probá de nuevo en un momento.';
 
-const NO_PARTIDOS: PartidosMios = { organizo: [], juego: [], jugados: [] };
+const NO_PARTIDOS: PartidosMios = { organizo: [], juego: [], jugados: [], requested: [] };
 
 const INITIAL_STATE: PartidosMiosState = {
   partidos: NO_PARTIDOS,
@@ -51,6 +51,7 @@ export function usePartidosMios() {
     organizo: state.partidos.organizo,
     juego: state.partidos.juego,
     jugados: state.partidos.jugados,
+    requested: state.partidos.requested,
     loading: sessionLoading || state.loading,
     error: state.error,
     reload,
