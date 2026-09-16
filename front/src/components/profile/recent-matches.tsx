@@ -51,7 +51,7 @@ export function RecentMatches({ partidos, error, showSeeAll = true }: RecentMatc
         )}
 
         {!error && partidos.length > 0 && (
-          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-4 lg:gap-4">
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:gap-4">
             {partidos.slice(0, MAX_CARDS).map((partido) => (
               <MatchRow key={partido.id} partido={partido} />
             ))}

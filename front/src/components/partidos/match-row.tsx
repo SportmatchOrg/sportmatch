@@ -12,7 +12,7 @@ import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { DEPORTE_LABEL, NIVEL_LABEL, type Partido } from '@/types/partido';
 
 const CARD =
-  'flex h-[100px] gap-[14px] overflow-hidden rounded-md bg-glass shadow-bevel backdrop-blur-card transition hover:bg-glass-strong active:scale-[var(--press-scale-card)] lg:h-[300px] lg:flex-col lg:gap-0 lg:rounded-lg lg:shadow-card-glass';
+  'flex h-[100px] gap-[14px] overflow-hidden rounded-md border border-glass-strong bg-glass shadow-bevel backdrop-blur-card transition hover:bg-glass-strong active:scale-[var(--press-scale-card)] lg:h-[300px] lg:flex-col lg:gap-0 lg:rounded-lg lg:shadow-card-glass';
 
 const TITLE = 'truncate text-subhead text-white';
 
