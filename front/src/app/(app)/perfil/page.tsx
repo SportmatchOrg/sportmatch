@@ -34,8 +34,8 @@ export default function ProfilePage() {
 
   return (
     <main className="w-full pb-10">
-      <ProfileHeader user={user} />
-      <ProfileStats partidosJugados={partidosError ? null : jugados.length} />
+      <ProfileHeader user={user} isOwnProfile />
+      <ProfileStats stats={user.stats} />
       <RecentMatches partidos={jugados} error={partidosError} />
     </main>
   );

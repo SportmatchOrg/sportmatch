@@ -16,15 +16,16 @@ const PANEL =
 type RecentMatchesProps = {
   partidos: Partido[];
   error: string | null;
+  showSeeAll?: boolean;
 };
 
-export function RecentMatches({ partidos, error }: RecentMatchesProps) {
+export function RecentMatches({ partidos, error, showSeeAll = true }: RecentMatchesProps) {
   return (
     <section className={cn(PROFILE_SECTION, 'pt-8 lg:pt-10')}>
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="text-title lg:text-[28px]">Partidos recientes</h2>
 
-        {partidos.length > 0 && !error && (
+        {showSeeAll && partidos.length > 0 && !error && (
           <Link
             href={SEE_ALL_HREF}
             className="shrink-0 text-callout font-semibold text-brand transition hover:text-brand-bright"
@@ -50,7 +51,7 @@ export function RecentMatches({ partidos, error }: RecentMatchesProps) {
         )}
 
         {!error && partidos.length > 0 && (
-          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-4 lg:gap-4">
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:gap-4">
             {partidos.slice(0, MAX_CARDS).map((partido) => (
               <MatchRow key={partido.id} partido={partido} />
             ))}

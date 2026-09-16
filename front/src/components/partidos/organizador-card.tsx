@@ -1,9 +1,5 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import Link from 'next/link';
+
 import { UserAvatar } from '@/components/user-avatar';
 import type { PublicUser } from '@/types/partido';
 
@@ -18,23 +14,17 @@ export function OrganizadorCard({ organizador }: { organizador: PublicUser }) {
         initialsClassName="text-callout"
       />
 
-      <span className="flex flex-1 flex-col gap-0.5">
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-caption text-ink-46">Organiza</span>
-        <span className="text-headline font-bold text-white">{organizador.nombre}</span>
+        <span className="truncate text-headline font-bold text-white">{organizador.nombre}</span>
       </span>
 
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger
-            type="button"
-            aria-disabled="true"
-            className="hidden shrink-0 rounded-full bg-glass-strong px-5 py-3 text-callout font-semibold text-white shadow-bevel-lit aria-disabled:cursor-not-allowed lg:block"
-          >
-            Ver perfil
-          </TooltipTrigger>
-          <TooltipContent>Próximamente</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Link
+        href={`/usuarios/${organizador.id}`}
+        className="shrink-0 rounded-full bg-glass-strong px-5 py-3 text-callout font-semibold text-white shadow-bevel-lit transition hover:bg-glass focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+      >
+        Ver perfil
+      </Link>
     </div>
   );
 }
