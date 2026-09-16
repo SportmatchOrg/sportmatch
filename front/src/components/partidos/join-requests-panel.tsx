@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { UserAvatar } from '@/components/user-avatar';
@@ -45,20 +46,26 @@ function RequestRow({
 }) {
   return (
     <li className="flex items-center gap-3">
-      <UserAvatar
-        name={request.user.nombre}
-        photoUrl={request.user.fotoUrl}
-        sizes="44px"
-        className="size-11"
-        initialsClassName="text-caption"
-      />
+      <Link
+        href={`/usuarios/${request.user.id}`}
+        aria-label={`Ver perfil de ${request.user.nombre}`}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-sm focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+      >
+        <UserAvatar
+          name={request.user.nombre}
+          photoUrl={request.user.fotoUrl}
+          sizes="44px"
+          className="size-11"
+          initialsClassName="text-caption"
+        />
 
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[15px] font-semibold text-white">
-          {request.user.nombre}
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate text-[15px] font-semibold text-white">
+            {request.user.nombre}
+          </span>
+          <span className="text-caption text-ink-46">quiere sumarse</span>
         </span>
-        <span className="text-caption text-ink-46">quiere sumarse</span>
-      </span>
+      </Link>
 
       <span className="flex shrink-0 gap-2">
         <IconButton
