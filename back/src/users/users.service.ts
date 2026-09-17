@@ -52,6 +52,10 @@ export class UsersService {
     }
   }
 
+  ensureExists(user: FirebaseUser) {
+    return this.usersRepository.ensureExists(user);
+  }
+
   async upsertFromFirebase(user: FirebaseUser) {
     const saved = await this.usersRepository.upsertByFirebaseUid(user);
 
