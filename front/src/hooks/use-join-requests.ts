@@ -12,6 +12,7 @@ type JoinRequestsState = {
 };
 
 const ERROR_MESSAGE = 'No pudimos cargar las solicitudes. Probá de nuevo en un momento.';
+const POLL_INTERVAL_MS = 2_000;
 
 const INITIAL_STATE: JoinRequestsState = {
   joinRequests: [],
@@ -30,17 +31,35 @@ export function useJoinRequests(partidoId: string, isOrganizer: boolean) {
     if (!isOrganizer || sessionLoading || !firebaseUser) return;
 
     let active = true;
+    let requestInFlight = false;
 
-    fetchJoinRequests(partidoId)
-      .then((joinRequests) => {
+    async function load(showError: boolean): Promise<void> {
+      if (requestInFlight) return;
+
+      requestInFlight = true;
+
+      try {
+        const joinRequests = await fetchJoinRequests(partidoId);
+
         if (active) setState({ joinRequests, loading: false, error: null });
-      })
-      .catch(() => {
-        if (active) setState({ joinRequests: [], loading: false, error: ERROR_MESSAGE });
-      });
+      } catch {
+        if (active && showError) {
+          setState({ joinRequests: [], loading: false, error: ERROR_MESSAGE });
+        }
+      } finally {
+        requestInFlight = false;
+      }
+    }
+
+    void load(true);
+
+    const interval = window.setInterval(() => {
+      void load(false);
+    }, POLL_INTERVAL_MS);
 
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [firebaseUser, isOrganizer, partidoId, reloadToken, sessionLoading]);
 

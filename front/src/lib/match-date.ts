@@ -13,11 +13,12 @@ export function weekdayLabel(date: Date): string {
 export function formatMatchDay(fecha: string): string {
   const date = new Date(fecha);
   const days = Math.round((startOfDay(date) - startOfDay(new Date())) / MS_PER_DAY);
+  const calendarDate = `${date.getDate()}/${date.getMonth() + 1}`;
 
-  if (days === 0) return 'Hoy';
-  if (days === 1) return 'Mañana';
+  if (days === 0) return `Hoy ${calendarDate}`;
+  if (days === 1) return `Mañana ${calendarDate}`;
 
-  return `${WEEKDAYS[date.getDay()]} ${date.getDate()}`;
+  return `${WEEKDAYS[date.getDay()]} ${calendarDate}`;
 }
 
 export function formatMatchTime(fecha: string): string {
