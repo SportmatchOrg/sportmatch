@@ -1,6 +1,8 @@
 'use client';
 
+import { PendingRatingsBanner } from '@/components/ratings/pending-ratings-banner';
 import { ProfileHeader } from '@/components/profile/profile-header';
+import { PROFILE_SECTION } from '@/components/profile/profile-layout';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 import { ProfileStats } from '@/components/profile/profile-stats';
 import { RecentMatches } from '@/components/profile/recent-matches';
@@ -13,6 +15,7 @@ export default function ProfilePage() {
     jugados,
     loading: partidosLoading,
     error: partidosError,
+    reload: reloadPartidos,
   } = usePartidosMios();
 
   if (loading || partidosLoading) {
@@ -34,8 +37,16 @@ export default function ProfilePage() {
 
   return (
     <main className="w-full pb-10">
-      <ProfileHeader user={user} />
-      <ProfileStats partidosJugados={partidosError ? null : jugados.length} />
+      <ProfileHeader user={user} isOwnProfile />
+      <ProfileStats stats={user.stats} />
+
+      <div className={`${PROFILE_SECTION} pt-4 lg:pt-6`}>
+        <PendingRatingsBanner
+          matches={jugados.filter(({ rating_pending }) => rating_pending === true)}
+          onRated={reloadPartidos}
+        />
+      </div>
+
       <RecentMatches partidos={jugados} error={partidosError} />
     </main>
   );

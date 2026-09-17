@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { UserAvatar } from '@/components/user-avatar';
 import type { PublicUser } from '@/types/partido';
 
@@ -21,9 +23,11 @@ export function AvatarStack({ usuarios, max = 6 }: AvatarStackProps) {
       style={{ height: AVATAR_SIZE, width: (slots - 1) * STEP + AVATAR_SIZE }}
     >
       {shown.map((usuario, position) => (
-        <span
+        <Link
           key={usuario.id}
-          className="absolute top-0 rounded-full ring-2 ring-base"
+          href={`/usuarios/${usuario.id}`}
+          aria-label={`Ver perfil de ${usuario.nombre}`}
+          className="absolute top-0 rounded-full ring-2 ring-base focus-visible:ring-brand focus-visible:outline-none"
           style={{ left: position * STEP }}
         >
           <UserAvatar
@@ -33,7 +37,7 @@ export function AvatarStack({ usuarios, max = 6 }: AvatarStackProps) {
             className="size-16"
             initialsClassName="text-callout"
           />
-        </span>
+        </Link>
       ))}
 
       {overflow > 0 && (

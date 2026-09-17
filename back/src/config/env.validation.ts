@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  ValidateIf,
   validateSync,
 } from 'class-validator';
 
@@ -31,6 +32,10 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   FIREBASE_PRIVATE_KEY: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsEmail()
+  SEED_DEMO_EMAIL?: string;
 }
 
 export function validateEnv(

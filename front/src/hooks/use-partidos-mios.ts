@@ -12,9 +12,13 @@ type PartidosMiosState = {
   error: string | null;
 };
 
+type UsePartidosMiosOptions = {
+  pollIntervalMs?: number;
+};
+
 const ERROR_MESSAGE = 'No pudimos cargar tus partidos. Probá de nuevo en un momento.';
 
-const NO_PARTIDOS: PartidosMios = { organizo: [], juego: [], jugados: [] };
+const NO_PARTIDOS: PartidosMios = { organizo: [], juego: [], jugados: [], requested: [] };
 
 const INITIAL_STATE: PartidosMiosState = {
   partidos: NO_PARTIDOS,
@@ -22,7 +26,7 @@ const INITIAL_STATE: PartidosMiosState = {
   error: null,
 };
 
-export function usePartidosMios() {
+export function usePartidosMios({ pollIntervalMs }: UsePartidosMiosOptions = {}) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<PartidosMiosState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
@@ -33,24 +37,45 @@ export function usePartidosMios() {
     if (sessionLoading || !firebaseUser) return;
 
     let active = true;
+    let requestInFlight = false;
 
-    fetchPartidosMios()
-      .then((partidos) => {
+    async function load(showError: boolean): Promise<void> {
+      if (requestInFlight) return;
+
+      requestInFlight = true;
+
+      try {
+        const partidos = await fetchPartidosMios();
+
         if (active) setState({ partidos, loading: false, error: null });
-      })
-      .catch(() => {
-        if (active) setState({ partidos: NO_PARTIDOS, loading: false, error: ERROR_MESSAGE });
-      });
+      } catch {
+        if (active && showError) {
+          setState({ partidos: NO_PARTIDOS, loading: false, error: ERROR_MESSAGE });
+        }
+      } finally {
+        requestInFlight = false;
+      }
+    }
+
+    void load(true);
+
+    const interval = pollIntervalMs
+      ? window.setInterval(() => {
+          void load(false);
+        }, pollIntervalMs)
+      : null;
 
     return () => {
       active = false;
+      if (interval !== null) window.clearInterval(interval);
     };
-  }, [sessionLoading, firebaseUser, reloadToken]);
+  }, [sessionLoading, firebaseUser, pollIntervalMs, reloadToken]);
 
   return {
     organizo: state.partidos.organizo,
     juego: state.partidos.juego,
     jugados: state.partidos.jugados,
+    requested: state.partidos.requested,
     loading: sessionLoading || state.loading,
     error: state.error,
     reload,

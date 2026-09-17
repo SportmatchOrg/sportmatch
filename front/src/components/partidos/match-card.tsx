@@ -25,6 +25,8 @@ const ROLE_CHIP: Record<MatchCardRole, string> = {
   player: 'bg-success-tint text-success',
 };
 
+const PENDING_REQUEST_CHIP = 'bg-warning-tint text-warning';
+
 const CHIP = 'rounded-full px-3 py-1 text-caption font-semibold';
 
 type MatchCardProps = {
@@ -41,6 +43,9 @@ export function MatchCard({ partido, role, panel, action }: MatchCardProps) {
   const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
   const libres = Math.max(0, partido.cupo - partido.anotados);
   const deporte = DEPORTE_LABEL[partido.deporte.nombre];
+  const pendingRequest = role === 'player' && partido.my_join_request === 'PENDING';
+  const roleLabel = pendingRequest ? 'Pendiente' : ROLE_LABEL[role];
+  const roleChip = pendingRequest ? PENDING_REQUEST_CHIP : ROLE_CHIP[role];
 
   return (
     <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel-lit transition active:scale-[var(--press-scale-card)] lg:rounded-md">
@@ -77,7 +82,7 @@ export function MatchCard({ partido, role, panel, action }: MatchCardProps) {
           <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2 lg:hidden">
             <span className="flex flex-wrap gap-2">
               <DeporteChip nombre={partido.deporte.nombre} />
-              <span className={cn(CHIP, ROLE_CHIP[role])}>{ROLE_LABEL[role]}</span>
+              <span className={cn(CHIP, roleChip)}>{roleLabel}</span>
             </span>
 
             {role === 'player' && <SpotsBadge libres={libres} onPhoto />}

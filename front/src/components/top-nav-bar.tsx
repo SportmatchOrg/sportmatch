@@ -51,7 +51,9 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
         >
           {content}
         </TooltipTrigger>
-        <TooltipContent>Próximamente</TooltipContent>
+        <TooltipContent side="bottom" sideOffset={12}>
+          Próximamente
+        </TooltipContent>
       </Tooltip>
     );
   }

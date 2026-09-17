@@ -1,13 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from '../generated/prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
+import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
+import { weekStreak } from '../utils/time/week-streak';
 
 @Injectable()
 export class UsersService {
@@ -24,7 +21,7 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} was not found`);
     }
 
-    return user;
+    return this.withStats(user);
   }
 
   async findByFirebaseUid(firebaseUid: string) {
@@ -55,8 +52,10 @@ export class UsersService {
     }
   }
 
-  upsertFromFirebase(user: FirebaseUser) {
-    return this.usersRepository.upsertByFirebaseUid(user);
+  async upsertFromFirebase(user: FirebaseUser) {
+    const saved = await this.usersRepository.upsertByFirebaseUid(user);
+
+    return this.withStats(saved);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -75,21 +74,29 @@ export class UsersService {
     }
   }
 
+  private async withStats<T extends { id: string }>(user: T) {
+    const [received, playedDates] = await Promise.all([
+      this.usersRepository.aggregateReceivedRatings(user.id),
+      this.usersRepository.findPlayedDates(user.id),
+    ]);
+
+    const average = received._avg.score;
+
+    return {
+      ...user,
+      stats: {
+        rating: average === null ? null : Math.round(average * 10) / 10,
+        ratingCount: received._count,
+        playedCount: playedDates.length,
+        weekStreak: weekStreak(playedDates.map(({ fecha }) => fecha)),
+      },
+    };
+  }
+
   private toHttpException(error: unknown, reference: string): Error {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2002: unique constraint violation (duplicated email or firebaseUid)
-      if (error.code === 'P2002') {
-        return new ConflictException(
-          'A user with that email or firebaseUid already exists',
-        );
-      }
-
-      // P2025: the record to update or delete does not exist
-      if (error.code === 'P2025') {
-        return new NotFoundException(`User with id ${reference} was not found`);
-      }
-    }
-
-    return error instanceof Error ? error : new Error(String(error));
+    return toPrismaHttpException(error, {
+      P2002: 'A user with that email or firebaseUid already exists',
+      P2025: `User with id ${reference} was not found`,
+    });
   }
 }

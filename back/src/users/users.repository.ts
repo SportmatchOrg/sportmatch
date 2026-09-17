@@ -49,6 +49,26 @@ export class UsersRepository {
       },
     });
   }
+  aggregateReceivedRatings(userId: string) {
+    return this.prisma.rating.aggregate({
+      where: { ratedUserId: userId },
+      _avg: { score: true },
+      _count: true,
+    });
+  }
+
+  findPlayedDates(userId: string) {
+    return this.prisma.partido.findMany({
+      where: {
+        fecha: { lt: new Date() },
+        OR: [
+          { organizadorId: userId },
+          { participantes: { some: { usuarioId: userId } } },
+        ],
+      },
+      select: { fecha: true },
+    });
+  }
 
   update(id: string, data: UpdateUserDto) {
     return this.prisma.user.update({ where: { id }, data });

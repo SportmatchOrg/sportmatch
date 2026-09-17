@@ -1,29 +1,43 @@
-'use client';
+"use client";
 
-import { Calendar, ChevronLeft, Clock, MapPin, Search, SignalHigh, Users } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { use, useState, type ComponentType, type SVGProps } from 'react';
+import {
+  Calendar,
+  CalendarCheck,
+  ChevronLeft,
+  Clock,
+  MapPin,
+  Search,
+  SignalHigh,
+  Users,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { use, useState, type ComponentType, type SVGProps } from "react";
 
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { OrganizadorCard } from '@/components/partidos/organizador-card';
-import { PartidoActions } from '@/components/partidos/partido-actions';
-import { PartidoPlayers } from '@/components/partidos/partido-players';
-import { LoadingScreen } from '@/components/loading-screen';
-import { EmptyState } from '@/components/ui/empty-state';
-import { usePartido } from '@/hooks/use-partido';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { deportePhotoUrl } from '@/lib/deporte-photo';
-import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
-import { cn } from '@/lib/utils';
-import { DEPORTE_LABEL, NIVEL_LABEL, type PartidoDetalle } from '@/types/partido';
+import { DEPORTE_ICON } from "@/components/partidos/deporte-icon";
+import { OrganizadorCard } from "@/components/partidos/organizador-card";
+import { PartidoActions } from "@/components/partidos/partido-actions";
+import { PartidoPlayers } from "@/components/partidos/partido-players";
+import { RatingSection } from "@/components/ratings/rating-section";
+import { LoadingScreen } from "@/components/loading-screen";
+import { EmptyState } from "@/components/ui/empty-state";
+import { usePartido } from "@/hooks/use-partido";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { deportePhotoUrl } from "@/lib/deporte-photo";
+import { formatMatchDay, formatMatchTime } from "@/lib/match-date";
+import { cn } from "@/lib/utils";
+import {
+  DEPORTE_LABEL,
+  NIVEL_LABEL,
+  type PartidoDetalle,
+} from "@/types/partido";
 
 const CHIP =
-  'rounded-full bg-glass-solid px-4 py-2 text-caption font-semibold text-white shadow-bevel backdrop-blur-chip';
+  "rounded-full bg-glass-solid px-4 py-2 text-caption font-semibold text-white shadow-bevel backdrop-blur-chip";
 
 const PLAIN_ON_DESKTOP =
-  'lg:bg-transparent lg:px-0 lg:py-0 lg:text-headline lg:font-bold lg:shadow-none lg:backdrop-blur-none';
+  "lg:bg-transparent lg:px-0 lg:py-0 lg:text-headline lg:font-bold lg:shadow-none lg:backdrop-blur-none";
 
 function MetaTile({
   icon: Icon,
@@ -41,11 +55,17 @@ function MetaTile({
       </span>
 
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-caption text-ink-46 lg:text-overline lg:uppercase">{label}</span>
+        <span className="text-caption text-ink-46 lg:text-overline lg:uppercase">
+          {label}
+        </span>
         <span className="text-callout font-bold text-white">{value}</span>
       </span>
     </div>
   );
+}
+
+function playersLabel(players: number): string {
+  return players === 1 ? "1 jugó" : `${players} jugaron`;
 }
 
 function PartidoTitle({ partido }: { partido: PartidoDetalle }) {
@@ -60,12 +80,15 @@ function PartidoTitle({ partido }: { partido: PartidoDetalle }) {
   );
 }
 
-export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]'>) {
+export default function PartidoDetallePage({
+  params,
+}: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
   const router = useRouter();
   const { partido, loading, notFound, error, reload } = usePartido(id);
   const { user } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [now] = useState(() => Date.now());
 
   if (loading) {
     return <LoadingScreen />;
@@ -76,11 +99,15 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
       <main className="flex min-h-dvh items-center justify-center px-8">
         <EmptyState
           icon={Search}
-          title={notFound ? 'No encontramos este partido' : 'No pudimos cargar el partido'}
+          title={
+            notFound
+              ? "No encontramos este partido"
+              : "No pudimos cargar el partido"
+          }
           text={
             notFound
-              ? 'Puede que se haya cancelado o que el link esté mal.'
-              : (error ?? 'Probá de nuevo en un momento.')
+              ? "Puede que se haya cancelado o que el link esté mal."
+              : (error ?? "Probá de nuevo en un momento.")
           }
           action={
             <Link
@@ -98,9 +125,10 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
   const Icon = DEPORTE_ICON[partido.deporte.nombre];
   const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
   const isOrganizer = user?.id === partido.organizador.id;
+  const played = new Date(partido.fecha).getTime() <= now;
 
   return (
-    <main className="pb-44 lg:pb-10">
+    <main className={cn("lg:pb-10", played ? "pb-10" : "pb-44")}>
       <div className="flex justify-center lg:px-8 lg:pt-6">
         <div className="grid w-full max-w-[1400px] gap-6 lg:grid-cols-[1fr_380px]">
           <div className="flex flex-col gap-6">
@@ -140,11 +168,19 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
                     {DEPORTE_LABEL[partido.deporte.nombre]}
                   </span>
 
-                  <span className={cn('flex items-center gap-2', CHIP, PLAIN_ON_DESKTOP)}>
-                    <SignalHigh className="size-4 lg:hidden" aria-hidden="true" />
+                  <span
+                    className={cn(
+                      "flex items-center gap-2",
+                      CHIP,
+                      PLAIN_ON_DESKTOP,
+                    )}
+                  >
+                    <SignalHigh
+                      className="size-4 lg:hidden"
+                      aria-hidden="true"
+                    />
                     {NIVEL_LABEL[partido.nivel]}
                   </span>
-
                 </div>
 
                 <h1 className="hidden text-display font-extrabold text-white lg:block">
@@ -162,19 +198,37 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
             </div>
 
             <div className="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-0">
-              <MetaTile icon={Calendar} label="Fecha" value={formatMatchDay(partido.fecha)} />
-              <MetaTile icon={Clock} label="Arranca" value={formatMatchTime(partido.fecha)} />
+              <MetaTile
+                icon={Calendar}
+                label="Fecha"
+                value={formatMatchDay(partido.fecha)}
+              />
+              <MetaTile
+                icon={Clock}
+                label="Hora"
+                value={formatMatchTime(partido.fecha)}
+              />
               <MetaTile
                 icon={Users}
                 label="Jugadores"
-                value={`${partido.anotados}/${partido.cupo}`}
+                value={
+                  played
+                    ? playersLabel(partido.anotados + 1)
+                    : `${partido.anotados}/${partido.cupo}`
+                }
               />
-              <MetaTile icon={SignalHigh} label="Nivel" value={NIVEL_LABEL[partido.nivel]} />
+              <MetaTile
+                icon={SignalHigh}
+                label="Nivel"
+                value={NIVEL_LABEL[partido.nivel]}
+              />
             </div>
 
             {partido.descripcion && (
               <div className="flex flex-col gap-3 px-5 lg:px-0">
-                <h2 className="text-overline text-ink-46 uppercase">Sobre el partido</h2>
+                <h2 className="text-overline text-ink-46 uppercase">
+                  Sobre el partido
+                </h2>
                 <p className="text-body text-ink-64">{partido.descripcion}</p>
               </div>
             )}
@@ -187,20 +241,48 @@ export default function PartidoDetallePage({ params }: PageProps<'/partidos/[id]
 
             <PartidoPlayers
               participantes={partido.participantes}
+              organizador={partido.organizador}
               anotados={partido.anotados}
               cupo={partido.cupo}
+              played={played}
             />
 
-            <div className="hidden lg:block">
-              <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
-            </div>
+            {played ? (
+              <div className="flex flex-col gap-4 rounded-md bg-glass p-4 shadow-bevel-lit">
+                <span className="flex items-center gap-3">
+                  <CalendarCheck
+                    className="size-5 shrink-0 text-brand"
+                    aria-hidden="true"
+                  />
+                  <span className="text-callout font-semibold text-white">
+                    Este partido ya se jugó
+                  </span>
+                </span>
+
+                <RatingSection matchId={partido.id} played={played} />
+              </div>
+            ) : (
+              <div className="hidden lg:block">
+                <PartidoActions
+                  partido={partido}
+                  isOrganizer={isOrganizer}
+                  onDone={reload}
+                />
+              </div>
+            )}
           </aside>
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
-        <PartidoActions partido={partido} isOrganizer={isOrganizer} onDone={reload} />
-      </div>
+      {!played && (
+        <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
+          <PartidoActions
+            partido={partido}
+            isOrganizer={isOrganizer}
+            onDone={reload}
+          />
+        </div>
+      )}
     </main>
   );
 }
