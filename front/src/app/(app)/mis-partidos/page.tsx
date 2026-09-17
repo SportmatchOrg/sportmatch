@@ -21,6 +21,8 @@ const LEAVE_ERROR = 'No pudimos darte de baja. Probá de nuevo.';
 
 const CANCEL_REQUEST_ERROR = 'No pudimos cancelar la solicitud. Probá de nuevo.';
 
+const POLL_INTERVAL_MS = 2_000;
+
 const EMPTY_ACTION =
   'flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-callout font-bold text-brand-ink shadow-glow transition hover:bg-brand-bright';
 
@@ -31,7 +33,9 @@ function partidoLabel(partido: Partido): string {
 }
 
 export default function MisPartidosPage() {
-  const { organizo, juego, requested, loading, error, reload } = usePartidosMios();
+  const { organizo, juego, requested, loading, error, reload } = usePartidosMios({
+    pollIntervalMs: POLL_INTERVAL_MS,
+  });
 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [toast, setToast] = useState<PageToast | null>(null);
