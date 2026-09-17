@@ -29,26 +29,6 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
 
-  create(data: CreateUserDto) {
-    return this.prisma.user.create({ data });
-  }
-
-  upsertByFirebaseUid(user: FirebaseUser) {
-    return this.prisma.user.upsert({
-      where: { firebaseUid: user.uid },
-      update: {
-        email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
-      },
-      create: {
-        firebaseUid: user.uid,
-        email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
-      },
-    });
-  }
   aggregateReceivedRatings(userId: string) {
     return this.prisma.rating.aggregate({
       where: { ratedUserId: userId },
@@ -67,6 +47,40 @@ export class UsersRepository {
         ],
       },
       select: { fecha: true },
+    });
+  }
+
+  create(data: CreateUserDto) {
+    return this.prisma.user.create({ data });
+  }
+
+  ensureExists(user: FirebaseUser) {
+    return this.prisma.user.upsert({
+      where: { firebaseUid: user.uid },
+      update: {},
+      create: {
+        firebaseUid: user.uid,
+        email: user.email,
+        nombre: user.nombre,
+        fotoUrl: user.fotoUrl,
+      },
+    });
+  }
+
+  upsertByFirebaseUid(user: FirebaseUser) {
+    return this.prisma.user.upsert({
+      where: { firebaseUid: user.uid },
+      update: {
+        email: user.email,
+        nombre: user.nombre,
+        fotoUrl: user.fotoUrl,
+      },
+      create: {
+        firebaseUid: user.uid,
+        email: user.email,
+        nombre: user.nombre,
+        fotoUrl: user.fotoUrl,
+      },
     });
   }
 

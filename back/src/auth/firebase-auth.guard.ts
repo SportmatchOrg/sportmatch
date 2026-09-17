@@ -8,11 +8,15 @@ import {
 import type { App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FIREBASE_ADMIN } from '../firebase/firebase.module';
+import { UsersService } from '../users/users.service';
 import { AuthenticatedRequest, FirebaseIdToken, FirebaseUser } from './types';
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
-  constructor(@Inject(FIREBASE_ADMIN) private readonly firebaseApp: App) {}
+  constructor(
+    @Inject(FIREBASE_ADMIN) private readonly firebaseApp: App,
+    private readonly usersService: UsersService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
@@ -22,7 +26,11 @@ export class FirebaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing bearer token');
     }
 
-    request.user = this.toFirebaseUser(await this.decodeToken(token));
+    const user = this.toFirebaseUser(await this.decodeToken(token));
+
+    await this.usersService.ensureExists(user);
+
+    request.user = user;
 
     return true;
   }
