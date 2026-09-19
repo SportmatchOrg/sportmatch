@@ -58,8 +58,8 @@ export class UsersRepository {
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        name: user.nombre,
-        photoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
     });
   }
@@ -69,14 +69,14 @@ export class UsersRepository {
       where: { firebaseUid: user.uid },
       update: {
         email: user.email,
-        name: user.nombre,
-        photoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        name: user.nombre,
-        photoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
     });
   }
