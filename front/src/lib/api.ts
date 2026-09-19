@@ -1,9 +1,13 @@
+import { signOut } from 'firebase/auth';
+
 import { requireEnv } from './env';
 import { auth } from './firebase';
 
 const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_URL');
 
 const NO_CONTENT = 204;
+const UNAUTHORIZED = 401;
+const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Volvé a iniciar sesión.';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -29,7 +33,14 @@ async function readErrorMessage(response: Response, path: string): Promise<strin
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = await auth.currentUser?.getIdToken();
+  const user = auth.currentUser;
+
+  if (!user) {
+    await signOut(auth).catch(() => undefined);
+    throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+  }
+
+  const token = await user.getIdToken();
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -39,6 +50,12 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       ...init.headers,
     },
   });
+
+  if (response.status === UNAUTHORIZED) {
+    // Token vencido, revocado o borrado: la sesión local ya no sirve (BUG-8).
+    await signOut(auth).catch(() => undefined);
+    throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+  }
 
   if (!response.ok) {
     throw new ApiError(await readErrorMessage(response, path), response.status);

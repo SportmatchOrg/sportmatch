@@ -45,7 +45,7 @@ export class FirebaseAuthGuard implements CanActivate {
 
   private async decodeToken(token: string): Promise<FirebaseIdToken> {
     try {
-      return await getAuth(this.firebaseApp).verifyIdToken(token);
+      return await getAuth(this.firebaseApp).verifyIdToken(token, true);
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
