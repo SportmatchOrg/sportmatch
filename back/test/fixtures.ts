@@ -10,16 +10,16 @@ import type { FirebaseUser } from '../src/auth/types';
 
 /** Usuario autenticado por defecto en los tests. Es el organizador. */
 export const TEST_USER: FirebaseUser = {
-  uid: 'e2e-uid-organizador',
-  email: 'organizador@e2e.test',
-  nombre: 'Organizador E2E',
+  uid: 'e2e-uid-organizer',
+  email: 'organizer@e2e.test',
+  name: 'Organizer E2E',
 };
 
 /** Segundo usuario, para los casos donde importa NO ser el organizador. */
 export const OTHER_USER: FirebaseUser = {
-  uid: 'e2e-uid-otro',
-  email: 'otro@e2e.test',
-  nombre: 'Otro E2E',
+  uid: 'e2e-uid-other',
+  email: 'other@e2e.test',
+  name: 'Other E2E',
 };
 
 export interface Baseline {
@@ -29,7 +29,7 @@ export interface Baseline {
 }
 
 /**
- * Crea el mínimo indispensable para que `POST /partidos` funcione:
+ * Crea el mínimo indispensable para que `POST /matches` funcione:
  * un Sport (FK obligatoria) y los dos usuarios (el service resuelve el
  * organizador con `findByFirebaseUid`, y tira 404 si no existe).
  */
@@ -42,7 +42,7 @@ export async function seedBaseline(prisma: PrismaService): Promise<Baseline> {
     data: {
       firebaseUid: TEST_USER.uid,
       email: TEST_USER.email,
-      name: TEST_USER.nombre,
+      name: TEST_USER.name,
     },
   });
 
@@ -50,7 +50,7 @@ export async function seedBaseline(prisma: PrismaService): Promise<Baseline> {
     data: {
       firebaseUid: OTHER_USER.uid,
       email: OTHER_USER.email,
-      name: OTHER_USER.nombre,
+      name: OTHER_USER.name,
     },
   });
 
@@ -69,8 +69,8 @@ export function futureDate(days = 7): Date {
   return date;
 }
 
-/** Payload válido de CreatePartidoDto. Los overrides pisan lo que haga falta. */
-export function partidoPayload(
+/** Payload válido de CreateMatchDto. Los overrides pisan lo que haga falta. */
+export function matchPayload(
   sportId: string,
   overrides: Record<string, unknown> = {},
 ) {
