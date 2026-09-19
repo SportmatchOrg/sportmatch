@@ -66,7 +66,7 @@ export class RatingsService {
     const match = await this.ratingsRepository.findMatchWithPlayers(matchId);
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
     if (match.date.getTime() > Date.now()) {

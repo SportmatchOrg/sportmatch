@@ -6,8 +6,8 @@ import { validateEnv } from './config/env.validation';
 import { FirebaseModule } from './firebase/firebase.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
-import { PartidosModule } from './partidos/partidos.module';
-import { DeportesModule } from './deportes/deportes.module';
+import { MatchesModule } from './matches/matches.module';
+import { SportsModule } from './sports/sports.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { RatingsModule } from './ratings/ratings.module';
 
@@ -20,8 +20,8 @@ import { RatingsModule } from './ratings/ratings.module';
     PrismaModule,
     FirebaseModule,
     UsersModule,
-    PartidosModule,
-    DeportesModule,
+    MatchesModule,
+    SportsModule,
     JoinRequestsModule,
     RatingsModule,
   ],
