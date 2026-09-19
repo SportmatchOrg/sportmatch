@@ -1,14 +1,14 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
-import { DeportesService } from './deportes.service';
+import { SportsService } from './sports.service';
 
 @UseGuards(FirebaseAuthGuard)
-@Controller('deportes')
-export class DeportesController {
-  constructor(private readonly deportesService: DeportesService) {}
+@Controller('sports')
+export class SportsController {
+  constructor(private readonly sportsService: SportsService) {}
 
   @Get()
   findAll() {
-    return this.deportesService.findAll();
+    return this.sportsService.findAll();
   }
 }

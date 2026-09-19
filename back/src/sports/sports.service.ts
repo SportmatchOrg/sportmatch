@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DeportesRepository } from './deportes.repository';
+import { SportsRepository } from './sports.repository';
 
 @Injectable()
-export class DeportesService {
-  constructor(private readonly deportesRepository: DeportesRepository) {}
+export class SportsService {
+  constructor(private readonly sportsRepository: SportsRepository) {}
 
   findAll() {
-    return this.deportesRepository.findAll();
+    return this.sportsRepository.findAll();
   }
 }

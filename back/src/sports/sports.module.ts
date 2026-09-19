@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { UsersModule } from '../users/users.module';
-import { DeportesController } from './deportes.controller';
-import { DeportesRepository } from './deportes.repository';
-import { DeportesService } from './deportes.service';
+import { SportsController } from './sports.controller';
+import { SportsRepository } from './sports.repository';
+import { SportsService } from './sports.service';
 
 @Module({
   imports: [UsersModule],
-  controllers: [DeportesController],
-  providers: [DeportesService, DeportesRepository],
-  exports: [DeportesService],
+  controllers: [SportsController],
+  providers: [SportsService, SportsRepository],
+  exports: [SportsService],
 })
-export class DeportesModule {}
+export class SportsModule {}
