@@ -28,17 +28,17 @@ export class JoinRequestsService {
       throw new NotFoundException(`Partido with id ${matchId} was not found`);
     }
 
-    if (match.organizadorId === user.id) {
+    if (match.organizerId === user.id) {
       throw new BadRequestException('The organizer cannot request to join');
     }
 
-    this.assertNotPlayed(match.fecha);
+    this.assertNotPlayed(match.date);
 
-    if (match.participantes.length > 0) {
+    if (match.participants.length > 0) {
       throw new ConflictException('You already joined this partido');
     }
 
-    if (match._count.participantes >= match.cupo) {
+    if (match._count.participants >= match.capacity) {
       throw new ConflictException('The partido is full');
     }
 
@@ -107,14 +107,14 @@ export class JoinRequestsService {
       throw new ConflictException('The join request is already resolved');
     }
 
-    this.assertNotPlayed(match.fecha);
+    this.assertNotPlayed(match.date);
 
     try {
       if (updateJoinRequestDto.status === 'REJECTED') {
         return await this.joinRequestsRepository.reject(id);
       }
 
-      if (match._count.participantes >= match.cupo) {
+      if (match._count.participants >= match.capacity) {
         throw new ConflictException('The match is full');
       }
 
@@ -149,7 +149,7 @@ export class JoinRequestsService {
       throw new NotFoundException(`Partido with id ${matchId} was not found`);
     }
 
-    if (match.organizadorId !== user.id) {
+    if (match.organizerId !== user.id) {
       throw new ForbiddenException(
         'Only the organizer can manage join requests',
       );

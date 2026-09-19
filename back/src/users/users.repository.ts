@@ -6,8 +6,8 @@ import { FirebaseUser } from '../auth/types';
 
 const PUBLIC_USER = {
   id: true,
-  nombre: true,
-  fotoUrl: true,
+  name: true,
+  photoUrl: true,
 } as const;
 
 @Injectable()
@@ -38,15 +38,12 @@ export class UsersRepository {
   }
 
   findPlayedDates(userId: string) {
-    return this.prisma.partido.findMany({
+    return this.prisma.match.findMany({
       where: {
-        fecha: { lt: new Date() },
-        OR: [
-          { organizadorId: userId },
-          { participantes: { some: { usuarioId: userId } } },
-        ],
+        date: { lt: new Date() },
+        OR: [{ organizerId: userId }, { participants: { some: { userId } } }],
       },
-      select: { fecha: true },
+      select: { date: true },
     });
   }
 
@@ -61,8 +58,8 @@ export class UsersRepository {
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.nombre,
+        photoUrl: user.fotoUrl,
       },
     });
   }
@@ -72,14 +69,14 @@ export class UsersRepository {
       where: { firebaseUid: user.uid },
       update: {
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.nombre,
+        photoUrl: user.fotoUrl,
       },
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.nombre,
+        photoUrl: user.fotoUrl,
       },
     });
   }

@@ -69,13 +69,13 @@ export class RatingsService {
       throw new NotFoundException(`Partido with id ${matchId} was not found`);
     }
 
-    if (match.fecha.getTime() > Date.now()) {
+    if (match.date.getTime() > Date.now()) {
       throw new BadRequestException('The match has not been played yet');
     }
 
     const players: PublicUser[] = [
-      match.organizador,
-      ...match.participantes.map(({ usuario }) => usuario),
+      match.organizer,
+      ...match.participants.map(({ user: participant }) => participant),
     ];
 
     if (!players.some((player) => player.id === user.id)) {

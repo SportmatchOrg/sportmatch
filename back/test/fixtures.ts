@@ -23,41 +23,41 @@ export const OTHER_USER: FirebaseUser = {
 };
 
 export interface Baseline {
-  deporteId: string;
-  organizadorId: string;
-  otroId: string;
+  sportId: string;
+  organizerId: string;
+  otherId: string;
 }
 
 /**
  * Crea el mínimo indispensable para que `POST /partidos` funcione:
- * un Deporte (FK obligatoria) y los dos usuarios (el service resuelve el
+ * un Sport (FK obligatoria) y los dos usuarios (el service resuelve el
  * organizador con `findByFirebaseUid`, y tira 404 si no existe).
  */
 export async function seedBaseline(prisma: PrismaService): Promise<Baseline> {
-  const deporte = await prisma.deporte.create({
-    data: { nombre: 'FUTBOL_E2E' },
+  const sport = await prisma.sport.create({
+    data: { name: 'FUTBOL_E2E' },
   });
 
-  const organizador = await prisma.user.create({
+  const organizer = await prisma.user.create({
     data: {
       firebaseUid: TEST_USER.uid,
       email: TEST_USER.email,
-      nombre: TEST_USER.nombre,
+      name: TEST_USER.nombre,
     },
   });
 
-  const otro = await prisma.user.create({
+  const other = await prisma.user.create({
     data: {
       firebaseUid: OTHER_USER.uid,
       email: OTHER_USER.email,
-      nombre: OTHER_USER.nombre,
+      name: OTHER_USER.nombre,
     },
   });
 
   return {
-    deporteId: deporte.id,
-    organizadorId: organizador.id,
-    otroId: otro.id,
+    sportId: sport.id,
+    organizerId: organizer.id,
+    otherId: other.id,
   };
 }
 
@@ -71,15 +71,15 @@ export function futureDate(days = 7): Date {
 
 /** Payload válido de CreatePartidoDto. Los overrides pisan lo que haga falta. */
 export function partidoPayload(
-  deporteId: string,
+  sportId: string,
   overrides: Record<string, unknown> = {},
 ) {
   return {
-    deporteId,
-    nivel: 'INTERMEDIO',
-    fecha: futureDate().toISOString(),
-    ubicacion: 'Cancha E2E',
-    cupo: 10,
+    sportId,
+    level: 'INTERMEDIATE',
+    date: futureDate().toISOString(),
+    location: 'Cancha E2E',
+    capacity: 10,
     ...overrides,
   };
 }

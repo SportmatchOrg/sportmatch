@@ -23,7 +23,7 @@ export class PartidosService {
     const partidos = await this.partidosRepository.findUpcoming(user.id);
 
     return partidos
-      .filter((partido) => partido._count.participantes < partido.cupo)
+      .filter((partido) => partido._count.participants < partido.capacity)
       .map((partido) => this.toListResponse(partido, user.id));
   }
 
@@ -74,7 +74,7 @@ export class PartidosService {
   }
 
   async create(firebaseUid: string, createPartidoDto: CreatePartidoDto) {
-    this.assertFutureDate(createPartidoDto.fecha);
+    this.assertFutureDate(createPartidoDto.date);
 
     const organizer = await this.usersService.findByFirebaseUid(firebaseUid);
 
@@ -98,18 +98,18 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partido = await this.assertIsOrganizer(user.id, id);
 
-    this.assertNotPlayed(partido.fecha);
+    this.assertNotPlayed(partido.date);
 
-    if (updatePartidoDto.fecha) {
-      this.assertFutureDate(updatePartidoDto.fecha);
+    if (updatePartidoDto.date) {
+      this.assertFutureDate(updatePartidoDto.date);
     }
 
     if (
-      updatePartidoDto.cupo !== undefined &&
-      updatePartidoDto.cupo < partido._count.participantes
+      updatePartidoDto.capacity !== undefined &&
+      updatePartidoDto.capacity < partido._count.participants
     ) {
       throw new BadRequestException(
-        `cupo cannot be lower than the ${partido._count.participantes} participants already joined`,
+        `capacity cannot be lower than the ${partido._count.participants} participants already joined`,
       );
     }
 
@@ -141,9 +141,9 @@ export class PartidosService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const partido = await this.getOrFail(partidoId, user.id);
 
-    this.assertNotPlayed(partido.fecha);
+    this.assertNotPlayed(partido.date);
 
-    if (partido.participantes.length === 0) {
+    if (partido.participants.length === 0) {
       throw new NotFoundException('You are not joined to this partido');
     }
 
@@ -168,20 +168,20 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, joinRequests, ratings, ...rest } = partido;
-    const estoyAnotado = participantes.length > 0;
+    const { _count, participants, joinRequests, ratings, ...rest } = partido;
+    const estoyAnotado = participants.length > 0;
 
     return {
       ...rest,
-      anotados: _count.participantes,
+      anotados: _count.participants,
       estoy_anotado: estoyAnotado,
       my_join_request: joinRequests[0]?.status ?? null,
       pending_requests:
-        rest.organizadorId === usuarioId ? _count.joinRequests : null,
+        rest.organizerId === usuarioId ? _count.joinRequests : null,
       rating_pending: this.toRatingPending({
-        fecha: rest.fecha,
-        isPlayer: rest.organizadorId === usuarioId || estoyAnotado,
-        participantes: _count.participantes,
+        date: rest.date,
+        isPlayer: rest.organizerId === usuarioId || estoyAnotado,
+        participants: _count.participants,
         ratings: ratings.length,
       }),
     };
@@ -191,46 +191,44 @@ export class PartidosService {
     partido: T,
     usuarioId: string,
   ) {
-    const { _count, participantes, joinRequests, ratings, ...rest } = partido;
-    const estoyAnotado = participantes.some(
-      ({ usuario }) => usuario.id === usuarioId,
-    );
+    const { _count, participants, joinRequests, ratings, ...rest } = partido;
+    const estoyAnotado = participants.some(({ user }) => user.id === usuarioId);
 
     return {
       ...rest,
-      anotados: _count.participantes,
+      anotados: _count.participants,
       estoy_anotado: estoyAnotado,
       my_join_request: joinRequests[0]?.status ?? null,
       pending_requests:
-        rest.organizadorId === usuarioId ? _count.joinRequests : null,
+        rest.organizerId === usuarioId ? _count.joinRequests : null,
       rating_pending: this.toRatingPending({
-        fecha: rest.fecha,
-        isPlayer: rest.organizadorId === usuarioId || estoyAnotado,
-        participantes: _count.participantes,
+        date: rest.date,
+        isPlayer: rest.organizerId === usuarioId || estoyAnotado,
+        participants: _count.participants,
         ratings: ratings.length,
       }),
-      participantes: participantes.map(({ usuario }) => usuario),
+      participantes: participants.map(({ user }) => user),
     };
   }
 
   private toRatingPending(input: {
-    fecha: Date;
+    date: Date;
     isPlayer: boolean;
-    participantes: number;
+    participants: number;
     ratings: number;
   }): boolean | null {
-    const played = input.fecha.getTime() <= Date.now();
+    const played = input.date.getTime() <= Date.now();
 
     if (!played || !input.isPlayer) {
       return null;
     }
 
-    return input.participantes >= 1 && input.ratings === 0;
+    return input.participants >= 1 && input.ratings === 0;
   }
 
   private assertFutureDate(fecha: Date) {
     if (fecha.getTime() <= Date.now()) {
-      throw new BadRequestException('fecha must be in the future');
+      throw new BadRequestException('date must be in the future');
     }
   }
 
@@ -243,7 +241,7 @@ export class PartidosService {
   private async assertIsOrganizer(usuarioId: string, partidoId: string) {
     const partido = await this.getOrFail(partidoId, usuarioId);
 
-    if (partido.organizadorId !== usuarioId) {
+    if (partido.organizerId !== usuarioId) {
       throw new ForbiddenException(
         'Only the organizer can modify this partido',
       );
@@ -255,7 +253,7 @@ export class PartidosService {
   private toHttpException(error: unknown, reference?: string): Error {
     return toPrismaHttpException(error, {
       P2002: 'You already joined this partido',
-      P2003: 'deporteId does not match a known sport',
+      P2003: 'sportId does not match a known sport',
       P2025: reference
         ? `Partido with id ${reference} was not found`
         : 'Partido was not found',
