@@ -27,6 +27,7 @@ export function MatchRow({ partido }: { partido: Partido }) {
   const Icon = DEPORTE_ICON[partido.deporte.nombre];
   const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
   const libres = Math.max(0, partido.cupo - partido.anotados);
+  const played = new Date(partido.fecha) < new Date();
   const deporte = DEPORTE_LABEL[partido.deporte.nombre];
 
   return (
@@ -49,9 +50,11 @@ export function MatchRow({ partido }: { partido: Partido }) {
 
         <span className="absolute inset-0 hidden bg-linear-to-t from-scrim-strong via-scrim-soft to-transparent lg:block" />
 
-        <span className="absolute top-4 right-4 hidden lg:block">
-          <SpotsBadge libres={libres} />
-        </span>
+        {!played && (
+          <span className="absolute top-4 right-4 hidden lg:block">
+            <SpotsBadge libres={libres} />
+          </span>
+        )}
 
         <span className="absolute inset-x-4 bottom-4 hidden items-center gap-2 lg:flex">
           <span className="truncate text-overline text-white uppercase">
@@ -76,9 +79,11 @@ export function MatchRow({ partido }: { partido: Partido }) {
           </span>
         </span>
 
-        <span className="lg:hidden">
-          <SpotsBadge libres={libres} />
-        </span>
+        {!played && (
+          <span className="lg:hidden">
+            <SpotsBadge libres={libres} />
+          </span>
+        )}
       </span>
     </Link>
   );
