@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { Level } from '../../generated/prisma/client';
 
-export class CreatePartidoDto {
+export class CreateMatchDto {
   @IsString()
   @IsNotEmpty()
   sportId: string;
