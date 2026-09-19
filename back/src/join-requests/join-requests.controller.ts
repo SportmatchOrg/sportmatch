@@ -17,7 +17,7 @@ import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsService } from './join-requests.service';
 
 @UseGuards(FirebaseAuthGuard)
-@Controller('partidos/:matchId/join-requests')
+@Controller('matches/:matchId/join-requests')
 export class JoinRequestsController {
   constructor(private readonly joinRequestsService: JoinRequestsService) {}
 

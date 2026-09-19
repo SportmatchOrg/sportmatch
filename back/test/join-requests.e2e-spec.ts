@@ -11,7 +11,7 @@ import {
 import {
   seedBaseline,
   futureDate,
-  partidoPayload,
+  matchPayload,
   TEST_USER,
   OTHER_USER,
   type Baseline,
@@ -36,11 +36,11 @@ describe('Join Requests (Organizer Endpoints)', () => {
     await resetDatabase(ctx.prisma);
     baseline = await seedBaseline(ctx.prisma);
     setAuthUser(TEST_USER);
-    const partidoResponse = await request(server)
-      .post('/partidos')
-      .send(partidoPayload(baseline.sportId, { capacity: 2 }))
+    const matchResponse = await request(server)
+      .post('/matches')
+      .send(matchPayload(baseline.sportId, { capacity: 2 }))
       .expect(201);
-    matchId = (partidoResponse.body as { id: string }).id;
+    matchId = (matchResponse.body as { id: string }).id;
     // Create a join request for the other user
     await ctx.prisma.joinRequest.create({
       data: {
@@ -52,19 +52,19 @@ describe('Join Requests (Organizer Endpoints)', () => {
     resetAuthUser();
   });
 
-  describe('GET /partidos/:matchId/join-requests', () => {
+  describe('GET /matches/:matchId/join-requests', () => {
     it('[AC-1] returns 200 for organizer with list containing name and photoUrl', async () => {
       setAuthUser(TEST_USER);
       const body = (
         await request(server)
-          .get(`/partidos/${matchId}/join-requests`)
+          .get(`/matches/${matchId}/join-requests`)
           .expect(200)
       ).body as Array<{
         id: string;
         user: { name: string; photoUrl: string | null };
       }>;
       expect(body.length).toBe(1);
-      expect(body[0].user.name).toBe(OTHER_USER.nombre);
+      expect(body[0].user.name).toBe(OTHER_USER.name);
       expect(body[0].user.photoUrl).toBeNull(); // because photoUrl is not set in seed
       // Ensure email and firebaseUid are not present
       expect(body[0].user).not.toHaveProperty('email');
@@ -75,15 +75,15 @@ describe('Join Requests (Organizer Endpoints)', () => {
     it('[AC-1] returns 403 for non-organizer', async () => {
       setAuthUser(OTHER_USER);
       await request(server)
-        .get(`/partidos/${matchId}/join-requests`)
+        .get(`/matches/${matchId}/join-requests`)
         .expect(403);
       resetAuthUser();
     });
     // Note: 401 test skipped due to harness limitation (guard override always sets a user)
   });
 
-  describe('PATCH /partidos/:matchId/join-requests/:id', () => {
-    it('[AC-3] accepts a join request (status: ACCEPTED) -> 200, creates participant, updates anotados', async () => {
+  describe('PATCH /matches/:matchId/join-requests/:id', () => {
+    it('[AC-3] accepts a join request (status: ACCEPTED) -> 200, creates participant, updates joinedCount', async () => {
       // Get the join request id
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
         where: { matchId: matchId, userId: baseline.otherId },
@@ -93,7 +93,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(200);
       // Check join request status updated
@@ -106,7 +106,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
         where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(participant).not.toBeNull();
-      // Check anotados increased by 1
+      // Check joinedCount increased by 1
       const match = await ctx.prisma.match.findUnique({
         where: { id: matchId },
         include: { _count: { select: { participants: true } } },
@@ -115,7 +115,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
       resetAuthUser();
     });
 
-    it('[AC-4] rejects a join request (status: REJECTED) -> 200, no participant created, anotados unchanged', async () => {
+    it('[AC-4] rejects a join request (status: REJECTED) -> 200, no participant created, joinedCount unchanged', async () => {
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
         where: { matchId: matchId, userId: baseline.otherId },
       });
@@ -124,7 +124,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'REJECTED' })
         .expect(200);
       const updatedJR = await ctx.prisma.joinRequest.findUnique({
@@ -175,7 +175,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(409);
       // Join request should still be PENDING
@@ -201,12 +201,12 @@ describe('Join Requests (Organizer Endpoints)', () => {
       setAuthUser(TEST_USER);
       // First accept
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(200);
       // Second accept on same request
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(409);
       resetAuthUser();
@@ -221,7 +221,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'PENDING' })
         .expect(400);
       resetAuthUser();
@@ -236,7 +236,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${matchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${matchId}/join-requests/${joinRequestId}`)
         .send({ status: 'INVALID_STATUS' })
         .expect(400);
       resetAuthUser();
@@ -246,7 +246,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
       setAuthUser(TEST_USER);
       await request(server)
         .patch(
-          `/partidos/${matchId}/join-requests/00000000-0000-0000-0000-000000000000`,
+          `/matches/${matchId}/join-requests/00000000-0000-0000-0000-000000000000`,
         )
         .send({ status: 'ACCEPTED' })
         .expect(404);
@@ -257,8 +257,8 @@ describe('Join Requests (Organizer Endpoints)', () => {
       // Create another match
       setAuthUser(TEST_USER);
       const otherMatchResponse = await request(server)
-        .post('/partidos')
-        .send(partidoPayload(baseline.sportId, { capacity: 10 }))
+        .post('/matches')
+        .send(matchPayload(baseline.sportId, { capacity: 10 }))
         .expect(201);
       const otherMatchId = (otherMatchResponse.body as { id: string }).id;
       resetAuthUser();
@@ -271,7 +271,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${otherMatchId}/join-requests/${joinRequestId}`)
+        .patch(`/matches/${otherMatchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(404);
       resetAuthUser();
@@ -304,35 +304,35 @@ describe('Join Requests (Organizer Endpoints)', () => {
       // Now try to accept the join request as organizer
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${match.id}/join-requests/${joinRequest.id}`)
+        .patch(`/matches/${match.id}/join-requests/${joinRequest.id}`)
         .send({ status: 'ACCEPTED' })
         .expect(400);
       resetAuthUser();
     });
   });
 
-  describe('GET /partidos/:id (pending_requests field)', () => {
-    it('[AC-7] pending_requests returns the real number for organizer', async () => {
+  describe('GET /matches/:id (pendingRequests field)', () => {
+    it('[AC-7] pendingRequests returns the real number for organizer', async () => {
       // We already have one pending join request
       setAuthUser(TEST_USER);
       const body = (
-        await request(server).get(`/partidos/${matchId}`).expect(200)
+        await request(server).get(`/matches/${matchId}`).expect(200)
       ).body as {
-        pending_requests: number | null;
+        pendingRequests: number | null;
         // ... other fields
       };
-      expect(body.pending_requests).toBe(1);
+      expect(body.pendingRequests).toBe(1);
       resetAuthUser();
     });
 
-    it('[AC-7] pending_requests returns null for non-organizer', async () => {
+    it('[AC-7] pendingRequests returns null for non-organizer', async () => {
       setAuthUser(OTHER_USER);
       const body = (
-        await request(server).get(`/partidos/${matchId}`).expect(200)
+        await request(server).get(`/matches/${matchId}`).expect(200)
       ).body as {
-        pending_requests: number | null;
+        pendingRequests: number | null;
       };
-      expect(body.pending_requests).toBeNull();
+      expect(body.pendingRequests).toBeNull();
       resetAuthUser();
     });
     // Note: 401 test skipped due to harness limitation

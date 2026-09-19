@@ -13,37 +13,37 @@ import {
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
-import { CreatePartidoDto } from './dto/create-partido.dto';
-import { UpdatePartidoDto } from './dto/update-partido.dto';
-import { PartidosService } from './partidos.service';
+import { CreateMatchDto } from './dto/create-match.dto';
+import { UpdateMatchDto } from './dto/update-match.dto';
+import { MatchesService } from './matches.service';
 
 @UseGuards(FirebaseAuthGuard)
-@Controller('partidos')
-export class PartidosController {
-  constructor(private readonly partidosService: PartidosService) {}
+@Controller('matches')
+export class MatchesController {
+  constructor(private readonly matchesService: MatchesService) {}
 
   @Post()
   create(
     @CurrentUser() user: FirebaseUser,
-    @Body() createPartidoDto: CreatePartidoDto,
+    @Body() createMatchDto: CreateMatchDto,
   ) {
-    return this.partidosService.create(user.uid, createPartidoDto);
+    return this.matchesService.create(user.uid, createMatchDto);
   }
 
-  @Delete(':id/participantes/me')
+  @Delete(':id/participants/me')
   @HttpCode(HttpStatus.NO_CONTENT)
   leave(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
-    return this.partidosService.leave(user.uid, id);
+    return this.matchesService.leave(user.uid, id);
   }
 
   @Get()
   findAll(@CurrentUser() user: FirebaseUser) {
-    return this.partidosService.findUpcoming(user.uid);
+    return this.matchesService.findUpcoming(user.uid);
   }
 
-  @Get('mios')
+  @Get('mine')
   findMine(@CurrentUser() user: FirebaseUser) {
-    return this.partidosService.findMine(user.uid);
+    return this.matchesService.findMine(user.uid);
   }
 
   @Get('played-by/:userId')
@@ -51,25 +51,25 @@ export class PartidosController {
     @CurrentUser() user: FirebaseUser,
     @Param('userId') userId: string,
   ) {
-    return this.partidosService.findPlayedByUser(user.uid, userId);
+    return this.matchesService.findPlayedByUser(user.uid, userId);
   }
 
   @Get(':id')
   findOne(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
-    return this.partidosService.findOne(user.uid, id);
+    return this.matchesService.findOne(user.uid, id);
   }
 
   @Patch(':id')
   update(
     @CurrentUser() user: FirebaseUser,
     @Param('id') id: string,
-    @Body() updatePartidoDto: UpdatePartidoDto,
+    @Body() updateMatchDto: UpdateMatchDto,
   ) {
-    return this.partidosService.update(user.uid, id, updatePartidoDto);
+    return this.matchesService.update(user.uid, id, updateMatchDto);
   }
 
   @Delete(':id')
   remove(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
-    return this.partidosService.remove(user.uid, id);
+    return this.matchesService.remove(user.uid, id);
   }
 }

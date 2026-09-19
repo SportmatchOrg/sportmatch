@@ -25,7 +25,7 @@ export class JoinRequestsService {
     );
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
     if (match.organizerId === user.id) {
@@ -35,18 +35,18 @@ export class JoinRequestsService {
     this.assertNotPlayed(match.date);
 
     if (match.participants.length > 0) {
-      throw new ConflictException('You already joined this partido');
+      throw new ConflictException('You already joined this match');
     }
 
     if (match._count.participants >= match.capacity) {
-      throw new ConflictException('The partido is full');
+      throw new ConflictException('The match is full');
     }
 
     const existingRequest =
       await this.joinRequestsRepository.findByMatchAndUser(matchId, user.id);
 
     if (existingRequest?.status === 'PENDING') {
-      throw new ConflictException('You already requested to join this partido');
+      throw new ConflictException('You already requested to join this match');
     }
 
     try {
@@ -59,7 +59,7 @@ export class JoinRequestsService {
       return await this.joinRequestsRepository.create(matchId, user.id);
     } catch (error) {
       throw toPrismaHttpException(error, {
-        P2002: 'You already requested to join this partido',
+        P2002: 'You already requested to join this match',
       });
     }
   }
@@ -134,7 +134,7 @@ export class JoinRequestsService {
 
   private assertNotPlayed(date: Date) {
     if (date.getTime() <= Date.now()) {
-      throw new BadRequestException('The partido has already been played');
+      throw new BadRequestException('The match has already been played');
     }
   }
 
@@ -146,7 +146,7 @@ export class JoinRequestsService {
     );
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
     if (match.organizerId !== user.id) {
