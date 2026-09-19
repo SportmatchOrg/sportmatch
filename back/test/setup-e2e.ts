@@ -28,7 +28,7 @@ import { TEST_USER } from './fixtures';
  * explícitas documenta el modelo y falla ruidosamente si alguien agrega una
  * entidad y se olvida de sumarla acá.
  */
-const TABLES = ['participantes', 'partidos', 'users', 'deportes'] as const;
+const TABLES = ['participants', 'matches', 'users', 'sports'] as const;
 
 /** Usuario que devuelve el guard mockeado. Mutable vía `setAuthUser`. */
 let currentUser: FirebaseUser = TEST_USER;

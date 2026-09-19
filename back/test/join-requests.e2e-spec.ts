@@ -38,14 +38,14 @@ describe('Join Requests (Organizer Endpoints)', () => {
     setAuthUser(TEST_USER);
     const partidoResponse = await request(server)
       .post('/partidos')
-      .send(partidoPayload(baseline.deporteId, { cupo: 2 }))
+      .send(partidoPayload(baseline.sportId, { capacity: 2 }))
       .expect(201);
     matchId = (partidoResponse.body as { id: string }).id;
     // Create a join request for the other user
     await ctx.prisma.joinRequest.create({
       data: {
         matchId: matchId,
-        userId: baseline.otroId,
+        userId: baseline.otherId,
         status: 'PENDING',
       },
     });
@@ -53,7 +53,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
   });
 
   describe('GET /partidos/:matchId/join-requests', () => {
-    it('[AC-1] returns 200 for organizer with list containing nombre and fotoUrl', async () => {
+    it('[AC-1] returns 200 for organizer with list containing name and photoUrl', async () => {
       setAuthUser(TEST_USER);
       const body = (
         await request(server)
@@ -61,11 +61,11 @@ describe('Join Requests (Organizer Endpoints)', () => {
           .expect(200)
       ).body as Array<{
         id: string;
-        user: { nombre: string; fotoUrl: string | null };
+        user: { name: string; photoUrl: string | null };
       }>;
       expect(body.length).toBe(1);
-      expect(body[0].user.nombre).toBe(OTHER_USER.nombre);
-      expect(body[0].user.fotoUrl).toBeNull(); // because fotoUrl is not set in seed
+      expect(body[0].user.name).toBe(OTHER_USER.nombre);
+      expect(body[0].user.photoUrl).toBeNull(); // because photoUrl is not set in seed
       // Ensure email and firebaseUid are not present
       expect(body[0].user).not.toHaveProperty('email');
       expect(body[0].user).not.toHaveProperty('firebaseUid');
@@ -86,7 +86,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
     it('[AC-3] accepts a join request (status: ACCEPTED) -> 200, creates participant, updates anotados', async () => {
       // Get the join request id
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -102,22 +102,22 @@ describe('Join Requests (Organizer Endpoints)', () => {
       });
       expect(updatedJR?.status).toBe('ACCEPTED');
       // Check participant created
-      const participant = await ctx.prisma.participante.findFirst({
-        where: { partidoId: matchId, usuarioId: baseline.otroId },
+      const participant = await ctx.prisma.participant.findFirst({
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(participant).not.toBeNull();
       // Check anotados increased by 1
-      const partido = await ctx.prisma.partido.findUnique({
+      const match = await ctx.prisma.match.findUnique({
         where: { id: matchId },
-        include: { _count: { select: { participantes: true } } },
+        include: { _count: { select: { participants: true } } },
       });
-      expect(partido?._count.participantes).toBe(1);
+      expect(match?._count.participants).toBe(1);
       resetAuthUser();
     });
 
     it('[AC-4] rejects a join request (status: REJECTED) -> 200, no participant created, anotados unchanged', async () => {
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -131,44 +131,44 @@ describe('Join Requests (Organizer Endpoints)', () => {
         where: { id: joinRequestId },
       });
       expect(updatedJR?.status).toBe('REJECTED');
-      const participant = await ctx.prisma.participante.findFirst({
-        where: { partidoId: matchId, usuarioId: baseline.otroId },
+      const participant = await ctx.prisma.participant.findFirst({
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(participant).toBeNull();
-      const partido = await ctx.prisma.partido.findUnique({
+      const match = await ctx.prisma.match.findUnique({
         where: { id: matchId },
-        include: { _count: { select: { participantes: true } } },
+        include: { _count: { select: { participants: true } } },
       });
-      expect(partido?._count.participantes).toBe(0);
+      expect(match?._count.participants).toBe(0);
       resetAuthUser();
     });
 
-    it('[AC-5] accepting when cupo is full -> 409, join request remains PENDING, no participant', async () => {
-      // Fill the cupo (2) by creating two participants
+    it('[AC-5] accepting when capacity is full -> 409, join request remains PENDING, no participant', async () => {
+      // Fill the capacity (2) by creating two participants
       const user1 = await ctx.prisma.user.create({
         data: {
           firebaseUid: 'e2e-uid-user1',
           email: 'user1@e2e.test',
-          nombre: 'User1 E2E',
+          name: 'User1 E2E',
         },
       });
       const user2 = await ctx.prisma.user.create({
         data: {
           firebaseUid: 'e2e-uid-user2',
           email: 'user2@e2e.test',
-          nombre: 'User2 E2E',
+          name: 'User2 E2E',
         },
       });
-      // Have them join the partido
-      await ctx.prisma.participante.createMany({
+      // Have them join the match
+      await ctx.prisma.participant.createMany({
         data: [
-          { partidoId: matchId, usuarioId: user1.id },
-          { partidoId: matchId, usuarioId: user2.id },
+          { matchId: matchId, userId: user1.id },
+          { matchId: matchId, userId: user2.id },
         ],
       });
-      // Now cupo is full (2 participants)
+      // Now capacity is full (2 participants)
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -184,8 +184,8 @@ describe('Join Requests (Organizer Endpoints)', () => {
       });
       expect(updatedJR?.status).toBe('PENDING');
       // No new participant
-      const participantCount = await ctx.prisma.participante.count({
-        where: { partidoId: matchId },
+      const participantCount = await ctx.prisma.participant.count({
+        where: { matchId: matchId },
       });
       expect(participantCount).toBe(2); // still the two we added
       resetAuthUser();
@@ -193,7 +193,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
     it('[AC-6] resolving twice the same request -> 409', async () => {
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -214,7 +214,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
     it('[AC-6] body with PENDING status -> 400', async () => {
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -229,7 +229,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
 
     it('[AC-6] body with invalid status -> 400', async () => {
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
@@ -256,46 +256,46 @@ describe('Join Requests (Organizer Endpoints)', () => {
     it('[AC-6] id of another match -> 404', async () => {
       // Create another match
       setAuthUser(TEST_USER);
-      const otroPartidoResponse = await request(server)
+      const otherMatchResponse = await request(server)
         .post('/partidos')
-        .send(partidoPayload(baseline.deporteId, { cupo: 10 }))
+        .send(partidoPayload(baseline.sportId, { capacity: 10 }))
         .expect(201);
-      const otroMatchId = (otroPartidoResponse.body as { id: string }).id;
+      const otherMatchId = (otherMatchResponse.body as { id: string }).id;
       resetAuthUser();
       // Use the join request from the first match
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
-        where: { matchId: matchId, userId: baseline.otroId },
+        where: { matchId: matchId, userId: baseline.otherId },
       });
       expect(joinRequest).not.toBeNull();
       const joinRequestId = joinRequest!.id;
 
       setAuthUser(TEST_USER);
       await request(server)
-        .patch(`/partidos/${otroMatchId}/join-requests/${joinRequestId}`)
+        .patch(`/partidos/${otherMatchId}/join-requests/${joinRequestId}`)
         .send({ status: 'ACCEPTED' })
         .expect(404);
       resetAuthUser();
     });
 
-    it('[AC-6] match already played (fecha in the past) -> 400', async () => {
+    it('[AC-6] match already played (date in the past) -> 400', async () => {
       // Create a match in the past directly in the database
       setAuthUser(TEST_USER);
       const pastDate = futureDate(-7); // 7 days ago
-      const match = await ctx.prisma.partido.create({
+      const match = await ctx.prisma.match.create({
         data: {
-          deporteId: baseline.deporteId,
-          nivel: 'INTERMEDIO',
-          fecha: pastDate,
-          ubicacion: 'Cancha E2E',
-          cupo: 10,
-          organizadorId: baseline.organizadorId,
+          sportId: baseline.sportId,
+          level: 'INTERMEDIATE',
+          date: pastDate,
+          location: 'Cancha E2E',
+          capacity: 10,
+          organizerId: baseline.organizerId,
         },
       });
       // Create a join request for the other user
       const joinRequest = await ctx.prisma.joinRequest.create({
         data: {
           matchId: match.id,
-          userId: baseline.otroId,
+          userId: baseline.otherId,
           status: 'PENDING',
         },
       });

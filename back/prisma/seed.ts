@@ -6,34 +6,34 @@ import { inDays } from '../src/utils/time/in-days';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const NOMBRES_DEPORTES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
+const SPORT_NAMES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
 
 async function main() {
-  const deportes = await Promise.all(
-    NOMBRES_DEPORTES.map((nombre) =>
-      prisma.deporte.upsert({
-        where: {nombre},
+  const sports = await Promise.all(
+    SPORT_NAMES.map((name) =>
+      prisma.sport.upsert({
+        where: { name },
         update: {},
-        create: {nombre},
+        create: { name },
       }),
     ),
   );
 
-  const deporteId = (nombre: string): string => {
-    const deporte = deportes.find((candidato) => candidato.nombre === nombre);
+  const sportId = (name: string): string => {
+    const sport = sports.find((candidate) => candidate.name === name);
 
-    if (!deporte) {
-      throw new Error(`Deporte ${nombre} was not seeded`);
+    if (!sport) {
+      throw new Error(`Sport ${name} was not seeded`);
     }
 
-    return deporte.id;
+    return sport.id;
   };
 
-  const seedUser = (firebaseUid: string, email: string, nombre: string) =>
+  const seedUser = (firebaseUid: string, email: string, name: string) =>
     prisma.user.upsert({
-      where: {firebaseUid},
+      where: { firebaseUid },
       update: {},
-      create: {firebaseUid, email, nombre},
+      create: { firebaseUid, email, name },
     });
 
   const [ana, luis, marta, pablo, sofia] = await Promise.all([
@@ -44,108 +44,108 @@ async function main() {
     seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
   ]);
 
-  await prisma.partido.deleteMany();
+  await prisma.match.deleteMany();
 
-  await prisma.partido.createMany({
+  await prisma.match.createMany({
     data: [
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(2, 19),
-        ubicacion: 'Parque Sur',
-        cupo: 10,
-        descripcion: 'Faltan dos para completar los equipos',
-        organizadorId: ana.id,
+        sportId: sportId('FUTBOL'),
+        level: 'INTERMEDIATE',
+        date: inDays(2, 19),
+        location: 'Parque Sur',
+        capacity: 10,
+        description: 'Faltan dos para completar los equipos',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('PADEL'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(3, 20),
-        ubicacion: 'Club Norte · Cancha 3',
-        cupo: 4,
-        organizadorId: luis.id,
+        sportId: sportId('PADEL'),
+        level: 'BEGINNER',
+        date: inDays(3, 20),
+        location: 'Club Norte · Cancha 3',
+        capacity: 4,
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('BASQUET'),
-        nivel: 'AVANZADO',
-        fecha: inDays(5, 21),
-        ubicacion: 'Polideportivo Municipal',
-        cupo: 10,
-        organizadorId: ana.id,
+        sportId: sportId('BASQUET'),
+        level: 'ADVANCED',
+        date: inDays(5, 21),
+        location: 'Polideportivo Municipal',
+        capacity: 10,
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('TENIS'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(7, 18),
-        ubicacion: 'River Courts · Cancha 2',
-        cupo: 2,
-        descripcion: 'Singles, traer pelotas',
-        organizadorId: luis.id,
+        sportId: sportId('TENIS'),
+        level: 'INTERMEDIATE',
+        date: inDays(7, 18),
+        location: 'River Courts · Cancha 2',
+        capacity: 2,
+        description: 'Singles, traer pelotas',
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('RUNNING'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(9, 8),
-        ubicacion: 'Costanera, kilómetro 0',
-        cupo: 15,
-        descripcion: 'Ritmo suave, 5 km',
-        organizadorId: ana.id,
+        sportId: sportId('RUNNING'),
+        level: 'BEGINNER',
+        date: inDays(9, 8),
+        location: 'Costanera, kilómetro 0',
+        capacity: 15,
+        description: 'Ritmo suave, 5 km',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'AVANZADO',
-        fecha: inDays(12, 22),
-        ubicacion: 'Complejo Del Este',
-        cupo: 14,
-        organizadorId: luis.id,
+        sportId: sportId('FUTBOL'),
+        level: 'ADVANCED',
+        date: inDays(12, 22),
+        location: 'Complejo Del Este',
+        capacity: 14,
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(-3, 20),
-        ubicacion: 'Parque Sur',
-        cupo: 10,
-        descripcion: 'Partido ya jugado',
-        organizadorId: ana.id,
+        sportId: sportId('FUTBOL'),
+        level: 'INTERMEDIATE',
+        date: inDays(-3, 20),
+        location: 'Parque Sur',
+        capacity: 10,
+        description: 'Partido ya jugado',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('PADEL'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(-10, 19),
-        ubicacion: 'Club Norte · Cancha 1',
-        cupo: 4,
-        organizadorId: luis.id,
+        sportId: sportId('PADEL'),
+        level: 'BEGINNER',
+        date: inDays(-10, 19),
+        location: 'Club Norte · Cancha 1',
+        capacity: 4,
+        organizerId: luis.id,
       },
     ],
   });
 
-  const createdPartidos = await prisma.partido.findMany({
-    orderBy: {fecha: 'asc'},
+  const createdMatches = await prisma.match.findMany({
+    orderBy: { date: 'asc' },
   });
 
   const now = new Date();
-  const played = createdPartidos.filter((partido) => partido.fecha < now);
-  const upcoming = createdPartidos.filter((partido) => partido.fecha >= now);
+  const played = createdMatches.filter((match) => match.date < now);
+  const upcoming = createdMatches.filter((match) => match.date >= now);
 
-  await prisma.participante.createMany({
-    data: [...played, ...upcoming.slice(0, 3)].map((partido) => ({
-      partidoId: partido.id,
-      usuarioId: partido.organizadorId === ana.id ? luis.id : ana.id,
+  await prisma.participant.createMany({
+    data: [...played, ...upcoming.slice(0, 3)].map((match) => ({
+      matchId: match.id,
+      userId: match.organizerId === ana.id ? luis.id : ana.id,
     })),
   });
 
-  await prisma.partido.create({
+  await prisma.match.create({
     data: {
-      deporteId: deporteId('FUTBOL'),
-      nivel: 'INTERMEDIO',
-      fecha: inDays(-2, 19),
-      ubicacion: 'Cancha Central',
-      cupo: 10,
-      descripcion: 'Partido jugado con cinco jugadores',
-      organizadorId: ana.id,
-      participantes: {
-        create: [luis, marta, pablo, sofia].map(({id}) => ({
-          usuarioId: id,
+      sportId: sportId('FUTBOL'),
+      level: 'INTERMEDIATE',
+      date: inDays(-2, 19),
+      location: 'Cancha Central',
+      capacity: 10,
+      description: 'Partido jugado con cinco jugadores',
+      organizerId: ana.id,
+      participants: {
+        create: [luis, marta, pablo, sofia].map(({ id }) => ({
+          userId: id,
         })),
       },
     },
@@ -157,22 +157,22 @@ async function main() {
     return;
   }
 
-  const demoUser = await prisma.user.findUnique({where: {email: demoEmail}});
+  const demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
 
   if (!demoUser) {
     return;
   }
 
-  const playedMatches = await prisma.partido.findMany({
-    where: {fecha: {lt: new Date()}, organizadorId: {not: demoUser.id}},
-    orderBy: {fecha: 'asc'},
-    select: {id: true, organizadorId: true},
+  const playedMatches = await prisma.match.findMany({
+    where: { date: { lt: new Date() }, organizerId: { not: demoUser.id } },
+    orderBy: { date: 'asc' },
+    select: { id: true, organizerId: true },
   });
 
-  await prisma.participante.createMany({
-    data: playedMatches.map(({id}) => ({
-      partidoId: id,
-      usuarioId: demoUser.id,
+  await prisma.participant.createMany({
+    data: playedMatches.map(({ id }) => ({
+      matchId: id,
+      userId: demoUser.id,
     })),
     skipDuplicates: true,
   });
@@ -187,7 +187,7 @@ async function main() {
     data: {
       matchId: ratedMatch.id,
       raterId: demoUser.id,
-      ratedUserId: ratedMatch.organizadorId,
+      ratedUserId: ratedMatch.organizerId,
       score: 5,
     },
   });

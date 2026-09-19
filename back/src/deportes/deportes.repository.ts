@@ -6,9 +6,9 @@ export class DeportesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.deporte.findMany({
-      select: { id: true, nombre: true },
-      orderBy: { nombre: 'asc' },
+    return this.prisma.sport.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
     });
   }
 }
