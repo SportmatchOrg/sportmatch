@@ -1,6 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { TextareaField } from "@/components/partidos/textarea-field";
@@ -10,15 +10,16 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { IconButton } from "@/components/ui/icon-button";
+import PeekRating from "@/components/ui/peek-rating";
 import { PillButton } from "@/components/ui/pill-button";
 import { TOAST_DURATION, Toast, type ToastTone } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/user-avatar";
 import { ApiError } from "@/lib/api";
 import { submitRatings, type RatingInput } from "@/lib/ratings";
-import { cn } from "@/lib/utils";
 import type { PublicUser } from "@/types/partido";
 
-const SCORES = [1, 2, 3, 4, 5];
+const SCORE_LABELS = ["Flojo", "Regular", "Bien", "Muy bien", "Crack"];
 const COMMENT_MAX = 280;
 const CONFLICT = 409;
 const EMPTY_ANSWER: Answer = { score: 0, comment: "" };
@@ -26,37 +27,6 @@ const EMPTY_ANSWER: Answer = { score: 0, comment: "" };
 type Answer = { score: number; comment: string };
 
 type ToastState = { message: string; tone: ToastTone };
-
-function StarPicker({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (score: number) => void;
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      {SCORES.map((score) => (
-        <button
-          key={score}
-          type="button"
-          onClick={() => onChange(score)}
-          aria-label={score === 1 ? "1 estrella" : `${score} estrellas`}
-          aria-pressed={score === value}
-          className="rounded-full p-1 outline-none transition focus-visible:ring-3 focus-visible:ring-brand/50"
-        >
-          <Star
-            className={cn(
-              "size-8 transition",
-              score <= value ? "fill-warning text-warning" : "text-ink-16",
-            )}
-            aria-hidden="true"
-          />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function RatingModal({
   matchId,
@@ -138,7 +108,20 @@ export function RatingModal({
           {target && (
             <>
               <div className="flex flex-col gap-1">
-                <DialogTitle>Calificá a tus compañeros</DialogTitle>
+                <div className="flex items-center justify-between gap-4">
+                  <DialogTitle className="min-w-0">Calificá a tus compañeros</DialogTitle>
+
+                  <IconButton
+                    label="Cerrar"
+                    variant="soft"
+                    size="sm"
+                    disabled={submitting}
+                    onClick={() => onOpenChange(false)}
+                  >
+                    <X className="size-5" aria-hidden="true" />
+                  </IconButton>
+                </div>
+
                 <DialogDescription>
                   {stepIndex + 1} de {targets.length}
                 </DialogDescription>
@@ -154,9 +137,12 @@ export function RatingModal({
                 />
                 <p className="text-subhead text-white">{target.nombre}</p>
 
-                <StarPicker
+                <PeekRating
                   value={answer.score}
                   onChange={(score) => updateAnswer({ score })}
+                  labels={SCORE_LABELS}
+                  ariaLabel={`Puntaje para ${target.nombre}`}
+                  allowClear={false}
                 />
               </div>
 

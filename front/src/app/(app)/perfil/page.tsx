@@ -47,7 +47,12 @@ export default function ProfilePage() {
         />
       </div>
 
-      <RecentMatches partidos={jugados} error={partidosError} />
+      <RecentMatches
+        partidos={jugados}
+        error={partidosError}
+        seeAllHref="/perfil/partidos"
+        emptyTitle="Todavía no jugaste ningún partido"
+      />
     </main>
   );
 }
