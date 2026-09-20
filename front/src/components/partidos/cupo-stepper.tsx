@@ -4,22 +4,22 @@ import { Minus, Plus } from 'lucide-react';
 
 import { FieldError } from '@/components/partidos/field-error';
 import { IconButton } from '@/components/ui/icon-button';
-import { CUPO_DEFAULT, CUPO_MAX, CUPO_MIN } from '@/types/partido';
+import { CAPACITY_DEFAULT, CAPACITY_MAX, CAPACITY_MIN } from '@/types/match';
 
 const ERROR_ID = 'error-cupo';
 
 type CupoStepperProps = {
   value: string;
-  onChange: (cupo: string) => void;
+  onChange: (capacity: string) => void;
   error?: string;
 };
 
 export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
   const parsed = Number(value);
-  const cupo = Number.isInteger(parsed) && parsed > 0 ? parsed : CUPO_DEFAULT;
+  const capacity = Number.isInteger(parsed) && parsed > 0 ? parsed : CAPACITY_DEFAULT;
 
   function shift(delta: number) {
-    onChange(String(Math.min(CUPO_MAX, Math.max(CUPO_MIN, cupo + delta))));
+    onChange(String(Math.min(CAPACITY_MAX, Math.max(CAPACITY_MIN, capacity + delta))));
   }
 
   return (
@@ -33,7 +33,7 @@ export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
           <IconButton
             label="Quitar un jugador"
             variant="soft"
-            disabled={cupo <= CUPO_MIN}
+            disabled={capacity <= CAPACITY_MIN}
             onClick={() => shift(-1)}
           >
             <Minus className="size-5" aria-hidden="true" />
@@ -44,13 +44,13 @@ export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
             aria-describedby={error ? ERROR_ID : undefined}
             className="w-12 text-center text-[30px] font-bold tabular-nums text-white"
           >
-            {cupo}
+            {capacity}
           </span>
 
           <IconButton
             label="Sumar un jugador"
             variant="brand"
-            disabled={cupo >= CUPO_MAX}
+            disabled={capacity >= CAPACITY_MAX}
             onClick={() => shift(1)}
           >
             <Plus className="size-5" aria-hidden="true" />

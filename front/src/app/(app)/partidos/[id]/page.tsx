@@ -22,16 +22,16 @@ import { PartidoPlayers } from "@/components/partidos/partido-players";
 import { RatingSection } from "@/components/ratings/rating-section";
 import { LoadingScreen } from "@/components/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
-import { usePartido } from "@/hooks/use-partido";
+import { useMatch } from "@/hooks/use-match";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { deportePhotoUrl } from "@/lib/deporte-photo";
+import { sportPhotoUrl } from "@/lib/sport-photo";
 import { formatMatchDay, formatMatchTime } from "@/lib/match-date";
 import { cn } from "@/lib/utils";
 import {
-  DEPORTE_LABEL,
-  NIVEL_LABEL,
-  type PartidoDetalle,
-} from "@/types/partido";
+  SPORT_LABEL,
+  LEVEL_LABEL,
+  type MatchDetail,
+} from "@/types/match";
 
 const CHIP =
   "rounded-full bg-glass-solid px-4 py-2 text-caption font-semibold text-white shadow-bevel backdrop-blur-chip";
@@ -68,13 +68,13 @@ function playersLabel(players: number): string {
   return players === 1 ? "1 jugó" : `${players} jugaron`;
 }
 
-function PartidoTitle({ partido }: { partido: PartidoDetalle }) {
+function PartidoTitle({ match }: { match: MatchDetail }) {
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-title font-bold text-white">{partido.ubicacion}</h1>
+      <h1 className="text-title font-bold text-white">{match.location}</h1>
       <span className="flex items-center gap-2 text-callout text-ink-64">
         <MapPin className="size-4" aria-hidden="true" />
-        {DEPORTE_LABEL[partido.deporte.nombre]} · {NIVEL_LABEL[partido.nivel]}
+        {SPORT_LABEL[match.sport.name]} · {LEVEL_LABEL[match.level]}
       </span>
     </div>
   );
@@ -85,7 +85,7 @@ export default function PartidoDetallePage({
 }: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
   const router = useRouter();
-  const { partido, loading, notFound, error, reload } = usePartido(id);
+  const { match, loading, notFound, error, reload } = useMatch(id);
   const { user } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [now] = useState(() => Date.now());
@@ -94,7 +94,7 @@ export default function PartidoDetallePage({
     return <LoadingScreen />;
   }
 
-  if (notFound || !partido) {
+  if (notFound || !match) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-8">
         <EmptyState
@@ -122,10 +122,10 @@ export default function PartidoDetallePage({
     );
   }
 
-  const Icon = DEPORTE_ICON[partido.deporte.nombre];
-  const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
-  const isOrganizer = user?.id === partido.organizador.id;
-  const played = new Date(partido.fecha).getTime() <= now;
+  const Icon = DEPORTE_ICON[match.sport.name];
+  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const isOrganizer = user?.id === match.organizer.id;
+  const played = new Date(match.date).getTime() <= now;
 
   return (
     <main className={cn("lg:pb-10", played ? "pb-10" : "pb-44")}>
@@ -165,7 +165,7 @@ export default function PartidoDetallePage({
               <div className="absolute inset-x-5 bottom-5 flex flex-col gap-4 lg:inset-x-8 lg:bottom-8">
                 <div className="flex flex-wrap items-center gap-3 lg:gap-6">
                   <span className={cn(CHIP, PLAIN_ON_DESKTOP)}>
-                    {DEPORTE_LABEL[partido.deporte.nombre]}
+                    {SPORT_LABEL[match.sport.name]}
                   </span>
 
                   <span
@@ -179,71 +179,71 @@ export default function PartidoDetallePage({
                       className="size-4 lg:hidden"
                       aria-hidden="true"
                     />
-                    {NIVEL_LABEL[partido.nivel]}
+                    {LEVEL_LABEL[match.level]}
                   </span>
                 </div>
 
                 <h1 className="hidden text-display font-extrabold text-white lg:block">
-                  {partido.ubicacion}
+                  {match.location}
                 </h1>
               </div>
             </div>
 
             <div className="px-5 lg:hidden">
-              <PartidoTitle partido={partido} />
+              <PartidoTitle match={match} />
             </div>
 
             <div className="px-5 lg:hidden">
-              <OrganizadorCard organizador={partido.organizador} />
+              <OrganizadorCard organizer={match.organizer} />
             </div>
 
             <div className="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-0">
               <MetaTile
                 icon={Calendar}
                 label="Fecha"
-                value={formatMatchDay(partido.fecha)}
+                value={formatMatchDay(match.date)}
               />
               <MetaTile
                 icon={Clock}
                 label="Hora"
-                value={formatMatchTime(partido.fecha)}
+                value={formatMatchTime(match.date)}
               />
               <MetaTile
                 icon={Users}
                 label="Jugadores"
                 value={
                   played
-                    ? playersLabel(partido.anotados + 1)
-                    : `${partido.anotados}/${partido.cupo}`
+                    ? playersLabel(match.joinedCount + 1)
+                    : `${match.joinedCount}/${match.capacity}`
                 }
               />
               <MetaTile
                 icon={SignalHigh}
                 label="Nivel"
-                value={NIVEL_LABEL[partido.nivel]}
+                value={LEVEL_LABEL[match.level]}
               />
             </div>
 
-            {partido.descripcion && (
+            {match.description && (
               <div className="flex flex-col gap-3 px-5 lg:px-0">
                 <h2 className="text-overline text-ink-46 uppercase">
                   Sobre el partido
                 </h2>
-                <p className="text-body text-ink-64">{partido.descripcion}</p>
+                <p className="text-body text-ink-64">{match.description}</p>
               </div>
             )}
           </div>
 
           <aside className="flex flex-col gap-4 px-5 lg:px-0">
             <div className="hidden lg:block">
-              <OrganizadorCard organizador={partido.organizador} />
+              <OrganizadorCard organizer={match.organizer} />
             </div>
 
             <PartidoPlayers
-              participantes={partido.participantes}
-              organizador={partido.organizador}
-              anotados={partido.anotados}
-              cupo={partido.cupo}
+              participants={match.participants}
+              organizer={match.organizer}
+              joinedCount={match.joinedCount}
+              capacity={match.capacity}
               played={played}
             />
 
@@ -259,12 +259,12 @@ export default function PartidoDetallePage({
                   </span>
                 </span>
 
-                <RatingSection matchId={partido.id} played={played} />
+                <RatingSection matchId={match.id} played={played} />
               </div>
             ) : (
               <div className="hidden lg:block">
                 <PartidoActions
-                  partido={partido}
+                  match={match}
                   isOrganizer={isOrganizer}
                   onDone={reload}
                 />
@@ -277,7 +277,7 @@ export default function PartidoDetallePage({
       {!played && (
         <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
           <PartidoActions
-            partido={partido}
+            match={match}
             isOrganizer={isOrganizer}
             onDone={reload}
           />

@@ -17,7 +17,7 @@ import { TOAST_DURATION, Toast, type ToastTone } from "@/components/ui/toast";
 import { UserAvatar } from "@/components/user-avatar";
 import { ApiError } from "@/lib/api";
 import { submitRatings, type RatingInput } from "@/lib/ratings";
-import type { PublicUser } from "@/types/partido";
+import type { PublicUser } from "@/types/match";
 
 const SCORE_LABELS = ["Flojo", "Regular", "Bien", "Muy bien", "Crack"];
 const COMMENT_MAX = 280;
@@ -129,19 +129,19 @@ export function RatingModal({
 
               <div className="flex flex-col items-center gap-4">
                 <UserAvatar
-                  name={target.nombre}
-                  photoUrl={target.fotoUrl}
+                  name={target.name}
+                  photoUrl={target.photoUrl}
                   sizes="88px"
                   className="size-22"
                   initialsClassName="text-title"
                 />
-                <p className="text-subhead text-white">{target.nombre}</p>
+                <p className="text-subhead text-white">{target.name}</p>
 
                 <PeekRating
                   value={answer.score}
                   onChange={(score) => updateAnswer({ score })}
                   labels={SCORE_LABELS}
-                  ariaLabel={`Puntaje para ${target.nombre}`}
+                  ariaLabel={`Puntaje para ${target.name}`}
                   allowClear={false}
                 />
               </div>

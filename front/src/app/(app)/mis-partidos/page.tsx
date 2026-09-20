@@ -10,10 +10,10 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
-import { usePartidosMios } from '@/hooks/use-partidos-mios';
+import { useMyMatches } from '@/hooks/use-my-matches';
 import { NEW_MATCH_HREF } from '@/lib/nav-items';
-import { cancelJoinRequest, cancelPartido, leavePartido } from '@/lib/partidos';
-import { DEPORTE_LABEL, type Partido } from '@/types/partido';
+import { cancelJoinRequest, cancelMatch, leaveMatch } from '@/lib/matches';
+import { SPORT_LABEL, type Match } from '@/types/match';
 
 const CANCEL_ERROR = 'No pudimos cancelar el partido. Probá de nuevo.';
 
@@ -28,12 +28,12 @@ const EMPTY_ACTION =
 
 type PageToast = { message: string; tone: ToastTone };
 
-function partidoLabel(partido: Partido): string {
-  return `${DEPORTE_LABEL[partido.deporte.nombre]} · ${partido.ubicacion}`;
+function matchLabel(match: Match): string {
+  return `${SPORT_LABEL[match.sport.name]} · ${match.location}`;
 }
 
 export default function MisPartidosPage() {
-  const { organizo, juego, requested, loading, error, reload } = usePartidosMios({
+  const { organizing, playing, requested, loading, error, reload } = useMyMatches({
     pollIntervalMs: POLL_INTERVAL_MS,
   });
 
@@ -49,17 +49,17 @@ export default function MisPartidosPage() {
   }, [toast]);
 
   async function run(
-    partido: Partido,
+    match: Match,
     action: (partidoId: string) => Promise<void>,
     success: PageToast,
     failure: string
   ) {
     if (pendingId) return;
 
-    setPendingId(partido.id);
+    setPendingId(match.id);
 
     try {
-      await action(partido.id);
+      await action(match.id);
       setToast(success);
       reload();
     } catch {
@@ -82,7 +82,7 @@ export default function MisPartidosPage() {
     );
   }
 
-  const sinPartidos = organizo.length === 0 && juego.length === 0 && requested.length === 0;
+  const sinPartidos = organizing.length === 0 && playing.length === 0 && requested.length === 0;
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-5 py-8 lg:px-8">
@@ -92,7 +92,7 @@ export default function MisPartidosPage() {
 
         {!sinPartidos && (
           <p className="text-callout text-ink-46 lg:hidden">
-            {organizo.length} organizando · {juego.length} anotado · {requested.length} esperando
+            {organizing.length} organizando · {playing.length} anotado · {requested.length} esperando
           </p>
         )}
       </header>
@@ -116,7 +116,7 @@ export default function MisPartidosPage() {
           <MisPartidosSection
             title="Organizás"
             subtitle="Aprobá quién se suma a los partidos que creaste"
-            partidos={organizo}
+            matches={organizing}
             role="host"
             empty={
               <EmptyState
@@ -131,19 +131,19 @@ export default function MisPartidosPage() {
                 }
               />
             }
-            renderPanel={(partido) => (
+            renderPanel={(match) => (
               <JoinRequestsPanel
-                partidoId={partido.id}
-                cupo={partido.cupo}
-                anotados={partido.anotados}
+                partidoId={match.id}
+                capacity={match.capacity}
+                joinedCount={match.joinedCount}
                 isOrganizer
                 onResolved={reload}
               />
             )}
-            renderAction={(partido) => (
+            renderAction={(match) => (
               <div className="flex items-center gap-3">
                 <Link
-                  href={`/partidos/${partido.id}/editar`}
+                  href={`/partidos/${match.id}/editar`}
                   className="shrink-0 text-callout font-semibold text-brand transition hover:text-brand-bright"
                 >
                   Editar
@@ -156,12 +156,12 @@ export default function MisPartidosPage() {
                   cancelLabel="Volver"
                   confirmLabel="Sí, cancelar"
                   pendingLabel="Cancelando…"
-                  pending={pendingId === partido.id}
+                  pending={pendingId === match.id}
                   onConfirm={() =>
                     void run(
-                      partido,
-                      cancelPartido,
-                      { message: `Partido cancelado · ${partidoLabel(partido)}`, tone: 'danger' },
+                      match,
+                      cancelMatch,
+                      { message: `Partido cancelado · ${matchLabel(match)}`, tone: 'danger' },
                       CANCEL_ERROR
                     )
                   }
@@ -173,7 +173,7 @@ export default function MisPartidosPage() {
           <MisPartidosSection
             title="Jugás"
             subtitle="Partidos a los que te sumaste"
-            partidos={juego}
+            matches={playing}
             role="player"
             empty={
               <EmptyState
@@ -188,19 +188,19 @@ export default function MisPartidosPage() {
                 }
               />
             }
-            renderAction={(partido) => (
+            renderAction={(match) => (
               <ConfirmAction
                 label="Cancelar mi lugar"
                 message="Se libera tu lugar para que lo tome otra persona."
                 cancelLabel="Mejor no"
                 confirmLabel="Salirme"
                 pendingLabel="Saliendo…"
-                pending={pendingId === partido.id}
+                pending={pendingId === match.id}
                 onConfirm={() =>
                   void run(
-                    partido,
-                    leavePartido,
-                    { message: `Te bajaste · ${partidoLabel(partido)}`, tone: 'info' },
+                    match,
+                    leaveMatch,
+                    { message: `Te bajaste · ${matchLabel(match)}`, tone: 'info' },
                     LEAVE_ERROR
                   )
                 }
@@ -213,23 +213,23 @@ export default function MisPartidosPage() {
               <MisPartidosSection
                 title="Esperando respuesta"
                 subtitle="El organizador todavía no te respondió"
-                partidos={requested}
+                matches={requested}
                 role="player"
                 empty={null}
-                renderAction={(partido) => (
+                renderAction={(match) => (
                   <ConfirmAction
                     label="Cancelar solicitud"
                     message="Se cancela tu solicitud para sumarte al partido."
                     cancelLabel="Mejor no"
                     confirmLabel="Cancelar solicitud"
                     pendingLabel="Cancelando…"
-                    pending={pendingId === partido.id}
+                    pending={pendingId === match.id}
                     onConfirm={() =>
                       void run(
-                        partido,
+                        match,
                         cancelJoinRequest,
                         {
-                          message: `Cancelaste tu solicitud · ${partidoLabel(partido)}`,
+                          message: `Cancelaste tu solicitud · ${matchLabel(match)}`,
                           tone: 'info',
                         },
                         CANCEL_REQUEST_ERROR

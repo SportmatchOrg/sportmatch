@@ -2,7 +2,7 @@
 
 import { FieldError } from '@/components/partidos/field-error';
 import { cn } from '@/lib/utils';
-import { NIVELES, NIVEL_LABEL, type Nivel } from '@/types/partido';
+import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
 
 const TRACK = 'flex gap-1 rounded-full bg-glass p-1 shadow-bevel';
 
@@ -17,8 +17,8 @@ const ERROR_ID = 'error-nivel';
 const LABEL_ID = 'label-nivel';
 
 type NivelPickerProps = {
-  value: Nivel | '';
-  onChange: (nivel: Nivel) => void;
+  value: Level | '';
+  onChange: (level: Level) => void;
   error?: string;
 };
 
@@ -30,19 +30,19 @@ export function NivelPicker({ value, onChange, error }: NivelPickerProps) {
       </span>
 
       <div className={TRACK}>
-        {NIVELES.map((nivel) => {
-          const selected = value === nivel;
+        {LEVELS.map((level) => {
+          const selected = value === level;
 
           return (
             <button
-              key={nivel}
+              key={level}
               type="button"
-              onClick={() => onChange(nivel)}
+              onClick={() => onChange(level)}
               aria-pressed={selected}
               aria-describedby={error ? ERROR_ID : undefined}
               className={cn(OPTION, selected ? OPTION_SELECTED : OPTION_IDLE)}
             >
-              {NIVEL_LABEL[nivel]}
+              {LEVEL_LABEL[level]}
             </button>
           );
         })}

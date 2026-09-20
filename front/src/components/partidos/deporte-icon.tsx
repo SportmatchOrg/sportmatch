@@ -7,11 +7,11 @@ import {
   RunningIcon,
   TenisIcon,
 } from '@/components/partidos/sport-icons';
-import type { DeporteNombre } from '@/types/partido';
+import type { SportName } from '@/types/match';
 
 export type SportIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-export const DEPORTE_ICON: Record<DeporteNombre, SportIcon> = {
+export const DEPORTE_ICON: Record<SportName, SportIcon> = {
   FUTBOL: FutbolIcon,
   BASQUET: BasquetIcon,
   TENIS: TenisIcon,

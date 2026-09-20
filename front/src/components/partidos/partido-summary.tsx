@@ -6,10 +6,10 @@ import { useState, type ComponentType, type SVGProps } from 'react';
 
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
 import { UserAvatar } from '@/components/user-avatar';
-import { deportePhotoUrl } from '@/lib/deporte-photo';
+import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
-import type { PartidoForm } from '@/lib/partido-form';
-import { DEPORTE_LABEL, NIVEL_LABEL, type Deporte } from '@/types/partido';
+import type { MatchForm } from '@/lib/match-form';
+import { SPORT_LABEL, LEVEL_LABEL, type Sport } from '@/types/match';
 
 const CHIP =
   'w-fit rounded-full bg-glass-solid px-3 py-1 text-caption font-semibold text-white shadow-bevel backdrop-blur-chip';
@@ -37,24 +37,24 @@ function SummaryRow({
   );
 }
 
-type Anfitrion = {
-  nombre: string;
-  fotoUrl: string | null;
+type Host = {
+  name: string;
+  photoUrl: string | null;
 };
 
 type PartidoSummaryProps = {
-  form: PartidoForm;
-  deporte?: Deporte;
-  organizador: Anfitrion | null;
+  form: MatchForm;
+  sport?: Sport;
+  organizer: Host | null;
 };
 
-export function PartidoSummary({ form, deporte, organizador }: PartidoSummaryProps) {
+export function PartidoSummary({ form, sport, organizer }: PartidoSummaryProps) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  const photo = deporte ? deportePhotoUrl(deporte.nombre, form.ubicacion) : null;
-  const Icon = deporte ? DEPORTE_ICON[deporte.nombre] : null;
-  const deporteLabel = deporte ? DEPORTE_LABEL[deporte.nombre] : '—';
-  const nivelLabel = form.nivel ? NIVEL_LABEL[form.nivel] : '—';
+  const photo = sport ? sportPhotoUrl(sport.name, form.location) : null;
+  const Icon = sport ? DEPORTE_ICON[sport.name] : null;
+  const deporteLabel = sport ? SPORT_LABEL[sport.name] : '—';
+  const nivelLabel = form.level ? LEVEL_LABEL[form.level] : '—';
 
   return (
     <section className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4">
@@ -82,29 +82,29 @@ export function PartidoSummary({ form, deporte, organizador }: PartidoSummaryPro
           <span className={CHIP}>{deporteLabel}</span>
 
           <h2 className="text-headline font-bold text-white">
-            {form.titulo.trim() || `${deporteLabel} · ${nivelLabel}`}
+            {form.title.trim() || `${deporteLabel} · ${nivelLabel}`}
           </h2>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        {form.titulo.trim() && <SummaryRow icon={Type} label="Título" value={form.titulo} />}
+        {form.title.trim() && <SummaryRow icon={Type} label="Título" value={form.title} />}
 
-        <SummaryRow icon={MapPin} label="Lugar" value={form.ubicacion} />
+        <SummaryRow icon={MapPin} label="Lugar" value={form.location} />
 
         <SummaryRow
           icon={Calendar}
           label="Cuándo"
-          value={form.fecha ? `${formatMatchDay(form.fecha)} · ${formatMatchTime(form.fecha)}` : '—'}
+          value={form.date ? `${formatMatchDay(form.date)} · ${formatMatchTime(form.date)}` : '—'}
         />
 
-        <SummaryRow icon={Users} label="Jugadores" value={`${form.cupo} · ${nivelLabel}`} />
+        <SummaryRow icon={Users} label="Jugadores" value={`${form.capacity} · ${nivelLabel}`} />
 
         <div className={ROW}>
-          {organizador && (
+          {organizer && (
             <UserAvatar
-              name={organizador.nombre}
-              photoUrl={organizador.fotoUrl}
+              name={organizer.name}
+              photoUrl={organizer.photoUrl}
               sizes="40px"
               className="size-10"
               initialsClassName="text-caption"
@@ -114,7 +114,7 @@ export function PartidoSummary({ form, deporte, organizador }: PartidoSummaryPro
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="text-overline text-ink-46 uppercase">Anfitrión</span>
             <span className="truncate text-callout font-bold text-white">
-              {organizador ? `Vos · ${organizador.nombre}` : '—'}
+              {organizer ? `Vos · ${organizer.name}` : '—'}
             </span>
           </span>
         </div>

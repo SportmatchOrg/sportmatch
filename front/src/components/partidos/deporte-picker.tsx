@@ -3,7 +3,7 @@
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
 import { FieldError } from '@/components/partidos/field-error';
 import { cn } from '@/lib/utils';
-import { DEPORTE_LABEL, type Deporte } from '@/types/partido';
+import { SPORT_LABEL, type Sport } from '@/types/match';
 
 const OPTION_BASE =
   'flex items-center gap-3 rounded-[20px] px-4 py-[18px] text-left text-[16.5px] font-bold tracking-[-0.34px] transition';
@@ -14,7 +14,7 @@ const OPTION_IDLE =
   'bg-glass text-white shadow-bevel hover:bg-glass-strong';
 
 type DeportePickerProps = {
-  deportes: Deporte[];
+  sports: Sport[];
   loading: boolean;
   loadError: string | null;
   value: string;
@@ -25,7 +25,7 @@ type DeportePickerProps = {
 const ERROR_ID = 'error-deporte';
 
 export function DeportePicker({
-  deportes,
+  sports,
   loading,
   loadError,
   value,
@@ -46,21 +46,21 @@ export function DeportePicker({
 
       {!loading && !loadError && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {deportes.map((deporte) => {
-            const Icon = DEPORTE_ICON[deporte.nombre];
-            const selected = value === deporte.id;
+          {sports.map((sport) => {
+            const Icon = DEPORTE_ICON[sport.name];
+            const selected = value === sport.id;
 
             return (
               <button
-                key={deporte.id}
+                key={sport.id}
                 type="button"
-                onClick={() => onChange(deporte.id)}
+                onClick={() => onChange(sport.id)}
                 aria-pressed={selected}
                 aria-describedby={error ? ERROR_ID : undefined}
                 className={cn(OPTION_BASE, selected ? OPTION_SELECTED : OPTION_IDLE)}
               >
                 <Icon className="size-[22px] shrink-0" aria-hidden="true" />
-                {DEPORTE_LABEL[deporte.nombre]}
+                {SPORT_LABEL[sport.name]}
               </button>
             );
           })}

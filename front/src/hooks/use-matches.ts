@@ -3,34 +3,34 @@
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth-context';
-import { fetchPartidos } from '@/lib/partidos';
-import type { Partido } from '@/types/partido';
+import { fetchMatches } from '@/lib/matches';
+import type { Match } from '@/types/match';
 
-type PartidosState = {
-  partidos: Partido[];
+type MatchesState = {
+  matches: Match[];
   loading: boolean;
   error: string | null;
 };
 
 const ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un momento.';
 
-const INITIAL_STATE: PartidosState = { partidos: [], loading: true, error: null };
+const INITIAL_STATE: MatchesState = { matches: [], loading: true, error: null };
 
-export function usePartidos(): PartidosState {
+export function useMatches(): MatchesState {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<PartidosState>(INITIAL_STATE);
+  const [state, setState] = useState<MatchesState>(INITIAL_STATE);
 
   useEffect(() => {
     if (sessionLoading || !firebaseUser) return;
 
     let active = true;
 
-    fetchPartidos()
-      .then((partidos) => {
-        if (active) setState({ partidos, loading: false, error: null });
+    fetchMatches()
+      .then((matches) => {
+        if (active) setState({ matches, loading: false, error: null });
       })
       .catch(() => {
-        if (active) setState({ partidos: [], loading: false, error: ERROR_MESSAGE });
+        if (active) setState({ matches: [], loading: false, error: ERROR_MESSAGE });
       });
 
     return () => {

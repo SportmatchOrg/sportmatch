@@ -14,28 +14,28 @@ import { TextareaField } from '@/components/partidos/textarea-field';
 import { WizardShell } from '@/components/partidos/wizard-shell';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { useDeportes } from '@/hooks/use-deportes';
-import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/partido-wizard';
+import { useSports } from '@/hooks/use-sports';
+import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
 import {
-  validatePartidoForm,
-  type PartidoForm,
-  type PartidoFormErrors,
-} from '@/lib/partido-form';
+  validateMatchForm,
+  type MatchForm,
+  type MatchFormErrors,
+} from '@/lib/match-form';
 import {
-  DESCRIPCION_MAX,
-  TITULO_MAX,
-  UBICACION_MAX,
-  type Deporte,
-  type Nivel,
-} from '@/types/partido';
+  DESCRIPTION_MAX,
+  TITLE_MAX,
+  LOCATION_MAX,
+  type Sport,
+  type Level,
+} from '@/types/match';
 
 type WizardToast = { message: string; tone: ToastTone };
 
 type PartidoWizardProps = {
   mode: 'create' | 'edit';
-  initialForm: PartidoForm;
-  submit: (form: PartidoForm) => Promise<unknown>;
-  toastMessage: (form: PartidoForm, deporte?: Deporte) => string;
+  initialForm: MatchForm;
+  submit: (form: MatchForm) => Promise<unknown>;
+  toastMessage: (form: MatchForm, sport?: Sport) => string;
   errorMessage: (error: unknown) => string;
   doneHref: string;
 };
@@ -49,11 +49,11 @@ export function PartidoWizard({
   doneHref,
 }: PartidoWizardProps) {
   const router = useRouter();
-  const { deportes, loading: deportesLoading, error: deportesError } = useDeportes();
+  const { sports, loading: deportesLoading, error: deportesError } = useSports();
   const { user } = useCurrentUser();
-  const [form, setForm] = useState<PartidoForm>(initialForm);
+  const [form, setForm] = useState<MatchForm>(initialForm);
   const [step, setStep] = useState(0);
-  const [errors, setErrors] = useState<PartidoFormErrors>({});
+  const [errors, setErrors] = useState<MatchFormErrors>({});
   const [toast, setToast] = useState<WizardToast | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,15 +71,15 @@ export function PartidoWizard({
     };
   }, []);
 
-  const deporte = deportes.find((candidate) => candidate.id === form.deporteId);
+  const sport = sports.find((candidate) => candidate.id === form.sportId);
 
-  function setField<K extends keyof PartidoForm>(key: K, value: PartidoForm[K]) {
+  function setField<K extends keyof MatchForm>(key: K, value: MatchForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
     setErrors((current) => ({ ...current, [key]: undefined }));
   }
 
   async function save() {
-    const found = validatePartidoForm(form);
+    const found = validateMatchForm(form);
 
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -91,7 +91,7 @@ export function PartidoWizard({
 
     try {
       await submit(form);
-      setToast({ message: toastMessage(form, deporte), tone: 'success' });
+      setToast({ message: toastMessage(form, sport), tone: 'success' });
       redirectTimer.current = setTimeout(() => router.replace(doneHref), TOAST_DURATION);
     } catch (caught) {
       setToast({ message: errorMessage(caught), tone: 'danger' });
@@ -102,7 +102,7 @@ export function PartidoWizard({
   function handleContinue() {
     if (submitting) return;
 
-    const found = stepErrors(validatePartidoForm(form), step);
+    const found = stepErrors(validateMatchForm(form), step);
     setErrors(found);
 
     if (Object.keys(found).length > 0) return;
@@ -138,12 +138,12 @@ export function PartidoWizard({
       >
         {step === 0 && (
           <DeportePicker
-            deportes={deportes}
+            sports={sports}
             loading={deportesLoading}
             loadError={deportesError}
-            value={form.deporteId}
-            onChange={(deporteId) => setField('deporteId', deporteId)}
-            error={errors.deporteId}
+            value={form.sportId}
+            onChange={(sportId) => setField('sportId', sportId)}
+            error={errors.sportId}
           />
         )}
 
@@ -159,10 +159,10 @@ export function PartidoWizard({
               label="Lugar"
               hideLabel
               placeholder="Buscá una cancha o dirección"
-              maxLength={UBICACION_MAX}
-              value={form.ubicacion}
-              onChange={(event) => setField('ubicacion', event.target.value)}
-              error={errors.ubicacion}
+              maxLength={LOCATION_MAX}
+              value={form.location}
+              onChange={(event) => setField('location', event.target.value)}
+              error={errors.location}
               className="pl-11"
             />
           </div>
@@ -170,50 +170,50 @@ export function PartidoWizard({
 
         {step === 2 && (
           <HorarioPicker
-            value={form.fecha}
-            onChange={(fecha) => setField('fecha', fecha)}
-            error={errors.fecha}
+            value={form.date}
+            onChange={(date) => setField('date', date)}
+            error={errors.date}
           />
         )}
 
         {step === 3 && (
           <div className="flex flex-col gap-6">
             <CupoStepper
-              value={form.cupo}
-              onChange={(cupo) => setField('cupo', cupo)}
-              error={errors.cupo}
+              value={form.capacity}
+              onChange={(capacity) => setField('capacity', capacity)}
+              error={errors.capacity}
             />
 
             <NivelPicker
-              value={form.nivel}
-              onChange={(nivel: Nivel) => setField('nivel', nivel)}
-              error={errors.nivel}
+              value={form.level}
+              onChange={(level: Level) => setField('level', level)}
+              error={errors.level}
             />
 
             <TextField
               id="titulo"
               label="Título"
-              maxLength={TITULO_MAX}
+              maxLength={TITLE_MAX}
               placeholder="Ej. Picado de los jueves"
-              value={form.titulo}
-              onChange={(event) => setField('titulo', event.target.value)}
-              error={errors.titulo}
+              value={form.title}
+              onChange={(event) => setField('title', event.target.value)}
+              error={errors.title}
             />
 
             <TextareaField
               id="descripcion"
               label="Descripción"
               hint="opcional"
-              maxLength={DESCRIPCION_MAX}
+              maxLength={DESCRIPTION_MAX}
               placeholder="Contá cómo se juega, qué llevar, si se arman equipos…"
-              value={form.descripcion}
-              onChange={(event) => setField('descripcion', event.target.value)}
-              error={errors.descripcion}
+              value={form.description}
+              onChange={(event) => setField('description', event.target.value)}
+              error={errors.description}
             />
           </div>
         )}
 
-        {step === LAST_STEP && <PartidoSummary form={form} deporte={deporte} organizador={user} />}
+        {step === LAST_STEP && <PartidoSummary form={form} sport={sport} organizer={user} />}
       </WizardShell>
 
       {toast && (

@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 
 import { WizardProgress } from '@/components/partidos/wizard-progress';
-import { WIZARD_STEPS } from '@/lib/partido-wizard';
+import { WIZARD_STEPS } from '@/lib/match-wizard';
 import { cn } from '@/lib/utils';
 
 const ITEM = 'flex items-center gap-4 rounded-md px-4 py-3 transition';

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { FieldError } from '@/components/partidos/field-error';
 import { formatMatchDay, weekdayLabel } from '@/lib/match-date';
-import { localDateTimeValue } from '@/lib/partido-form';
+import { localDateTimeValue } from '@/lib/match-form';
 import { cn } from '@/lib/utils';
 
 const ERROR_ID = 'error-fecha';
@@ -68,7 +68,7 @@ function isSameDay(one: Date, other: Date): boolean {
 
 type HorarioPickerProps = {
   value: string;
-  onChange: (fecha: string) => void;
+  onChange: (date: string) => void;
   error?: string;
 };
 

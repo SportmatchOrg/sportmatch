@@ -6,8 +6,8 @@ import { useEffect, useState } from 'react';
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
-import { cancelJoinRequest, leavePartido, requestToJoin } from '@/lib/partidos';
-import type { JoinRequestStatus, PartidoDetalle } from '@/types/partido';
+import { cancelJoinRequest, leaveMatch, requestToJoin } from '@/lib/matches';
+import type { JoinRequestStatus, MatchDetail } from '@/types/match';
 
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
@@ -53,7 +53,7 @@ function cancelRequestErrorMessage(error: unknown): string {
 }
 
 type PartidoActionsProps = {
-  partido: PartidoDetalle;
+  match: MatchDetail;
   isOrganizer: boolean;
   onDone: () => void;
 };
@@ -116,7 +116,7 @@ function ConfirmationBlock({
   );
 }
 
-export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsProps) {
+export function PartidoActions({ match, isOrganizer, onDone }: PartidoActionsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,11 +124,11 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
   const [optimisticRequestStatus, setOptimisticRequestStatus] =
     useState<OptimisticRequestStatus | null>(null);
 
-  const lleno = partido.anotados >= partido.cupo;
+  const lleno = match.joinedCount >= match.capacity;
   const requestStatus =
-    optimisticRequestStatus?.from === partido.my_join_request
+    optimisticRequestStatus?.from === match.myJoinRequest
       ? optimisticRequestStatus.to
-      : partido.my_join_request;
+      : match.myJoinRequest;
 
   useEffect(() => {
     if (!toast) return;
@@ -183,7 +183,7 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
         </p>
       )}
 
-      {partido.estoy_anotado ? (
+      {match.isJoined ? (
         <>
           <p className="flex items-center gap-3 rounded-full bg-glass px-4 py-3 text-callout font-bold text-white shadow-bevel-lit">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-midnight">
@@ -210,7 +210,7 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
               pendingLabel="Saliendo…"
               pending={submitting}
               onCancel={() => setConfirming(false)}
-              onConfirm={() => void run(() => leavePartido(partido.id), leaveErrorMessage)}
+              onConfirm={() => void run(() => leaveMatch(match.id), leaveErrorMessage)}
             />
           )}
         </>
@@ -242,7 +242,7 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
               pending={submitting}
               onCancel={() => setConfirming(false)}
               onConfirm={() =>
-                void run(() => cancelJoinRequest(partido.id), cancelRequestErrorMessage, {
+                void run(() => cancelJoinRequest(match.id), cancelRequestErrorMessage, {
                   onSuccess: () =>
                     setOptimisticRequestStatus({ from: 'PENDING', to: null }),
                   successMessage: 'Solicitud cancelada',
@@ -264,7 +264,7 @@ export function PartidoActions({ partido, isOrganizer, onDone }: PartidoActionsP
             size="lg"
             disabled={lleno || submitting}
             onClick={() =>
-              void run(() => requestToJoin(partido.id), joinRequestErrorMessage, {
+              void run(() => requestToJoin(match.id), joinRequestErrorMessage, {
                 onSuccess: () =>
                   setOptimisticRequestStatus({ from: requestStatus, to: 'PENDING' }),
               })

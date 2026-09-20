@@ -3,7 +3,7 @@ import { CalendarX } from 'lucide-react';
 import { MatchRow } from '@/components/partidos/match-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Partido } from '@/types/partido';
+import type { Match } from '@/types/match';
 
 const MONTHS = [
   'Enero',
@@ -25,14 +25,14 @@ const GRID = 'flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:gap-4';
 type MonthGroup = {
   key: string;
   label: string;
-  matches: Partido[];
+  matches: Match[];
 };
 
-function groupByMonth(matches: Partido[]): MonthGroup[] {
+function groupByMonth(matches: Match[]): MonthGroup[] {
   const groups: MonthGroup[] = [];
 
   for (const match of matches) {
-    const date = new Date(match.fecha);
+    const date = new Date(match.date);
     const key = `${date.getFullYear()}-${date.getMonth()}`;
     const last = groups.at(-1);
 
@@ -62,7 +62,7 @@ export function PlayedMatchesSkeleton() {
 }
 
 type PlayedMatchesListProps = {
-  matches: Partido[];
+  matches: Match[];
   emptyTitle: string;
 };
 
@@ -85,7 +85,7 @@ export function PlayedMatchesList({ matches, emptyTitle }: PlayedMatchesListProp
 
           <div className={GRID}>
             {group.matches.map((match) => (
-              <MatchRow key={match.id} partido={match} />
+              <MatchRow key={match.id} match={match} />
             ))}
           </div>
         </section>

@@ -10,8 +10,8 @@ export function weekdayLabel(date: Date): string {
   return WEEKDAYS[date.getDay()];
 }
 
-export function formatMatchDay(fecha: string): string {
-  const date = new Date(fecha);
+export function formatMatchDay(value: string): string {
+  const date = new Date(value);
   const days = Math.round((startOfDay(date) - startOfDay(new Date())) / MS_PER_DAY);
   const calendarDate = `${date.getDate()}/${date.getMonth() + 1}`;
 
@@ -21,8 +21,8 @@ export function formatMatchDay(fecha: string): string {
   return `${WEEKDAYS[date.getDay()]} ${calendarDate}`;
 }
 
-export function formatMatchTime(fecha: string): string {
-  const date = new Date(fecha);
+export function formatMatchTime(value: string): string {
+  const date = new Date(value);
 
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }

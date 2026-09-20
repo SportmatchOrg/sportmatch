@@ -3,32 +3,32 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth-context';
-import { fetchPartidosMios } from '@/lib/partidos';
-import type { PartidosMios } from '@/types/partido';
+import { fetchMyMatches } from '@/lib/matches';
+import type { MyMatches } from '@/types/match';
 
-type PartidosMiosState = {
-  partidos: PartidosMios;
+type MyMatchesState = {
+  matches: MyMatches;
   loading: boolean;
   error: string | null;
 };
 
-type UsePartidosMiosOptions = {
+type UseMyMatchesOptions = {
   pollIntervalMs?: number;
 };
 
 const ERROR_MESSAGE = 'No pudimos cargar tus partidos. Probá de nuevo en un momento.';
 
-const NO_PARTIDOS: PartidosMios = { organizo: [], juego: [], jugados: [], requested: [] };
+const NO_MATCHES: MyMatches = { organizing: [], playing: [], played: [], requested: [] };
 
-const INITIAL_STATE: PartidosMiosState = {
-  partidos: NO_PARTIDOS,
+const INITIAL_STATE: MyMatchesState = {
+  matches: NO_MATCHES,
   loading: true,
   error: null,
 };
 
-export function usePartidosMios({ pollIntervalMs }: UsePartidosMiosOptions = {}) {
+export function useMyMatches({ pollIntervalMs }: UseMyMatchesOptions = {}) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<PartidosMiosState>(INITIAL_STATE);
+  const [state, setState] = useState<MyMatchesState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
@@ -45,12 +45,12 @@ export function usePartidosMios({ pollIntervalMs }: UsePartidosMiosOptions = {})
       requestInFlight = true;
 
       try {
-        const partidos = await fetchPartidosMios();
+        const matches = await fetchMyMatches();
 
-        if (active) setState({ partidos, loading: false, error: null });
+        if (active) setState({ matches, loading: false, error: null });
       } catch {
         if (active && showError) {
-          setState({ partidos: NO_PARTIDOS, loading: false, error: ERROR_MESSAGE });
+          setState({ matches: NO_MATCHES, loading: false, error: ERROR_MESSAGE });
         }
       } finally {
         requestInFlight = false;
@@ -72,10 +72,10 @@ export function usePartidosMios({ pollIntervalMs }: UsePartidosMiosOptions = {})
   }, [sessionLoading, firebaseUser, pollIntervalMs, reloadToken]);
 
   return {
-    organizo: state.partidos.organizo,
-    juego: state.partidos.juego,
-    jugados: state.partidos.jugados,
-    requested: state.partidos.requested,
+    organizing: state.matches.organizing,
+    playing: state.matches.playing,
+    played: state.matches.played,
+    requested: state.matches.requested,
     loading: sessionLoading || state.loading,
     error: state.error,
     reload,

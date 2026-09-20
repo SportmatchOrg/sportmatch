@@ -1,22 +1,22 @@
 import type { ReactNode } from 'react';
 
 import { MatchCard, type MatchCardRole } from '@/components/partidos/match-card';
-import type { Partido } from '@/types/partido';
+import type { Match } from '@/types/match';
 
 type MisPartidosSectionProps = {
   title: string;
   subtitle: string;
-  partidos: Partido[];
+  matches: Match[];
   role: MatchCardRole;
   empty: ReactNode;
-  renderPanel?: (partido: Partido) => ReactNode;
-  renderAction: (partido: Partido) => ReactNode;
+  renderPanel?: (match: Match) => ReactNode;
+  renderAction: (match: Match) => ReactNode;
 };
 
 export function MisPartidosSection({
   title,
   subtitle,
-  partidos,
+  matches,
   role,
   empty,
   renderPanel,
@@ -27,23 +27,23 @@ export function MisPartidosSection({
       <div className="flex flex-col gap-1">
         <span className="flex items-baseline gap-3">
           <h2 className="text-title font-bold text-white">{title}</h2>
-          <span className="text-callout tabular-nums text-ink-46">{partidos.length}</span>
+          <span className="text-callout tabular-nums text-ink-46">{matches.length}</span>
         </span>
 
         <p className="text-callout text-ink-46 lg:hidden">{subtitle}</p>
       </div>
 
-      {partidos.length === 0 ? (
+      {matches.length === 0 ? (
         <div className="py-8">{empty}</div>
       ) : (
         <div className="flex flex-col gap-4">
-          {partidos.map((partido) => (
+          {matches.map((match) => (
             <MatchCard
-              key={partido.id}
-              partido={partido}
+              key={match.id}
+              match={match}
               role={role}
-              panel={renderPanel?.(partido)}
-              action={renderAction(partido)}
+              panel={renderPanel?.(match)}
+              action={renderAction(match)}
             />
           ))}
         </div>

@@ -1,30 +1,30 @@
 import { AvatarStack } from '@/components/partidos/avatar-stack';
 import { cn } from '@/lib/utils';
-import type { PublicUser } from '@/types/partido';
+import type { PublicUser } from '@/types/match';
 
 const LOW_SPOTS = 2;
 const EMPTY_MESSAGE = 'Todavía no se anotó nadie';
 
 type PartidoPlayersProps = {
-  participantes: PublicUser[];
-  organizador: PublicUser;
-  anotados: number;
-  cupo: number;
+  participants: PublicUser[];
+  organizer: PublicUser;
+  joinedCount: number;
+  capacity: number;
   played?: boolean;
 };
 
 export function PartidoPlayers({
-  participantes,
-  organizador,
-  anotados,
-  cupo,
+  participants,
+  organizer,
+  joinedCount,
+  capacity,
   played = false,
 }: PartidoPlayersProps) {
-  const libres = Math.max(0, cupo - anotados);
-  const low = libres <= LOW_SPOTS;
-  const usuarios = played
-    ? [organizador, ...participantes.filter(({ id }) => id !== organizador.id)]
-    : participantes;
+  const freeSpots = Math.max(0, capacity - joinedCount);
+  const low = freeSpots <= LOW_SPOTS;
+  const users = played
+    ? [organizer, ...participants.filter(({ id }) => id !== organizer.id)]
+    : participants;
 
   return (
     <section className="flex flex-col gap-5">
@@ -46,13 +46,13 @@ export function PartidoPlayers({
               className={cn('size-2 rounded-full', low ? 'bg-danger' : 'bg-success')}
               aria-hidden="true"
             />
-            {libres === 1 ? '1 lugar libre' : `${libres} lugares libres`}
+            {freeSpots === 1 ? '1 lugar libre' : `${freeSpots} lugares libres`}
           </span>
         )}
       </header>
 
-      {usuarios.length ? (
-        <AvatarStack usuarios={usuarios} />
+      {users.length ? (
+        <AvatarStack users={users} />
       ) : (
         <p className="text-callout text-ink-46">{EMPTY_MESSAGE}</p>
       )}

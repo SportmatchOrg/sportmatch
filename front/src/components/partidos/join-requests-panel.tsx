@@ -19,8 +19,8 @@ const RESOLVE_FALLBACK = 'No pudimos resolver la solicitud. Probá de nuevo.';
 
 type JoinRequestsPanelProps = {
   partidoId: string;
-  cupo: number;
-  anotados: number;
+  capacity: number;
+  joinedCount: number;
   isOrganizer: boolean;
   onResolved: () => void;
 };
@@ -48,12 +48,12 @@ function RequestRow({
     <li className="flex items-center gap-3">
       <Link
         href={`/usuarios/${request.user.id}`}
-        aria-label={`Ver perfil de ${request.user.nombre}`}
+        aria-label={`Ver perfil de ${request.user.name}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-sm focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <UserAvatar
-          name={request.user.nombre}
-          photoUrl={request.user.fotoUrl}
+          name={request.user.name}
+          photoUrl={request.user.photoUrl}
           sizes="44px"
           className="size-11"
           initialsClassName="text-caption"
@@ -61,7 +61,7 @@ function RequestRow({
 
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="truncate text-[15px] font-semibold text-white">
-            {request.user.nombre}
+            {request.user.name}
           </span>
           <span className="text-caption text-ink-46">quiere sumarse</span>
         </span>
@@ -69,7 +69,7 @@ function RequestRow({
 
       <span className="flex shrink-0 gap-2">
         <IconButton
-          label={`Rechazar a ${request.user.nombre}`}
+          label={`Rechazar a ${request.user.name}`}
           variant="strong"
           disabled={resolving}
           onClick={() => onResolve(request, 'REJECTED')}
@@ -78,7 +78,7 @@ function RequestRow({
           <X className="size-[18px]" aria-hidden="true" />
         </IconButton>
         <IconButton
-          label={`Aceptar a ${request.user.nombre}`}
+          label={`Aceptar a ${request.user.name}`}
           variant="brand"
           disabled={resolving}
           onClick={() => onResolve(request, 'ACCEPTED')}
@@ -93,8 +93,8 @@ function RequestRow({
 
 export function JoinRequestsPanel({
   partidoId,
-  cupo,
-  anotados,
+  capacity,
+  joinedCount,
   isOrganizer,
   onResolved,
 }: JoinRequestsPanelProps) {
@@ -163,7 +163,7 @@ export function JoinRequestsPanel({
           </span>
         </div>
         <p className="text-caption text-ink-46">
-          {anotados}/{cupo} jugadores confirmados
+          {joinedCount}/{capacity} jugadores confirmados
         </p>
       </header>
 

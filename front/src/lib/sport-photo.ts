@@ -1,6 +1,6 @@
-import type { DeporteNombre } from '@/types/partido';
+import type { SportName } from '@/types/match';
 
-const DEPORTE_PHOTOS: Record<DeporteNombre, string[]> = {
+const SPORT_PHOTOS: Record<SportName, string[]> = {
   FUTBOL: ['/deportes/football-match.jpg', '/deportes/football-bw.jpg'],
   BASQUET: [
     '/deportes/basketball-aerial.jpg',
@@ -22,8 +22,8 @@ function hash(value: string): number {
   return result;
 }
 
-export function deportePhotoUrl(nombre: DeporteNombre, seed: string): string | null {
-  const photos = DEPORTE_PHOTOS[nombre];
+export function sportPhotoUrl(name: SportName, seed: string): string | null {
+  const photos = SPORT_PHOTOS[name];
 
   if (!photos?.length) return null;
 

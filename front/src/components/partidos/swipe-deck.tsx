@@ -10,9 +10,9 @@ import { joinRequestErrorMessage } from '@/components/partidos/partido-actions';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
-import { deportePhotoUrl } from '@/lib/deporte-photo';
-import { requestToJoin } from '@/lib/partidos';
-import type { Partido } from '@/types/partido';
+import { sportPhotoUrl } from '@/lib/sport-photo';
+import { requestToJoin } from '@/lib/matches';
+import type { Match } from '@/types/match';
 
 const DECISION_THRESHOLD = 110;
 const INDICATOR_THRESHOLD = 40;
@@ -41,7 +41,7 @@ type Drag = { x: number; y: number; active: boolean };
 const NO_DRAG: Drag = { x: 0, y: 0, active: false };
 
 type SwipeDeckProps = {
-  partidos: Partido[];
+  matches: Match[];
 };
 
 type DeckToast = {
@@ -49,7 +49,7 @@ type DeckToast = {
   tone: ToastTone;
 };
 
-export function SwipeDeck({ partidos }: SwipeDeckProps) {
+export function SwipeDeck({ matches }: SwipeDeckProps) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
@@ -66,7 +66,7 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const current = partidos[index];
+  const current = matches[index];
 
   const commit = useCallback(
     (direction: SwipeDecision) => {
@@ -135,19 +135,19 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
     }
   }
 
-  if (!partidos.length || !current) {
+  if (!matches.length || !current) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-base lg:absolute">
         <EmptyState
           icon={Layers}
-          title={partidos.length ? 'Viste todo por hoy' : 'Todavía no hay partidos'}
+          title={matches.length ? 'Viste todo por hoy' : 'Todavía no hay partidos'}
           text={
-            partidos.length
+            matches.length
               ? 'Ya viste todos los partidos cerca. Volvé más tarde.'
               : 'Cuando alguien cree un partido cerca tuyo, va a aparecer acá.'
           }
           action={
-            partidos.length ? (
+            matches.length ? (
               <Button onClick={() => setIndex(0)} className="gap-2 rounded-full">
                 <Compass className="size-[18px]" aria-hidden="true" />
                 Empezar de nuevo
@@ -159,7 +159,7 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
     );
   }
 
-  const ambientPhoto = deportePhotoUrl(current.deporte.nombre, current.id);
+  const ambientPhoto = sportPhotoUrl(current.sport.name, current.id);
   const offsetX = flyout ? (flyout === 'yes' ? FLYOUT_DISTANCE : -FLYOUT_DISTANCE) : drag.x;
   const offsetY = flyout ? FLYOUT_LIFT : drag.y;
   const decision =
@@ -192,16 +192,16 @@ export function SwipeDeck({ partidos }: SwipeDeckProps) {
 
       <div className="absolute top-[70px] right-4 bottom-[120px] left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-15rem))] lg:w-auto lg:shrink-0">
         {STACK.map(({ depth, className }) => {
-          const partido = partidos[index + depth];
+          const match = matches[index + depth];
 
-          if (!partido) return null;
+          if (!match) return null;
 
           const isTop = depth === 0;
 
           return (
             <SwipeCard
-              key={partido.id}
-              partido={partido}
+              key={match.id}
+              match={match}
               interactive={isTop}
               decision={isTop ? decision : null}
               className={className}

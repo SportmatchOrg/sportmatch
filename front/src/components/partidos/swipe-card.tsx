@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { useState, type CSSProperties, type PointerEventHandler } from 'react';
 
 import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { deportePhotoUrl } from '@/lib/deporte-photo';
+import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { cn } from '@/lib/utils';
-import { DEPORTE_LABEL, NIVEL_LABEL, type Partido } from '@/types/partido';
+import { SPORT_LABEL, LEVEL_LABEL, type Match } from '@/types/match';
 
 export type SwipeDecision = 'yes' | 'no';
 
@@ -24,17 +24,17 @@ const DECISION_STYLE: Record<SwipeDecision, string> = {
 
 const CHIP = 'rounded-full bg-glass-solid px-4 py-2.5 text-callout font-semibold text-white shadow-bevel backdrop-blur-chip';
 
-function SpotsPill({ libres }: { libres: number }) {
+function SpotsPill({ freeSpots }: { freeSpots: number }) {
   return (
     <span className="flex items-center gap-2 rounded-full bg-glass-solid px-3.5 py-2 text-callout font-semibold text-success shadow-bevel backdrop-blur-chip">
       <span className="size-2 rounded-full bg-success" aria-hidden="true" />
-      {libres === 1 ? '1 lugar' : `${libres} lugares`}
+      {freeSpots === 1 ? '1 lugar' : `${freeSpots} lugares`}
     </span>
   );
 }
 
 type SwipeCardProps = {
-  partido: Partido;
+  match: Match;
   decision: SwipeDecision | null;
   interactive: boolean;
   className?: string;
@@ -46,7 +46,7 @@ type SwipeCardProps = {
 };
 
 export function SwipeCard({
-  partido,
+  match,
   decision,
   interactive,
   className,
@@ -57,11 +57,11 @@ export function SwipeCard({
   onPointerCancel,
 }: SwipeCardProps) {
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
-  const Icon = DEPORTE_ICON[partido.deporte.nombre];
-  const photo = deportePhotoUrl(partido.deporte.nombre, partido.id);
-  const libres = Math.max(0, partido.cupo - partido.anotados);
-  const deporte = DEPORTE_LABEL[partido.deporte.nombre];
-  const nivel = NIVEL_LABEL[partido.nivel];
+  const Icon = DEPORTE_ICON[match.sport.name];
+  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const freeSpots = Math.max(0, match.capacity - match.joinedCount);
+  const sport = SPORT_LABEL[match.sport.name];
+  const level = LEVEL_LABEL[match.level];
 
   return (
     <div
@@ -96,17 +96,17 @@ export function SwipeCard({
       <div className="absolute inset-x-5 top-5 flex items-start justify-between gap-3 lg:items-center">
         <span className={cn('flex items-center gap-2', CHIP, 'lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none lg:backdrop-blur-none')}>
           <Icon className="size-4 lg:hidden" aria-hidden="true" />
-          {deporte}
-          <span className="hidden lg:inline">· {nivel}</span>
+          {sport}
+          <span className="hidden lg:inline">· {level}</span>
         </span>
 
         <span className={cn('flex items-center gap-2 lg:hidden', CHIP)}>
           <SignalHigh className="size-4" aria-hidden="true" />
-          {nivel}
+          {level}
         </span>
 
         <span className="hidden lg:block">
-          <SpotsPill libres={libres} />
+          <SpotsPill freeSpots={freeSpots} />
         </span>
       </div>
 
@@ -124,16 +124,16 @@ export function SwipeCard({
       <div
         className="absolute inset-x-4 bottom-4 flex flex-col items-start gap-4 rounded-md bg-glass-solid p-5 shadow-bevel backdrop-blur-card lg:inset-x-6 lg:bottom-6 lg:gap-3 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none"
       >
-        <span className="text-title font-bold text-white">{partido.ubicacion}</span>
+        <span className="text-title font-bold text-white">{match.location}</span>
 
         <span className="flex flex-wrap items-center gap-3">
           <span className="flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 text-callout font-semibold text-ink-80 shadow-bevel lg:rounded-none lg:bg-transparent lg:px-0 lg:py-0 lg:shadow-none">
             <Calendar className="size-4 text-ink-64 lg:text-brand" aria-hidden="true" />
-            {formatMatchDay(partido.fecha)} · {formatMatchTime(partido.fecha)}
+            {formatMatchDay(match.date)} · {formatMatchTime(match.date)}
           </span>
 
           <span className="lg:hidden">
-            <SpotsPill libres={libres} />
+            <SpotsPill freeSpots={freeSpots} />
           </span>
         </span>
       </div>

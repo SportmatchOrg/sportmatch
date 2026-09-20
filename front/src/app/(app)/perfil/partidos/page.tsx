@@ -8,10 +8,10 @@ import {
 } from '@/components/profile/played-matches-list';
 import { PlayedMatchesScreen } from '@/components/profile/played-matches-screen';
 import { EmptyState } from '@/components/ui/empty-state';
-import { usePartidosMios } from '@/hooks/use-partidos-mios';
+import { useMyMatches } from '@/hooks/use-my-matches';
 
 export default function OwnPlayedMatchesPage() {
-  const { jugados, loading, error } = usePartidosMios();
+  const { played, loading, error } = useMyMatches();
 
   if (loading) {
     return (
@@ -30,8 +30,8 @@ export default function OwnPlayedMatchesPage() {
   }
 
   return (
-    <PlayedMatchesScreen title={`Partidos jugados · ${jugados.length}`}>
-      <PlayedMatchesList matches={jugados} emptyTitle="Todavía no jugaste ningún partido" />
+    <PlayedMatchesScreen title={`Partidos jugados · ${played.length}`}>
+      <PlayedMatchesList matches={played} emptyTitle="Todavía no jugaste ningún partido" />
     </PlayedMatchesScreen>
   );
 }

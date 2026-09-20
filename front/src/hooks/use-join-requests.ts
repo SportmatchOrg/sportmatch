@@ -20,7 +20,7 @@ const INITIAL_STATE: JoinRequestsState = {
   error: null,
 };
 
-export function useJoinRequests(partidoId: string, isOrganizer: boolean) {
+export function useJoinRequests(matchId: string, isOrganizer: boolean) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<JoinRequestsState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
@@ -39,7 +39,7 @@ export function useJoinRequests(partidoId: string, isOrganizer: boolean) {
       requestInFlight = true;
 
       try {
-        const joinRequests = await fetchJoinRequests(partidoId);
+        const joinRequests = await fetchJoinRequests(matchId);
 
         if (active) setState({ joinRequests, loading: false, error: null });
       } catch {
@@ -61,7 +61,7 @@ export function useJoinRequests(partidoId: string, isOrganizer: boolean) {
       active = false;
       window.clearInterval(interval);
     };
-  }, [firebaseUser, isOrganizer, partidoId, reloadToken, sessionLoading]);
+  }, [firebaseUser, isOrganizer, matchId, reloadToken, sessionLoading]);
 
   return {
     joinRequests: isOrganizer ? state.joinRequests : [],

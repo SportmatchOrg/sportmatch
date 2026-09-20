@@ -1,27 +1,27 @@
-import type { PartidoForm, PartidoFormErrors } from '@/lib/partido-form';
+import type { MatchForm, MatchFormErrors } from '@/lib/match-form';
 
 export type WizardStep = {
   name: string;
   question: string;
-  fields: (keyof PartidoForm)[];
+  fields: (keyof MatchForm)[];
 };
 
 export const WIZARD_STEPS: WizardStep[] = [
-  { name: 'Deporte', question: '¿A qué vas a jugar?', fields: ['deporteId'] },
-  { name: 'Lugar', question: '¿Dónde se juega?', fields: ['ubicacion'] },
-  { name: 'Horario', question: '¿A qué hora arranca?', fields: ['fecha'] },
+  { name: 'Deporte', question: '¿A qué vas a jugar?', fields: ['sportId'] },
+  { name: 'Lugar', question: '¿Dónde se juega?', fields: ['location'] },
+  { name: 'Horario', question: '¿A qué hora arranca?', fields: ['date'] },
   {
     name: 'Jugadores',
     question: '¿Cuántos jugadores?',
-    fields: ['cupo', 'nivel', 'titulo', 'descripcion'],
+    fields: ['capacity', 'level', 'title', 'description'],
   },
   { name: 'Revisión', question: '¿Listo para publicar?', fields: [] },
 ];
 
 export const LAST_STEP = WIZARD_STEPS.length - 1;
 
-export function stepErrors(errors: PartidoFormErrors, step: number): PartidoFormErrors {
-  const found: PartidoFormErrors = {};
+export function stepErrors(errors: MatchFormErrors, step: number): MatchFormErrors {
+  const found: MatchFormErrors = {};
 
   for (const field of WIZARD_STEPS[step].fields) {
     const message = errors[field];
@@ -32,7 +32,7 @@ export function stepErrors(errors: PartidoFormErrors, step: number): PartidoForm
   return found;
 }
 
-export function firstStepWithError(errors: PartidoFormErrors): number {
+export function firstStepWithError(errors: MatchFormErrors): number {
   const index = WIZARD_STEPS.findIndex((wizardStep) =>
     wizardStep.fields.some((field) => errors[field])
   );

@@ -7,16 +7,16 @@ import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
 import { ProfileStats } from '@/components/profile/profile-stats';
 import { RecentMatches } from '@/components/profile/recent-matches';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { usePartidosMios } from '@/hooks/use-partidos-mios';
+import { useMyMatches } from '@/hooks/use-my-matches';
 
 export default function ProfilePage() {
   const { user, loading, error } = useCurrentUser();
   const {
-    jugados,
+    played,
     loading: partidosLoading,
     error: partidosError,
     reload: reloadPartidos,
-  } = usePartidosMios();
+  } = useMyMatches();
 
   if (loading || partidosLoading) {
     return (
@@ -42,13 +42,13 @@ export default function ProfilePage() {
 
       <div className={`${PROFILE_SECTION} pt-4 lg:pt-6`}>
         <PendingRatingsBanner
-          matches={jugados.filter(({ rating_pending }) => rating_pending === true)}
+          matches={played.filter(({ ratingPending }) => ratingPending === true)}
           onRated={reloadPartidos}
         />
       </div>
 
       <RecentMatches
-        partidos={jugados}
+        matches={played}
         error={partidosError}
         seeAllHref="/perfil/partidos"
         emptyTitle="Todavía no jugaste ningún partido"

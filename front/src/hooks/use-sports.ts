@@ -3,34 +3,34 @@
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth-context';
-import { fetchDeportes } from '@/lib/deportes';
-import type { Deporte } from '@/types/partido';
+import { fetchSports } from '@/lib/sports';
+import type { Sport } from '@/types/match';
 
-type DeportesState = {
-  deportes: Deporte[];
+type SportsState = {
+  sports: Sport[];
   loading: boolean;
   error: string | null;
 };
 
 const ERROR_MESSAGE = 'No pudimos cargar los deportes. Probá de nuevo en un momento.';
 
-const INITIAL_STATE: DeportesState = { deportes: [], loading: true, error: null };
+const INITIAL_STATE: SportsState = { sports: [], loading: true, error: null };
 
-export function useDeportes(): DeportesState {
+export function useSports(): SportsState {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<DeportesState>(INITIAL_STATE);
+  const [state, setState] = useState<SportsState>(INITIAL_STATE);
 
   useEffect(() => {
     if (sessionLoading || !firebaseUser) return;
 
     let active = true;
 
-    fetchDeportes()
-      .then((deportes) => {
-        if (active) setState({ deportes, loading: false, error: null });
+    fetchSports()
+      .then((sports) => {
+        if (active) setState({ sports, loading: false, error: null });
       })
       .catch(() => {
-        if (active) setState({ deportes: [], loading: false, error: ERROR_MESSAGE });
+        if (active) setState({ sports: [], loading: false, error: ERROR_MESSAGE });
       });
 
     return () => {

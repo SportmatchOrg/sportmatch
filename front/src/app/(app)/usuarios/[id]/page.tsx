@@ -52,7 +52,7 @@ export default function PublicProfilePage({ params }: PageProps<'/usuarios/[id]'
       <ProfileHeader user={profile} isOwnProfile={false} />
       <ProfileStats stats={profile.stats} />
       <RecentMatches
-        partidos={matches}
+        matches={matches}
         error={null}
         seeAllHref={`/usuarios/${id}/partidos`}
         emptyTitle="Todavía no jugó ningún partido"

@@ -8,21 +8,21 @@ import { PartidoWizard } from '@/components/partidos/partido-wizard';
 import { LoadingScreen } from '@/components/loading-screen';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { usePartido } from '@/hooks/use-partido';
+import { useMatch } from '@/hooks/use-match';
 import { ApiError } from '@/lib/api';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
-import { toPartidoForm } from '@/lib/partido-form';
-import { updatePartido } from '@/lib/partidos';
-import { DEPORTE_LABEL, type Deporte } from '@/types/partido';
+import { toMatchForm } from '@/lib/match-form';
+import { updateMatch } from '@/lib/matches';
+import { SPORT_LABEL, type Sport } from '@/types/match';
 
 const FORBIDDEN = 403;
 const NOT_FOUND = 404;
 const INVALID = 400;
 
-function updatedMessage(form: { fecha: string }, deporte?: Deporte): string {
-  const label = deporte ? DEPORTE_LABEL[deporte.nombre] : '';
+function updatedMessage(form: { date: string }, sport?: Sport): string {
+  const label = sport ? SPORT_LABEL[sport.name] : '';
 
-  return `Cambios guardados · ${label} · ${formatMatchDay(form.fecha)} · ${formatMatchTime(form.fecha)}`;
+  return `Cambios guardados · ${label} · ${formatMatchDay(form.date)} · ${formatMatchTime(form.date)}`;
 }
 
 function updateErrorMessage(error: unknown): string {
@@ -47,14 +47,14 @@ function updateErrorMessage(error: unknown): string {
 
 export default function EditPartidoPage({ params }: PageProps<'/partidos/[id]/editar'>) {
   const { id } = use(params);
-  const { partido, loading: partidoLoading, notFound, error } = usePartido(id);
+  const { match, loading: partidoLoading, notFound, error } = useMatch(id);
   const { user, loading: userLoading } = useCurrentUser();
 
   if (partidoLoading || userLoading) {
     return <LoadingScreen />;
   }
 
-  if (notFound || !partido) {
+  if (notFound || !match) {
     return (
       <main className="flex min-h-dvh items-center justify-center px-8">
         <EmptyState
@@ -71,8 +71,8 @@ export default function EditPartidoPage({ params }: PageProps<'/partidos/[id]/ed
     );
   }
 
-  const isOrganizer = user?.id === partido.organizador.id;
-  const isPlayed = new Date(partido.fecha) <= new Date();
+  const isOrganizer = user?.id === match.organizer.id;
+  const isPlayed = new Date(match.date) <= new Date();
 
   if (!isOrganizer || isPlayed) {
     return (
@@ -102,8 +102,8 @@ export default function EditPartidoPage({ params }: PageProps<'/partidos/[id]/ed
   return (
     <PartidoWizard
       mode="edit"
-      initialForm={toPartidoForm(partido)}
-      submit={(form) => updatePartido(id, form)}
+      initialForm={toMatchForm(match)}
+      submit={(form) => updateMatch(id, form)}
       toastMessage={updatedMessage}
       errorMessage={updateErrorMessage}
       doneHref={`/partidos/${id}`}
