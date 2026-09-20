@@ -19,6 +19,11 @@ export class ApiError extends Error {
   }
 }
 
+async function expireSession(): Promise<never> {
+  await signOut(auth).catch(() => undefined);
+  throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+}
+
 async function readErrorMessage(response: Response, path: string): Promise<string> {
   const body: unknown = await response.json().catch(() => null);
   const message = (body as { message?: unknown } | null)?.message;
@@ -36,8 +41,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const user = auth.currentUser;
 
   if (!user) {
-    await signOut(auth).catch(() => undefined);
-    throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+    return expireSession();
   }
 
   const token = await user.getIdToken();
@@ -53,8 +57,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (response.status === UNAUTHORIZED) {
     // Token vencido, revocado o borrado: la sesión local ya no sirve (BUG-8).
-    await signOut(auth).catch(() => undefined);
-    throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+    return expireSession();
   }
 
   if (!response.ok) {
