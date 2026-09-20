@@ -1,11 +1,11 @@
-import { AvatarStack } from '@/components/partidos/avatar-stack';
+import { AvatarStack } from '@/components/matches/avatar-stack';
 import { cn } from '@/lib/utils';
 import type { PublicUser } from '@/types/match';
 
 const LOW_SPOTS = 2;
 const EMPTY_MESSAGE = 'Todavía no se anotó nadie';
 
-type PartidoPlayersProps = {
+type MatchPlayersProps = {
   participants: PublicUser[];
   organizer: PublicUser;
   joinedCount: number;
@@ -13,13 +13,13 @@ type PartidoPlayersProps = {
   played?: boolean;
 };
 
-export function PartidoPlayers({
+export function MatchPlayers({
   participants,
   organizer,
   joinedCount,
   capacity,
   played = false,
-}: PartidoPlayersProps) {
+}: MatchPlayersProps) {
   const freeSpots = Math.max(0, capacity - joinedCount);
   const low = freeSpots <= LOW_SPOTS;
   const users = played

@@ -6,12 +6,12 @@ import {
   PadelIcon,
   RunningIcon,
   TenisIcon,
-} from '@/components/partidos/sport-icons';
+} from '@/components/matches/sport-icons';
 import type { SportName } from '@/types/match';
 
 export type SportIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-export const DEPORTE_ICON: Record<SportName, SportIcon> = {
+export const SPORT_ICON: Record<SportName, SportIcon> = {
   FUTBOL: FutbolIcon,
   BASQUET: BasquetIcon,
   TENIS: TenisIcon,

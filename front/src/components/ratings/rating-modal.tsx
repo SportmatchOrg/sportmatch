@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { TextareaField } from "@/components/partidos/textarea-field";
+import { TextareaField } from "@/components/matches/textarea-field";
 import {
   Dialog,
   DialogContent,

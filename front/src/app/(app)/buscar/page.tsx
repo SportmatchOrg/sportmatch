@@ -1,10 +1,10 @@
 'use client';
 
 import { LoadingScreen } from '@/components/loading-screen';
-import { SwipeDeck } from '@/components/partidos/swipe-deck';
+import { SwipeDeck } from '@/components/matches/swipe-deck';
 import { useMatches } from '@/hooks/use-matches';
 
-export default function BuscarPage() {
+export default function SearchPage() {
   const { matches, loading, error } = useMatches();
 
   if (loading) {

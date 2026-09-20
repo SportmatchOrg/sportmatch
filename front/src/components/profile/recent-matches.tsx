@@ -1,7 +1,7 @@
 import { CalendarX } from 'lucide-react';
 import Link from 'next/link';
 
-import { MatchRow } from '@/components/partidos/match-row';
+import { MatchRow } from '@/components/matches/match-row';
 import { PROFILE_SECTION } from '@/components/profile/profile-layout';
 import { cn } from '@/lib/utils';
 import type { Match } from '@/types/match';

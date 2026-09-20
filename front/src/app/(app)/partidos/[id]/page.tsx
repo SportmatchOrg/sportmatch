@@ -15,10 +15,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState, type ComponentType, type SVGProps } from "react";
 
-import { DEPORTE_ICON } from "@/components/partidos/deporte-icon";
-import { OrganizadorCard } from "@/components/partidos/organizador-card";
-import { PartidoActions } from "@/components/partidos/partido-actions";
-import { PartidoPlayers } from "@/components/partidos/partido-players";
+import { SPORT_ICON } from "@/components/matches/sport-icon";
+import { OrganizerCard } from "@/components/matches/organizer-card";
+import { MatchActions } from "@/components/matches/match-actions";
+import { MatchPlayers } from "@/components/matches/match-players";
 import { RatingSection } from "@/components/ratings/rating-section";
 import { LoadingScreen } from "@/components/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -80,7 +80,7 @@ function PartidoTitle({ match }: { match: MatchDetail }) {
   );
 }
 
-export default function PartidoDetallePage({
+export default function MatchDetailPage({
   params,
 }: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
@@ -122,7 +122,7 @@ export default function PartidoDetallePage({
     );
   }
 
-  const Icon = DEPORTE_ICON[match.sport.name];
+  const Icon = SPORT_ICON[match.sport.name];
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const isOrganizer = user?.id === match.organizer.id;
   const played = new Date(match.date).getTime() <= now;
@@ -194,7 +194,7 @@ export default function PartidoDetallePage({
             </div>
 
             <div className="px-5 lg:hidden">
-              <OrganizadorCard organizer={match.organizer} />
+              <OrganizerCard organizer={match.organizer} />
             </div>
 
             <div className="grid grid-cols-2 gap-3 px-5 lg:grid-cols-4 lg:px-0">
@@ -236,10 +236,10 @@ export default function PartidoDetallePage({
 
           <aside className="flex flex-col gap-4 px-5 lg:px-0">
             <div className="hidden lg:block">
-              <OrganizadorCard organizer={match.organizer} />
+              <OrganizerCard organizer={match.organizer} />
             </div>
 
-            <PartidoPlayers
+            <MatchPlayers
               participants={match.participants}
               organizer={match.organizer}
               joinedCount={match.joinedCount}
@@ -263,7 +263,7 @@ export default function PartidoDetallePage({
               </div>
             ) : (
               <div className="hidden lg:block">
-                <PartidoActions
+                <MatchActions
                   match={match}
                   isOrganizer={isOrganizer}
                   onDone={reload}
@@ -276,7 +276,7 @@ export default function PartidoDetallePage({
 
       {!played && (
         <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
-          <PartidoActions
+          <MatchActions
             match={match}
             isOrganizer={isOrganizer}
             onDone={reload}

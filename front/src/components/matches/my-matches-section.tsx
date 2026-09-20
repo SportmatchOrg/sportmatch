@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 
-import { MatchCard, type MatchCardRole } from '@/components/partidos/match-card';
+import { MatchCard, type MatchCardRole } from '@/components/matches/match-card';
 import type { Match } from '@/types/match';
 
-type MisPartidosSectionProps = {
+type MyMatchesSectionProps = {
   title: string;
   subtitle: string;
   matches: Match[];
@@ -13,7 +13,7 @@ type MisPartidosSectionProps = {
   renderAction: (match: Match) => ReactNode;
 };
 
-export function MisPartidosSection({
+export function MyMatchesSection({
   title,
   subtitle,
   matches,
@@ -21,7 +21,7 @@ export function MisPartidosSection({
   empty,
   renderPanel,
   renderAction,
-}: MisPartidosSectionProps) {
+}: MyMatchesSectionProps) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">

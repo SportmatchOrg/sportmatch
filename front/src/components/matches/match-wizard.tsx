@@ -4,14 +4,14 @@ import { MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { CupoStepper } from '@/components/partidos/cupo-stepper';
-import { DeportePicker } from '@/components/partidos/deporte-picker';
-import { HorarioPicker } from '@/components/partidos/horario-picker';
-import { NivelPicker } from '@/components/partidos/nivel-picker';
-import { PartidoSummary } from '@/components/partidos/partido-summary';
-import { TextField } from '@/components/partidos/text-field';
-import { TextareaField } from '@/components/partidos/textarea-field';
-import { WizardShell } from '@/components/partidos/wizard-shell';
+import { CapacityStepper } from '@/components/matches/capacity-stepper';
+import { SportPicker } from '@/components/matches/sport-picker';
+import { SchedulePicker } from '@/components/matches/schedule-picker';
+import { LevelPicker } from '@/components/matches/level-picker';
+import { MatchSummary } from '@/components/matches/match-summary';
+import { TextField } from '@/components/matches/text-field';
+import { TextareaField } from '@/components/matches/textarea-field';
+import { WizardShell } from '@/components/matches/wizard-shell';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useSports } from '@/hooks/use-sports';
@@ -31,7 +31,7 @@ import {
 
 type WizardToast = { message: string; tone: ToastTone };
 
-type PartidoWizardProps = {
+type MatchWizardProps = {
   mode: 'create' | 'edit';
   initialForm: MatchForm;
   submit: (form: MatchForm) => Promise<unknown>;
@@ -40,14 +40,14 @@ type PartidoWizardProps = {
   doneHref: string;
 };
 
-export function PartidoWizard({
+export function MatchWizard({
   mode,
   initialForm,
   submit,
   toastMessage,
   errorMessage,
   doneHref,
-}: PartidoWizardProps) {
+}: MatchWizardProps) {
   const router = useRouter();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
   const { user } = useCurrentUser();
@@ -137,7 +137,7 @@ export function PartidoWizard({
         onContinue={handleContinue}
       >
         {step === 0 && (
-          <DeportePicker
+          <SportPicker
             sports={sports}
             loading={deportesLoading}
             loadError={deportesError}
@@ -169,7 +169,7 @@ export function PartidoWizard({
         )}
 
         {step === 2 && (
-          <HorarioPicker
+          <SchedulePicker
             value={form.date}
             onChange={(date) => setField('date', date)}
             error={errors.date}
@@ -178,13 +178,13 @@ export function PartidoWizard({
 
         {step === 3 && (
           <div className="flex flex-col gap-6">
-            <CupoStepper
+            <CapacityStepper
               value={form.capacity}
               onChange={(capacity) => setField('capacity', capacity)}
               error={errors.capacity}
             />
 
-            <NivelPicker
+            <LevelPicker
               value={form.level}
               onChange={(level: Level) => setField('level', level)}
               error={errors.level}
@@ -213,7 +213,7 @@ export function PartidoWizard({
           </div>
         )}
 
-        {step === LAST_STEP && <PartidoSummary form={form} sport={sport} organizer={user} />}
+        {step === LAST_STEP && <MatchSummary form={form} sport={sport} organizer={user} />}
       </WizardShell>
 
       {toast && (

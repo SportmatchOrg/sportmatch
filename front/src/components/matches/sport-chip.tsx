@@ -7,6 +7,6 @@ type DeporteChipProps = {
   name: SportName;
 };
 
-export function DeporteChip({ name }: DeporteChipProps) {
+export function SportChip({ name }: DeporteChipProps) {
   return <span className={CHIP}>{SPORT_LABEL[name]}</span>;
 }

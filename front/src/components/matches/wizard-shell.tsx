@@ -3,8 +3,8 @@
 import { ArrowRight, Check, ChevronLeft, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-import { WizardProgress } from '@/components/partidos/wizard-progress';
-import { WizardRail } from '@/components/partidos/wizard-rail';
+import { WizardProgress } from '@/components/matches/wizard-progress';
+import { WizardRail } from '@/components/matches/wizard-rail';
 import { IconButton } from '@/components/ui/icon-button';
 import { PillButton } from '@/components/ui/pill-button';
 import { LAST_STEP, WIZARD_STEPS } from '@/lib/match-wizard';

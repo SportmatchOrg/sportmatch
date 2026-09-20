@@ -4,7 +4,7 @@ import { Calendar, SignalHigh } from 'lucide-react';
 import Image from 'next/image';
 import { useState, type CSSProperties, type PointerEventHandler } from 'react';
 
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ export function SwipeCard({
   onPointerCancel,
 }: SwipeCardProps) {
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
-  const Icon = DEPORTE_ICON[match.sport.name];
+  const Icon = SPORT_ICON[match.sport.name];
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const sport = SPORT_LABEL[match.sport.name];

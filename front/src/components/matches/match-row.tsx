@@ -5,8 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { SpotsBadge } from '@/components/partidos/spots-badge';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { SpotsBadge } from '@/components/matches/spots-badge';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { SPORT_LABEL, LEVEL_LABEL, type Match } from '@/types/match';
@@ -24,7 +24,7 @@ const RATING_CHIP =
 export function MatchRow({ match }: { match: Match }) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  const Icon = DEPORTE_ICON[match.sport.name];
+  const Icon = SPORT_ICON[match.sport.name];
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const played = new Date(match.date) < new Date();

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import { FieldError } from '@/components/partidos/field-error';
+import { FieldError } from '@/components/matches/field-error';
 import { formatMatchDay, weekdayLabel } from '@/lib/match-date';
 import { localDateTimeValue } from '@/lib/match-form';
 import { cn } from '@/lib/utils';
@@ -72,7 +72,7 @@ type HorarioPickerProps = {
   error?: string;
 };
 
-export function HorarioPicker({ value, onChange, error }: HorarioPickerProps) {
+export function SchedulePicker({ value, onChange, error }: HorarioPickerProps) {
   const parsed = new Date(value);
   const selected = value && !Number.isNaN(parsed.getTime()) ? parsed : null;
   const current = selected ?? defaultFecha();

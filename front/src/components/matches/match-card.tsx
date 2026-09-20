@@ -5,9 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
-import { DeporteChip } from '@/components/partidos/deporte-chip';
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { SpotsBadge } from '@/components/partidos/spots-badge';
+import { SportChip } from '@/components/matches/sport-chip';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { SpotsBadge } from '@/components/matches/spots-badge';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,7 @@ type MatchCardProps = {
 export function MatchCard({ match, role, panel, action }: MatchCardProps) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  const Icon = DEPORTE_ICON[match.sport.name];
+  const Icon = SPORT_ICON[match.sport.name];
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const sport = SPORT_LABEL[match.sport.name];
@@ -81,7 +81,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
 
           <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2 lg:hidden">
             <span className="flex flex-wrap gap-2">
-              <DeporteChip name={match.sport.name} />
+              <SportChip name={match.sport.name} />
               <span className={cn(CHIP, roleChip)}>{roleLabel}</span>
             </span>
 

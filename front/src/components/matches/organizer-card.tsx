@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { UserAvatar } from '@/components/user-avatar';
 import type { PublicUser } from '@/types/match';
 
-export function OrganizadorCard({ organizer }: { organizer: PublicUser }) {
+export function OrganizerCard({ organizer }: { organizer: PublicUser }) {
   return (
     <div className="flex items-center gap-4 rounded-md bg-glass p-4 shadow-bevel-lit">
       <UserAvatar

@@ -2,7 +2,7 @@
 
 import { Minus, Plus } from 'lucide-react';
 
-import { FieldError } from '@/components/partidos/field-error';
+import { FieldError } from '@/components/matches/field-error';
 import { IconButton } from '@/components/ui/icon-button';
 import { CAPACITY_DEFAULT, CAPACITY_MAX, CAPACITY_MIN } from '@/types/match';
 
@@ -14,7 +14,7 @@ type CupoStepperProps = {
   error?: string;
 };
 
-export function CupoStepper({ value, onChange, error }: CupoStepperProps) {
+export function CapacityStepper({ value, onChange, error }: CupoStepperProps) {
   const parsed = Number(value);
   const capacity = Number.isInteger(parsed) && parsed > 0 ? parsed : CAPACITY_DEFAULT;
 

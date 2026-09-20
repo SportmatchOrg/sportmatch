@@ -4,8 +4,8 @@ import { CalendarDays, Compass, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { JoinRequestsPanel } from '@/components/partidos/join-requests-panel';
-import { MisPartidosSection } from '@/components/partidos/mis-partidos-section';
+import { JoinRequestsPanel } from '@/components/matches/join-requests-panel';
+import { MyMatchesSection } from '@/components/matches/my-matches-section';
 import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -32,7 +32,7 @@ function matchLabel(match: Match): string {
   return `${SPORT_LABEL[match.sport.name]} · ${match.location}`;
 }
 
-export default function MisPartidosPage() {
+export default function MyMatchesPage() {
   const { organizing, playing, requested, loading, error, reload } = useMyMatches({
     pollIntervalMs: POLL_INTERVAL_MS,
   });
@@ -113,7 +113,7 @@ export default function MisPartidosPage() {
         </div>
       ) : (
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
-          <MisPartidosSection
+          <MyMatchesSection
             title="Organizás"
             subtitle="Aprobá quién se suma a los partidos que creaste"
             matches={organizing}
@@ -170,7 +170,7 @@ export default function MisPartidosPage() {
             )}
           />
 
-          <MisPartidosSection
+          <MyMatchesSection
             title="Jugás"
             subtitle="Partidos a los que te sumaste"
             matches={playing}
@@ -210,7 +210,7 @@ export default function MisPartidosPage() {
 
           {requested.length > 0 && (
             <div className="lg:col-start-2">
-              <MisPartidosSection
+              <MyMatchesSection
                 title="Esperando respuesta"
                 subtitle="El organizador todavía no te respondió"
                 matches={requested}

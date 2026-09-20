@@ -1,6 +1,6 @@
 'use client';
 
-import { FieldError } from '@/components/partidos/field-error';
+import { FieldError } from '@/components/matches/field-error';
 import { cn } from '@/lib/utils';
 import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
 
@@ -22,7 +22,7 @@ type NivelPickerProps = {
   error?: string;
 };
 
-export function NivelPicker({ value, onChange, error }: NivelPickerProps) {
+export function LevelPicker({ value, onChange, error }: NivelPickerProps) {
   return (
     <div role="group" aria-labelledby={LABEL_ID} className="flex flex-col gap-3">
       <span id={LABEL_ID} className="text-overline text-ink-46 uppercase">

@@ -5,8 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 
-import { SwipeCard, type SwipeDecision } from '@/components/partidos/swipe-card';
-import { joinRequestErrorMessage } from '@/components/partidos/partido-actions';
+import { SwipeCard, type SwipeDecision } from '@/components/matches/swipe-card';
+import { joinRequestErrorMessage } from '@/components/matches/match-actions';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';

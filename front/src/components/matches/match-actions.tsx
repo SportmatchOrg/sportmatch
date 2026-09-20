@@ -52,7 +52,7 @@ function cancelRequestErrorMessage(error: unknown): string {
   return CANCEL_REQUEST_FALLBACK;
 }
 
-type PartidoActionsProps = {
+type MatchActionsProps = {
   match: MatchDetail;
   isOrganizer: boolean;
   onDone: () => void;
@@ -116,7 +116,7 @@ function ConfirmationBlock({
   );
 }
 
-export function PartidoActions({ match, isOrganizer, onDone }: PartidoActionsProps) {
+export function MatchActions({ match, isOrganizer, onDone }: MatchActionsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 'use client';
 
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
-import { FieldError } from '@/components/partidos/field-error';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { FieldError } from '@/components/matches/field-error';
 import { cn } from '@/lib/utils';
 import { SPORT_LABEL, type Sport } from '@/types/match';
 
@@ -24,7 +24,7 @@ type DeportePickerProps = {
 
 const ERROR_ID = 'error-deporte';
 
-export function DeportePicker({
+export function SportPicker({
   sports,
   loading,
   loadError,
@@ -47,7 +47,7 @@ export function DeportePicker({
       {!loading && !loadError && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {sports.map((sport) => {
-            const Icon = DEPORTE_ICON[sport.name];
+            const Icon = SPORT_ICON[sport.name];
             const selected = value === sport.id;
 
             return (

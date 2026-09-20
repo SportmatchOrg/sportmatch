@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 
-import { WizardProgress } from '@/components/partidos/wizard-progress';
+import { WizardProgress } from '@/components/matches/wizard-progress';
 import { WIZARD_STEPS } from '@/lib/match-wizard';
 import { cn } from '@/lib/utils';
 

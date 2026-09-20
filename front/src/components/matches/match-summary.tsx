@@ -4,7 +4,7 @@ import { Calendar, MapPin, Type, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useState, type ComponentType, type SVGProps } from 'react';
 
-import { DEPORTE_ICON } from '@/components/partidos/deporte-icon';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
 import { UserAvatar } from '@/components/user-avatar';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
@@ -42,17 +42,17 @@ type Host = {
   photoUrl: string | null;
 };
 
-type PartidoSummaryProps = {
+type MatchSummaryProps = {
   form: MatchForm;
   sport?: Sport;
   organizer: Host | null;
 };
 
-export function PartidoSummary({ form, sport, organizer }: PartidoSummaryProps) {
+export function MatchSummary({ form, sport, organizer }: MatchSummaryProps) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
   const photo = sport ? sportPhotoUrl(sport.name, form.location) : null;
-  const Icon = sport ? DEPORTE_ICON[sport.name] : null;
+  const Icon = sport ? SPORT_ICON[sport.name] : null;
   const deporteLabel = sport ? SPORT_LABEL[sport.name] : '—';
   const nivelLabel = form.level ? LEVEL_LABEL[form.level] : '—';
 

@@ -2,7 +2,7 @@
 
 import type { InputHTMLAttributes } from 'react';
 
-import { FieldError } from '@/components/partidos/field-error';
+import { FieldError } from '@/components/matches/field-error';
 import { cn } from '@/lib/utils';
 
 const CONTROL =

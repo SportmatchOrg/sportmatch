@@ -4,7 +4,7 @@ import { Pencil, Search } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
 
-import { PartidoWizard } from '@/components/partidos/partido-wizard';
+import { MatchWizard } from '@/components/matches/match-wizard';
 import { LoadingScreen } from '@/components/loading-screen';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -45,7 +45,7 @@ function updateErrorMessage(error: unknown): string {
   return 'No pudimos guardar los cambios. Probá de nuevo.';
 }
 
-export default function EditPartidoPage({ params }: PageProps<'/partidos/[id]/editar'>) {
+export default function EditMatchPage({ params }: PageProps<'/partidos/[id]/editar'>) {
   const { id } = use(params);
   const { match, loading: partidoLoading, notFound, error } = useMatch(id);
   const { user, loading: userLoading } = useCurrentUser();
@@ -100,7 +100,7 @@ export default function EditPartidoPage({ params }: PageProps<'/partidos/[id]/ed
   }
 
   return (
-    <PartidoWizard
+    <MatchWizard
       mode="edit"
       initialForm={toMatchForm(match)}
       submit={(form) => updateMatch(id, form)}

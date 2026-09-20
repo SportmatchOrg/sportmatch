@@ -1,6 +1,6 @@
 import { CalendarX } from 'lucide-react';
 
-import { MatchRow } from '@/components/partidos/match-row';
+import { MatchRow } from '@/components/matches/match-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Match } from '@/types/match';

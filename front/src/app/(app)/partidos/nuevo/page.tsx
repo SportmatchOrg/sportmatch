@@ -1,6 +1,6 @@
 'use client';
 
-import { PartidoWizard } from '@/components/partidos/partido-wizard';
+import { MatchWizard } from '@/components/matches/match-wizard';
 import { ApiError } from '@/lib/api';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { EMPTY_MATCH_FORM } from '@/lib/match-form';
@@ -15,9 +15,9 @@ function publishedMessage(form: { date: string }, sport?: Sport): string {
   return `Partido publicado · ${label} · ${formatMatchDay(form.date)} · ${formatMatchTime(form.date)}`;
 }
 
-export default function NewPartidoPage() {
+export default function NewMatchPage() {
   return (
-    <PartidoWizard
+    <MatchWizard
       mode="create"
       initialForm={EMPTY_MATCH_FORM}
       submit={createMatch}
