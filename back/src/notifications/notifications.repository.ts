@@ -20,6 +20,7 @@ const NOTIFICATION_SELECT = {
       id: true,
       date: true,
       location: true,
+      status: true,
       sport: { select: { id: true, name: true } },
     },
   },

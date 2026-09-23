@@ -16,6 +16,7 @@ export class RatingsRepository {
       select: {
         id: true,
         date: true,
+        status: true,
         organizer: PUBLIC_USER,
         participants: { select: { user: PUBLIC_USER } },
       },

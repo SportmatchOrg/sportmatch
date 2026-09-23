@@ -16,6 +16,13 @@ enum Level {
   @@map("level")
 }
 
+enum MatchStatus {
+  ACTIVE
+  CANCELED
+
+  @@map("match_status")
+}
+
 model User {
   id          String   @id @default(cuid())
   firebaseUid String   @unique
@@ -56,6 +63,9 @@ model Match {
   location      String
   capacity      Int
   description   String?
+  status        MatchStatus    @default(ACTIVE)
+  cancelReason  String?
+  canceledAt    DateTime?
   organizerId   String
   organizer     User           @relation(fields: [organizerId], references: [id])
   createdAt     DateTime       @default(now())

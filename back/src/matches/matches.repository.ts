@@ -47,6 +47,7 @@ export class MatchesRepository {
     return this.prisma.match.findMany({
       where: {
         date: { gte: new Date() },
+        status: 'ACTIVE',
         organizerId: { not: userId },
         participants: { none: { userId } },
         joinRequests: {
@@ -109,6 +110,7 @@ export class MatchesRepository {
     return this.prisma.match.findMany({
       where: {
         date: { gte: new Date() },
+        status: 'ACTIVE',
         joinRequests: { some: { userId, status: 'PENDING' } },
       },
       orderBy: { date: 'asc' },
@@ -120,6 +122,7 @@ export class MatchesRepository {
     return this.prisma.match.findMany({
       where: {
         date: { lt: new Date() },
+        status: 'ACTIVE',
         OR: [
           { organizerId: playerId },
           { participants: { some: { userId: playerId } } },
@@ -141,6 +144,18 @@ export class MatchesRepository {
     return this.prisma.match.update({
       where: { id },
       data,
+      include: matchInclude(userId),
+    });
+  }
+
+  cancel(id: string, userId: string, reason: string) {
+    return this.prisma.match.update({
+      where: { id },
+      data: {
+        status: 'CANCELED',
+        cancelReason: reason,
+        canceledAt: new Date(),
+      },
       include: matchInclude(userId),
     });
   }
