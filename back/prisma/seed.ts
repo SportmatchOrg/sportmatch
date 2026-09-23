@@ -177,9 +177,9 @@ async function main() {
     skipDuplicates: true,
   });
 
-  const [ratedMatch] = playedMatches;
+  const [ratedMatch, secondPlayedMatch, thirdPlayedMatch] = playedMatches;
 
-  if (!ratedMatch) {
+  if (!ratedMatch || !secondPlayedMatch || !thirdPlayedMatch) {
     return;
   }
 
@@ -190,6 +190,33 @@ async function main() {
       ratedUserId: ratedMatch.organizerId,
       score: 5,
     },
+  });
+
+  await prisma.notification.deleteMany({ where: { userId: demoUser.id } });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: demoUser.id,
+        actorId: ana.id,
+        matchId: ratedMatch.id,
+        type: 'JOIN_REQUEST_ACCEPTED',
+        readAt: new Date(),
+      },
+      {
+        userId: demoUser.id,
+        actorId: luis.id,
+        matchId: secondPlayedMatch.id,
+        type: 'JOIN_REQUEST_REJECTED',
+      },
+      {
+        userId: demoUser.id,
+        actorId: marta.id,
+        matchId: thirdPlayedMatch.id,
+        type: 'MATCH_CANCELED',
+        payload: { reason: 'Canceled because of rain' },
+      },
+    ],
   });
 }
 
