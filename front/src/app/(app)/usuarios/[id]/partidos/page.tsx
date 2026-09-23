@@ -49,7 +49,7 @@ export default function PublicPlayedMatchesPage({ params }: PageProps<'/usuarios
   }
 
   return (
-    <PlayedMatchesScreen title={`Partidos de ${profile.nombre} · ${matches.length}`}>
+    <PlayedMatchesScreen title={`Partidos de ${profile.name} · ${matches.length}`}>
       <PlayedMatchesList matches={matches} emptyTitle="Todavía no jugó ningún partido" />
     </PlayedMatchesScreen>
   );
