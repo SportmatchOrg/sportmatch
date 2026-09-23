@@ -67,15 +67,30 @@ export class JoinRequestsRepository {
   }
 
   accept(joinRequestId: string, matchId: string, userId: string) {
-    return this.prisma.$transaction([
-      this.prisma.joinRequest.update({
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+
+      const [joined, match] = await Promise.all([
+        tx.participant.count({ where: { matchId } }),
+        tx.match.findUniqueOrThrow({
+          where: { id: matchId },
+          select: { capacity: true },
+        }),
+      ]);
+
+      if (joined >= match.capacity) {
+        return null;
+      }
+
+      const request = await tx.joinRequest.update({
         where: { id: joinRequestId },
         data: { status: 'ACCEPTED' },
-      }),
-      this.prisma.participant.create({
-        data: { matchId, userId },
-      }),
-    ]);
+      });
+
+      await tx.participant.create({ data: { matchId, userId } });
+
+      return request;
+    });
   }
 
   deletePending(matchId: string, userId: string) {
