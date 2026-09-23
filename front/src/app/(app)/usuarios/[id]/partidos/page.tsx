@@ -4,15 +4,16 @@ import { Search, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
 
-import { ProfileHeader } from '@/components/profile/profile-header';
-import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
-import { ProfileStats } from '@/components/profile/profile-stats';
-import { RecentMatches } from '@/components/profile/recent-matches';
+import {
+  PlayedMatchesList,
+  PlayedMatchesSkeleton,
+} from '@/components/profile/played-matches-list';
+import { PlayedMatchesScreen } from '@/components/profile/played-matches-screen';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { usePublicProfile } from '@/hooks/use-public-profile';
 
-export default function PublicProfilePage({ params }: PageProps<'/usuarios/[id]'>) {
+export default function PublicPlayedMatchesPage({ params }: PageProps<'/usuarios/[id]/partidos'>) {
   const { id } = use(params);
   const router = useRouter();
   const { user, loading: currentUserLoading } = useCurrentUser();
@@ -20,43 +21,36 @@ export default function PublicProfilePage({ params }: PageProps<'/usuarios/[id]'
   const isOwnProfile = user?.id === id;
 
   useEffect(() => {
-    if (isOwnProfile) router.replace('/perfil');
+    if (isOwnProfile) router.replace('/perfil/partidos');
   }, [isOwnProfile, router]);
 
   if (currentUserLoading || loading || isOwnProfile) {
     return (
-      <main className="w-full">
-        <ProfileSkeleton />
-      </main>
+      <PlayedMatchesScreen title="Partidos jugados">
+        <PlayedMatchesSkeleton />
+      </PlayedMatchesScreen>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <main className="flex min-h-dvh items-center justify-center px-8">
+      <PlayedMatchesScreen title="Partidos jugados">
         <EmptyState
           icon={notFound ? Search : TriangleAlert}
-          title={notFound ? 'No encontramos este jugador' : 'No pudimos cargar este perfil'}
+          title={notFound ? 'No encontramos este jugador' : 'No pudimos cargar estos partidos'}
           text={
             notFound
               ? 'Puede que el perfil ya no exista o que el link esté mal.'
               : (error ?? 'Probá de nuevo en un momento.')
           }
         />
-      </main>
+      </PlayedMatchesScreen>
     );
   }
 
   return (
-    <main className="w-full pb-10">
-      <ProfileHeader user={profile} isOwnProfile={false} />
-      <ProfileStats stats={profile.stats} />
-      <RecentMatches
-        partidos={matches}
-        error={null}
-        seeAllHref={`/usuarios/${id}/partidos`}
-        emptyTitle="Todavía no jugó ningún partido"
-      />
-    </main>
+    <PlayedMatchesScreen title={`Partidos de ${profile.nombre} · ${matches.length}`}>
+      <PlayedMatchesList matches={matches} emptyTitle="Todavía no jugó ningún partido" />
+    </PlayedMatchesScreen>
   );
 }
