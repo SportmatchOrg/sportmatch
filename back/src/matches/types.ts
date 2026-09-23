@@ -1,7 +1,7 @@
 import type { JoinRequestStatus } from '../generated/prisma/client';
 import type { PublicUser } from '../users/types';
 
-export type ListedPartido = {
+export type ListedMatch = {
   organizerId: string;
   date: Date;
   _count: { participants: number; joinRequests: number };
@@ -10,7 +10,7 @@ export type ListedPartido = {
   ratings: { id: string }[];
 };
 
-export type DetailedPartido = {
+export type DetailedMatch = {
   organizerId: string;
   date: Date;
   _count: { participants: number; joinRequests: number };

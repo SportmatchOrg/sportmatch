@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePartidoDto } from './dto/create-partido.dto';
-import { UpdatePartidoDto } from './dto/update-partido.dto';
+import { CreateMatchDto } from './dto/create-match.dto';
+import { UpdateMatchDto } from './dto/update-match.dto';
 
 const PUBLIC_ORGANIZER = {
   select: { id: true, name: true, photoUrl: true },
@@ -40,7 +40,7 @@ const matchInclude = (userId: string) =>
   }) as const;
 
 @Injectable()
-export class PartidosRepository {
+export class MatchesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findUpcoming(userId: string) {
@@ -130,14 +130,14 @@ export class PartidosRepository {
     });
   }
 
-  create(organizerId: string, data: CreatePartidoDto) {
+  create(organizerId: string, data: CreateMatchDto) {
     return this.prisma.match.create({
       data: { ...data, organizerId },
       include: matchInclude(organizerId),
     });
   }
 
-  update(id: string, userId: string, data: UpdatePartidoDto) {
+  update(id: string, userId: string, data: UpdateMatchDto) {
     return this.prisma.match.update({
       where: { id },
       data,
