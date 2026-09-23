@@ -69,6 +69,10 @@ export class RatingsService {
       throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
+    if (match.status === 'CANCELED') {
+      throw new BadRequestException('The match is canceled');
+    }
+
     if (match.date.getTime() > Date.now()) {
       throw new BadRequestException('The match has not been played yet');
     }

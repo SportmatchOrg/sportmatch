@@ -1,11 +1,14 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { MatchStatus } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
+import { CancelMatchDto } from './dto/cancel-match.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesRepository } from './matches.repository';
@@ -96,6 +99,7 @@ export class MatchesService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const match = await this.assertIsOrganizer(user.id, id);
 
+    this.assertNotCanceled(match.status);
     this.assertNotPlayed(match.date);
 
     if (updateMatchDto.date) {
@@ -124,6 +128,26 @@ export class MatchesService {
     }
   }
 
+  async cancel(
+    firebaseUid: string,
+    id: string,
+    cancelMatchDto: CancelMatchDto,
+  ) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const match = await this.assertIsOrganizer(user.id, id);
+
+    this.assertNotCanceled(match.status);
+    this.assertNotPlayed(match.date);
+
+    const canceled = await this.matchesRepository.cancel(
+      id,
+      user.id,
+      cancelMatchDto.reason,
+    );
+
+    return this.toListResponse(canceled, user.id);
+  }
+
   async remove(firebaseUid: string, id: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     await this.assertIsOrganizer(user.id, id);
@@ -139,6 +163,7 @@ export class MatchesService {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const match = await this.getOrFail(matchId, user.id);
 
+    this.assertNotCanceled(match.status);
     this.assertNotPlayed(match.date);
 
     if (match.participants.length === 0) {
@@ -225,6 +250,12 @@ export class MatchesService {
   private assertNotPlayed(date: Date) {
     if (date.getTime() <= Date.now()) {
       throw new BadRequestException('The match has already been played');
+    }
+  }
+
+  private assertNotCanceled(status: MatchStatus) {
+    if (status === 'CANCELED') {
+      throw new ConflictException('The match is canceled');
     }
   }
 

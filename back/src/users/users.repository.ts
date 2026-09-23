@@ -41,6 +41,7 @@ export class UsersRepository {
     return this.prisma.match.findMany({
       where: {
         date: { lt: new Date() },
+        status: 'ACTIVE',
         OR: [{ organizerId: userId }, { participants: { some: { userId } } }],
       },
       select: { date: true },

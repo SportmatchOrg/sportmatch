@@ -16,6 +16,7 @@ export class JoinRequestsRepository {
         id: true,
         organizerId: true,
         date: true,
+        status: true,
         capacity: true,
         _count: { select: { participants: true } },
         participants: {

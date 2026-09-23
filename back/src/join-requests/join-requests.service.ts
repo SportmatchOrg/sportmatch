@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { MatchStatus } from '../generated/prisma/client';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
@@ -27,6 +28,8 @@ export class JoinRequestsService {
     if (!match) {
       throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
+
+    this.assertNotCanceled(match.status);
 
     if (match.organizerId === user.id) {
       throw new BadRequestException('The organizer cannot request to join');
@@ -90,6 +93,8 @@ export class JoinRequestsService {
   ) {
     const { match } = await this.getOrganizerMatch(firebaseUid, matchId);
 
+    this.assertNotCanceled(match.status);
+
     if (updateJoinRequestDto.status === 'PENDING') {
       throw new BadRequestException('A join request cannot return to pending');
     }
@@ -139,6 +144,12 @@ export class JoinRequestsService {
   private assertNotPlayed(date: Date) {
     if (date.getTime() <= Date.now()) {
       throw new BadRequestException('The match has already been played');
+    }
+  }
+
+  private assertNotCanceled(status: MatchStatus) {
+    if (status === 'CANCELED') {
+      throw new ConflictException('The match is canceled');
     }
   }
 

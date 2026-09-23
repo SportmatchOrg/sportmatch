@@ -13,6 +13,7 @@ import {
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
+import { CancelMatchDto } from './dto/cancel-match.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesService } from './matches.service';
@@ -57,6 +58,15 @@ export class MatchesController {
   @Get(':id')
   findOne(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
     return this.matchesService.findOne(user.uid, id);
+  }
+
+  @Patch(':id/cancel')
+  cancel(
+    @CurrentUser() user: FirebaseUser,
+    @Param('id') id: string,
+    @Body() cancelMatchDto: CancelMatchDto,
+  ) {
+    return this.matchesService.cancel(user.uid, id, cancelMatchDto);
   }
 
   @Patch(':id')
