@@ -150,8 +150,11 @@ export class MatchesRepository {
   }
 
   removeParticipant(matchId: string, userId: string) {
-    return this.prisma.participant.delete({
-      where: { matchId_userId: { matchId, userId } },
-    });
+    return this.prisma.$transaction([
+      this.prisma.participant.delete({
+        where: { matchId_userId: { matchId, userId } },
+      }),
+      this.prisma.joinRequest.deleteMany({ where: { matchId, userId } }),
+    ]);
   }
 }
