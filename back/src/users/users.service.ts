@@ -92,7 +92,7 @@ export class UsersService {
         rating: average === null ? null : Math.round(average * 10) / 10,
         ratingCount: received._count,
         playedCount: playedDates.length,
-        weekStreak: weekStreak(playedDates.map(({ fecha }) => fecha)),
+        weekStreak: weekStreak(playedDates.map(({ date }) => date)),
       },
     };
   }

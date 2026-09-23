@@ -6,7 +6,7 @@ import { CreateRatingsDto } from './dto/create-ratings.dto';
 import { RatingsService } from './ratings.service';
 
 @UseGuards(FirebaseAuthGuard)
-@Controller('partidos/:matchId/ratings')
+@Controller('matches/:matchId/ratings')
 export class RatingsController {
   constructor(private readonly ratingsService: RatingsService) {}
 

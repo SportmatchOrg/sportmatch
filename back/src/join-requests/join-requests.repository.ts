@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 const PUBLIC_USER = {
-  select: { id: true, nombre: true, fotoUrl: true },
+  select: { id: true, name: true, photoUrl: true },
 } as const;
 
 @Injectable()
@@ -10,16 +10,16 @@ export class JoinRequestsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findMatchById(matchId: string, userId: string) {
-    return this.prisma.partido.findUnique({
+    return this.prisma.match.findUnique({
       where: { id: matchId },
       select: {
         id: true,
-        organizadorId: true,
-        fecha: true,
-        cupo: true,
-        _count: { select: { participantes: true } },
-        participantes: {
-          where: { usuarioId: userId },
+        organizerId: true,
+        date: true,
+        capacity: true,
+        _count: { select: { participants: true } },
+        participants: {
+          where: { userId },
           select: { id: true },
         },
       },
@@ -72,8 +72,8 @@ export class JoinRequestsRepository {
         where: { id: joinRequestId },
         data: { status: 'ACCEPTED' },
       }),
-      this.prisma.participante.create({
-        data: { partidoId: matchId, usuarioId: userId },
+      this.prisma.participant.create({
+        data: { matchId, userId },
       }),
     ]);
   }

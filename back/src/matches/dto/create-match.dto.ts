@@ -10,31 +10,31 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Nivel } from '../../generated/prisma/client';
+import { Level } from '../../generated/prisma/client';
 
-export class CreatePartidoDto {
+export class CreateMatchDto {
   @IsString()
   @IsNotEmpty()
-  deporteId: string;
+  sportId: string;
 
-  @IsEnum(Nivel)
-  nivel: Nivel;
+  @IsEnum(Level)
+  level: Level;
 
   @Type(() => Date)
   @IsDate()
-  fecha: Date;
+  date: Date;
 
   @IsString()
   @Length(3, 120)
-  ubicacion: string;
+  location: string;
 
   @IsInt()
   @Min(2)
   @Max(30)
-  cupo: number;
+  capacity: number;
 
   @IsOptional()
   @IsString()
   @Length(0, 500)
-  descripcion?: string;
+  description?: string;
 }

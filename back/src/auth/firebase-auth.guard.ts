@@ -52,7 +52,6 @@ export class FirebaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
-
   private toFirebaseUser(decodedToken: FirebaseIdToken): FirebaseUser {
     if (!decodedToken.email) {
       throw new UnauthorizedException('Token does not contain an email');
@@ -61,8 +60,8 @@ export class FirebaseAuthGuard implements CanActivate {
     return {
       uid: decodedToken.uid,
       email: decodedToken.email,
-      nombre: decodedToken.name ?? decodedToken.email.split('@')[0],
-      fotoUrl: decodedToken.picture,
+      name: decodedToken.name ?? decodedToken.email.split('@')[0],
+      photoUrl: decodedToken.picture,
     };
   }
 }

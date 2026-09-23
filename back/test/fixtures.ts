@@ -10,54 +10,54 @@ import type { FirebaseUser } from '../src/auth/types';
 
 /** Usuario autenticado por defecto en los tests. Es el organizador. */
 export const TEST_USER: FirebaseUser = {
-  uid: 'e2e-uid-organizador',
-  email: 'organizador@e2e.test',
-  nombre: 'Organizador E2E',
+  uid: 'e2e-uid-organizer',
+  email: 'organizer@e2e.test',
+  name: 'Organizer E2E',
 };
 
 /** Segundo usuario, para los casos donde importa NO ser el organizador. */
 export const OTHER_USER: FirebaseUser = {
-  uid: 'e2e-uid-otro',
-  email: 'otro@e2e.test',
-  nombre: 'Otro E2E',
+  uid: 'e2e-uid-other',
+  email: 'other@e2e.test',
+  name: 'Other E2E',
 };
 
 export interface Baseline {
-  deporteId: string;
-  organizadorId: string;
-  otroId: string;
+  sportId: string;
+  organizerId: string;
+  otherId: string;
 }
 
 /**
- * Crea el mínimo indispensable para que `POST /partidos` funcione:
- * un Deporte (FK obligatoria) y los dos usuarios (el service resuelve el
+ * Crea el mínimo indispensable para que `POST /matches` funcione:
+ * un Sport (FK obligatoria) y los dos usuarios (el service resuelve el
  * organizador con `findByFirebaseUid`, y tira 404 si no existe).
  */
 export async function seedBaseline(prisma: PrismaService): Promise<Baseline> {
-  const deporte = await prisma.deporte.create({
-    data: { nombre: 'FUTBOL_E2E' },
+  const sport = await prisma.sport.create({
+    data: { name: 'FUTBOL_E2E' },
   });
 
-  const organizador = await prisma.user.create({
+  const organizer = await prisma.user.create({
     data: {
       firebaseUid: TEST_USER.uid,
       email: TEST_USER.email,
-      nombre: TEST_USER.nombre,
+      name: TEST_USER.name,
     },
   });
 
-  const otro = await prisma.user.create({
+  const other = await prisma.user.create({
     data: {
       firebaseUid: OTHER_USER.uid,
       email: OTHER_USER.email,
-      nombre: OTHER_USER.nombre,
+      name: OTHER_USER.name,
     },
   });
 
   return {
-    deporteId: deporte.id,
-    organizadorId: organizador.id,
-    otroId: otro.id,
+    sportId: sport.id,
+    organizerId: organizer.id,
+    otherId: other.id,
   };
 }
 
@@ -69,17 +69,17 @@ export function futureDate(days = 7): Date {
   return date;
 }
 
-/** Payload válido de CreatePartidoDto. Los overrides pisan lo que haga falta. */
-export function partidoPayload(
-  deporteId: string,
+/** Payload válido de CreateMatchDto. Los overrides pisan lo que haga falta. */
+export function matchPayload(
+  sportId: string,
   overrides: Record<string, unknown> = {},
 ) {
   return {
-    deporteId,
-    nivel: 'INTERMEDIO',
-    fecha: futureDate().toISOString(),
-    ubicacion: 'Cancha E2E',
-    cupo: 10,
+    sportId,
+    level: 'INTERMEDIATE',
+    date: futureDate().toISOString(),
+    location: 'Cancha E2E',
+    capacity: 10,
     ...overrides,
   };
 }
