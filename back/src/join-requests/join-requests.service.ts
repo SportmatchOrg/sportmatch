@@ -118,11 +118,15 @@ export class JoinRequestsService {
         throw new ConflictException('The match is full');
       }
 
-      const [acceptedRequest] = await this.joinRequestsRepository.accept(
+      const acceptedRequest = await this.joinRequestsRepository.accept(
         id,
         matchId,
         joinRequest.userId,
       );
+
+      if (!acceptedRequest) {
+        throw new ConflictException('The match is full');
+      }
 
       return acceptedRequest;
     } catch (error) {
