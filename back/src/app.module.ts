@@ -10,6 +10,7 @@ import { MatchesModule } from './matches/matches.module';
 import { SportsModule } from './sports/sports.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { RatingsModule } from './ratings/ratings.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RatingsModule } from './ratings/ratings.module';
     SportsModule,
     JoinRequestsModule,
     RatingsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
