@@ -53,6 +53,8 @@ export type Match = {
   level: Level;
   date: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   capacity: number;
   description: string | null;
   status: MatchStatus;
