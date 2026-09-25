@@ -177,6 +177,21 @@ async function main() {
     skipDuplicates: true,
   });
 
+  await prisma.match.create({
+    data: {
+      sportId: sportId('BASQUET'),
+      level: 'INTERMEDIATE',
+      date: inDays(-1, 20),
+      location: 'Polideportivo Municipal',
+      capacity: 4,
+      description: 'Partido jugado sin calificar',
+      organizerId: marta.id,
+      participants: {
+        create: [demoUser, pablo, sofia].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
   const [ratedMatch, secondPlayedMatch, thirdPlayedMatch] = playedMatches;
 
   if (!ratedMatch || !secondPlayedMatch || !thirdPlayedMatch) {
