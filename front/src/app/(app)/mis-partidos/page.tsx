@@ -4,6 +4,7 @@ import { CalendarDays, Compass, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { CancelMatchDialog } from '@/components/matches/cancel-match-dialog';
 import { JoinRequestsPanel } from '@/components/matches/join-requests-panel';
 import { MyMatchesSection } from '@/components/matches/my-matches-section';
 import { LoadingScreen } from '@/components/loading-screen';
@@ -11,11 +12,16 @@ import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useMyMatches } from '@/hooks/use-my-matches';
+import { ApiError } from '@/lib/api';
 import { NEW_MATCH_HREF } from '@/lib/nav-items';
 import { cancelJoinRequest, cancelMatch, leaveMatch } from '@/lib/matches';
-import { SPORT_LABEL, type Match } from '@/types/match';
+import { SPORT_LABEL, type CancelReason, type Match } from '@/types/match';
 
 const CANCEL_ERROR = 'No pudimos cancelar el partido. Probá de nuevo.';
+
+const ALREADY_CANCELED_ERROR = 'Este partido ya estaba cancelado.';
+
+const CONFLICT = 409;
 
 const LEAVE_ERROR = 'No pudimos darte de baja. Probá de nuevo.';
 
@@ -30,6 +36,12 @@ type PageToast = { message: string; tone: ToastTone };
 
 function matchLabel(match: Match): string {
   return `${SPORT_LABEL[match.sport.name]} · ${match.location}`;
+}
+
+function canceledLast(matches: Match[]): Match[] {
+  return [...matches].sort(
+    (a, b) => Number(a.status === 'CANCELED') - Number(b.status === 'CANCELED')
+  );
 }
 
 export default function MyMatchesPage() {
@@ -64,6 +76,22 @@ export default function MyMatchesPage() {
       reload();
     } catch {
       setToast({ message: failure, tone: 'danger' });
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  async function cancel(match: Match, reason: CancelReason) {
+    setPendingId(match.id);
+
+    try {
+      await cancelMatch(match.id, reason);
+      setToast({ message: `Partido cancelado · ${matchLabel(match)}`, tone: 'danger' });
+      reload();
+    } catch (cause) {
+      const conflict = cause instanceof ApiError && cause.status === CONFLICT;
+
+      throw new Error(conflict ? ALREADY_CANCELED_ERROR : CANCEL_ERROR);
     } finally {
       setPendingId(null);
     }
@@ -116,7 +144,7 @@ export default function MyMatchesPage() {
           <MyMatchesSection
             title="Organizás"
             subtitle="Aprobá quién se suma a los partidos que creaste"
-            matches={organizing}
+            matches={canceledLast(organizing)}
             role="host"
             empty={
               <EmptyState
@@ -149,22 +177,9 @@ export default function MyMatchesPage() {
                   Editar
                 </Link>
 
-                <ConfirmAction
-                  variant="ghost"
-                  label="Cancelar partido"
-                  message="Se cancela para todos los jugadores. No se puede deshacer."
-                  cancelLabel="Volver"
-                  confirmLabel="Sí, cancelar"
-                  pendingLabel="Cancelando…"
+                <CancelMatchDialog
                   pending={pendingId === match.id}
-                  onConfirm={() =>
-                    void run(
-                      match,
-                      cancelMatch,
-                      { message: `Partido cancelado · ${matchLabel(match)}`, tone: 'danger' },
-                      CANCEL_ERROR
-                    )
-                  }
+                  onConfirm={(reason) => cancel(match, reason)}
                 />
               </div>
             )}
@@ -173,7 +188,7 @@ export default function MyMatchesPage() {
           <MyMatchesSection
             title="Jugás"
             subtitle="Partidos a los que te sumaste"
-            matches={playing}
+            matches={canceledLast(playing)}
             role="player"
             empty={
               <EmptyState

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { MatchStatus } from '../generated/prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
@@ -16,6 +17,7 @@ export class JoinRequestsService {
   constructor(
     private readonly joinRequestsRepository: JoinRequestsRepository,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(firebaseUid: string, matchId: string) {
@@ -52,19 +54,24 @@ export class JoinRequestsService {
       throw new ConflictException('You already requested to join this match');
     }
 
-    try {
-      if (existingRequest) {
-        return await this.joinRequestsRepository.resetToPending(
-          existingRequest.id,
-        );
-      }
-
-      return await this.joinRequestsRepository.create(matchId, user.id);
-    } catch (error) {
+    const joinRequest = await (
+      existingRequest
+        ? this.joinRequestsRepository.resetToPending(existingRequest.id)
+        : this.joinRequestsRepository.create(matchId, user.id)
+    ).catch((error: unknown) => {
       throw toPrismaHttpException(error, {
         P2002: 'You already requested to join this match',
       });
-    }
+    });
+
+    await this.notificationsService.notify({
+      userId: match.organizerId,
+      actorId: user.id,
+      matchId,
+      type: 'JOIN_REQUEST_RECEIVED',
+    });
+
+    return joinRequest;
   }
 
   async cancel(firebaseUid: string, matchId: string) {
@@ -91,7 +98,7 @@ export class JoinRequestsService {
     id: string,
     updateJoinRequestDto: UpdateJoinRequestDto,
   ) {
-    const { match } = await this.getOrganizerMatch(firebaseUid, matchId);
+    const { user, match } = await this.getOrganizerMatch(firebaseUid, matchId);
 
     this.assertNotCanceled(match.status);
 
@@ -116,7 +123,16 @@ export class JoinRequestsService {
 
     try {
       if (updateJoinRequestDto.status === 'REJECTED') {
-        return await this.joinRequestsRepository.reject(id);
+        const rejectedRequest = await this.joinRequestsRepository.reject(id);
+
+        await this.notificationsService.notify({
+          userId: joinRequest.userId,
+          actorId: user.id,
+          matchId,
+          type: 'JOIN_REQUEST_REJECTED',
+        });
+
+        return rejectedRequest;
       }
 
       if (match._count.participants >= match.capacity) {
@@ -132,6 +148,13 @@ export class JoinRequestsService {
       if (!acceptedRequest) {
         throw new ConflictException('The match is full');
       }
+
+      await this.notificationsService.notify({
+        userId: joinRequest.userId,
+        actorId: user.id,
+        matchId,
+        type: 'JOIN_REQUEST_ACCEPTED',
+      });
 
       return acceptedRequest;
     } catch (error) {
@@ -170,6 +193,6 @@ export class JoinRequestsService {
       );
     }
 
-    return { match };
+    return { user, match };
   }
 }

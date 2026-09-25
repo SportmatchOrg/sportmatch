@@ -23,19 +23,46 @@ export class RatingsRepository {
     });
   }
 
-  countGivenBy(matchId: string, raterId: string) {
-    return this.prisma.rating.count({ where: { matchId, raterId } });
+  async countSubmittedBy(matchId: string, userId: string) {
+    const [ratings, noShowReports] = await Promise.all([
+      this.prisma.rating.count({ where: { matchId, raterId: userId } }),
+      this.prisma.noShowReport.count({
+        where: { matchId, reporterId: userId },
+      }),
+    ]);
+
+    return ratings + noShowReports;
   }
 
-  createMany(matchId: string, raterId: string, items: RatingItemDto[]) {
-    return this.prisma.rating.createMany({
-      data: items.map(({ ratedUserId, score, comment }) => ({
-        matchId,
-        raterId,
-        ratedUserId,
-        score,
-        comment,
-      })),
-    });
+  async createSubmission(
+    matchId: string,
+    userId: string,
+    ratings: RatingItemDto[],
+    noShowUserIds: string[],
+  ) {
+    const [createdRatings, createdNoShowReports] =
+      await this.prisma.$transaction([
+        this.prisma.rating.createMany({
+          data: ratings.map(({ ratedUserId, score, comment }) => ({
+            matchId,
+            raterId: userId,
+            ratedUserId,
+            score,
+            comment,
+          })),
+        }),
+        this.prisma.noShowReport.createMany({
+          data: noShowUserIds.map((reportedUserId) => ({
+            matchId,
+            reporterId: userId,
+            reportedUserId,
+          })),
+        }),
+      ]);
+
+    return {
+      count: createdRatings.count,
+      noShowCount: createdNoShowReports.count,
+    };
   }
 }

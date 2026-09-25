@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api';
 import { toCreateMatchBody, toUpdateMatchBody, type MatchForm } from '@/lib/match-form';
-import type { Match, MatchDetail, MyMatches } from '@/types/match';
+import type { CancelReason, Match, MatchDetail, MyMatches } from '@/types/match';
 
 export async function fetchMatches(): Promise<Match[]> {
   return apiFetch<Match[]>('/matches');
@@ -36,8 +36,11 @@ export async function cancelJoinRequest(matchId: string): Promise<void> {
   await apiFetch<void>(`/matches/${matchId}/join-requests/me`, { method: 'DELETE' });
 }
 
-export async function cancelMatch(matchId: string): Promise<void> {
-  await apiFetch<void>(`/matches/${matchId}`, { method: 'DELETE' });
+export async function cancelMatch(matchId: string, reason: CancelReason): Promise<Match> {
+  return apiFetch<Match>(`/matches/${matchId}/cancel`, {
+    method: 'PATCH',
+    body: JSON.stringify({ reason }),
+  });
 }
 
 export async function leaveMatch(matchId: string): Promise<void> {

@@ -31,6 +31,21 @@ export type PublicUser = {
 
 export type JoinRequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
+export type MatchStatus = 'ACTIVE' | 'CANCELED';
+
+export const CANCEL_REASONS = [
+  'Mal clima',
+  'No se juntaron jugadores',
+  'La cancha no está disponible',
+  'Me surgió un imprevisto',
+  'Lesión o problema de salud',
+  'Se reprograma para otra fecha',
+  'Se cruzó con otro compromiso',
+  'Otro',
+] as const;
+
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
 export type Match = {
   id: string;
   sportId: string;
@@ -40,6 +55,8 @@ export type Match = {
   location: string;
   capacity: number;
   description: string | null;
+  status: MatchStatus;
+  cancelReason: string | null;
   organizer: PublicUser;
   joinedCount: number;
   isJoined: boolean;

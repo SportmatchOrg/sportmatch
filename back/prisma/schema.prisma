@@ -37,6 +37,8 @@ model User {
   joinRequests           JoinRequest[]
   ratingsGiven           Rating[]       @relation("RatingsGiven")
   ratingsReceived        Rating[]       @relation("RatingsReceived")
+  noShowReportsGiven     NoShowReport[] @relation("NoShowReportsGiven")
+  noShowReportsReceived  NoShowReport[] @relation("NoShowReportsReceived")
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
 
@@ -73,6 +75,7 @@ model Match {
   participants  Participant[]
   joinRequests  JoinRequest[]
   ratings       Rating[]
+  noShowReports NoShowReport[]
   notifications Notification[]
 
   @@index([date])
@@ -133,11 +136,30 @@ model Rating {
   @@map("ratings")
 }
 
+model NoShowReport {
+  id             String   @id @default(cuid())
+  matchId        String
+  match          Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  reporterId     String
+  reporter       User     @relation("NoShowReportsGiven", fields: [reporterId], references: [id])
+  reportedUserId String
+  reportedUser   User     @relation("NoShowReportsReceived", fields: [reportedUserId], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@unique([matchId, reporterId, reportedUserId])
+  @@index([reportedUserId])
+  @@map("no_show_reports")
+}
+
 enum NotificationType {
   JOIN_REQUEST_RECEIVED
   JOIN_REQUEST_ACCEPTED
   JOIN_REQUEST_REJECTED
   MATCH_CANCELED
+  PARTICIPANT_LEFT
+  MATCH_UPDATED
+  NO_SHOW_CONFIRMED
+  USER_SUSPENDED
 
   @@map("notification_type")
 }

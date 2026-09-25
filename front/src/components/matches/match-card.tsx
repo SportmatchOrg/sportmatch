@@ -27,6 +27,8 @@ const ROLE_CHIP: Record<MatchCardRole, string> = {
 
 const PENDING_REQUEST_CHIP = 'bg-warning-tint text-warning';
 
+const CANCELED_CHIP = 'bg-danger-tint text-danger';
+
 const CHIP = 'rounded-full px-3 py-1 text-caption font-semibold';
 
 type MatchCardProps = {
@@ -43,9 +45,14 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const sport = SPORT_LABEL[match.sport.name];
-  const pendingRequest = role === 'player' && match.myJoinRequest === 'PENDING';
-  const roleLabel = pendingRequest ? 'Pendiente' : ROLE_LABEL[role];
-  const roleChip = pendingRequest ? PENDING_REQUEST_CHIP : ROLE_CHIP[role];
+  const canceled = match.status === 'CANCELED';
+  const pendingRequest = !canceled && role === 'player' && match.myJoinRequest === 'PENDING';
+  const roleLabel = canceled ? 'Cancelado' : pendingRequest ? 'Pendiente' : ROLE_LABEL[role];
+  const roleChip = canceled
+    ? CANCELED_CHIP
+    : pendingRequest
+      ? PENDING_REQUEST_CHIP
+      : ROLE_CHIP[role];
 
   return (
     <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel-lit transition active:scale-[var(--press-scale-card)] lg:rounded-md">
@@ -59,7 +66,8 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
         <div
           className={cn(
             'relative shrink-0 overflow-hidden bg-sunken lg:aspect-auto lg:w-[132px]',
-            role === 'host' ? 'aspect-video' : 'aspect-[16/11]'
+            role === 'host' ? 'aspect-video' : 'aspect-[16/11]',
+            canceled && 'opacity-60'
           )}
         >
           {photo && !photoFailed ? (
@@ -85,7 +93,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
               <span className={cn(CHIP, roleChip)}>{roleLabel}</span>
             </span>
 
-            {role === 'player' && <SpotsBadge freeSpots={freeSpots} onPhoto />}
+            {role === 'player' && !canceled && <SpotsBadge freeSpots={freeSpots} onPhoto />}
           </div>
 
           <h3 className="absolute inset-x-4 bottom-4 truncate text-subhead text-white lg:hidden">
@@ -97,7 +105,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
           <div className="hidden shrink-0 items-center justify-between gap-3 lg:flex">
             <span className="text-overline text-ink-46 uppercase">{sport}</span>
 
-            {role === 'player' && <SpotsBadge freeSpots={freeSpots} />}
+            {role === 'player' && !canceled && <SpotsBadge freeSpots={freeSpots} />}
           </div>
 
           <h3 className="hidden shrink-0 truncate text-subhead text-white lg:block">
@@ -117,7 +125,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
               </span>
             </span>
 
-            {role === 'player' && (
+            {role === 'player' && !canceled && (
               <span
                 aria-hidden="true"
                 className="flex shrink-0 items-center gap-1 text-callout font-semibold text-brand lg:hidden"
@@ -127,14 +135,18 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
               </span>
             )}
           </div>
+
+          {canceled && match.cancelReason && (
+            <p className="text-caption text-ink-64">Motivo: {match.cancelReason}</p>
+          )}
         </div>
       </div>
 
-      {panel && (
+      {!canceled && panel && (
         <div className="relative z-10 border-t border-glass-strong p-4">{panel}</div>
       )}
 
-      {action && (
+      {!canceled && action && (
         <div
           className={cn(
             'relative z-10 border-t border-glass-strong px-4',
