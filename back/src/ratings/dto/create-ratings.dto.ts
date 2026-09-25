@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsInt,
   IsOptional,
@@ -27,9 +27,15 @@ export class RatingItemDto {
 }
 
 export class CreateRatingsDto {
+  // Empty when every assigned target was reported as a no-show.
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => RatingItemDto)
   ratings: RatingItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  noShowUserIds?: string[];
 }

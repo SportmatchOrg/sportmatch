@@ -20,13 +20,17 @@ export class RatingsService {
   ) {}
 
   async findPending(firebaseUid: string, matchId: string) {
-    const { user, targets } = await this.getAssignment(firebaseUid, matchId);
-    const alreadyRated = await this.ratingsRepository.countGivenBy(
+    const { user, targets, otherPlayers } = await this.getAssignment(
+      firebaseUid,
       matchId,
-      user.id,
     );
+    const alreadySubmitted = await this.hasSubmitted(matchId, user.id);
 
-    return { matchId, targets: alreadyRated > 0 ? [] : targets };
+    return {
+      matchId,
+      targets: alreadySubmitted ? [] : targets,
+      players: alreadySubmitted ? [] : otherPlayers,
+    };
   }
 
   async create(
@@ -34,31 +38,48 @@ export class RatingsService {
     matchId: string,
     createRatingsDto: CreateRatingsDto,
   ) {
-    const { user, targets } = await this.getAssignment(firebaseUid, matchId);
-    const alreadyRated = await this.ratingsRepository.countGivenBy(
+    const { user, targets, otherPlayers } = await this.getAssignment(
+      firebaseUid,
       matchId,
-      user.id,
     );
 
-    if (alreadyRated > 0) {
+    if (await this.hasSubmitted(matchId, user.id)) {
       throw new ConflictException('You already rated this match');
     }
 
-    this.assertMatchesAssignment(createRatingsDto.ratings, targets);
+    const { ratings, noShowUserIds = [] } = createRatingsDto;
+    const noShowIds = new Set(noShowUserIds);
+
+    this.assertNoShowsArePlayers(noShowIds, otherPlayers);
+    this.assertMatchesAssignment(
+      ratings,
+      targets.filter(({ id }) => !noShowIds.has(id)),
+    );
 
     try {
-      const { count } = await this.ratingsRepository.createMany(
-        matchId,
-        user.id,
-        createRatingsDto.ratings,
-      );
+      const { count, noShowCount } =
+        await this.ratingsRepository.createSubmission(
+          matchId,
+          user.id,
+          ratings,
+          noShowUserIds,
+        );
 
-      return { matchId, count };
+      return { matchId, count, noShowCount };
     } catch (error) {
       throw toPrismaHttpException(error, {
         P2002: 'You already rated this match',
       });
     }
+  }
+
+  private async hasSubmitted(matchId: string, userId: string) {
+    const submitted = await this.ratingsRepository.countSubmittedBy(
+      matchId,
+      userId,
+    );
+
+    return submitted > 0;
   }
 
   private async getAssignment(firebaseUid: string, matchId: string) {
@@ -96,7 +117,22 @@ export class RatingsService {
       .map((id) => playersById.get(id))
       .filter((player): player is PublicUser => player !== undefined);
 
-    return { user, targets };
+    const otherPlayers = players.filter(({ id }) => id !== user.id);
+
+    return { user, targets, otherPlayers };
+  }
+
+  private assertNoShowsArePlayers(
+    noShowIds: Set<string>,
+    otherPlayers: PublicUser[],
+  ) {
+    const otherPlayerIds = new Set(otherPlayers.map(({ id }) => id));
+
+    if ([...noShowIds].some((id) => !otherPlayerIds.has(id))) {
+      throw new BadRequestException(
+        'No-shows must be other players of this match',
+      );
+    }
   }
 
   private assertMatchesAssignment(
