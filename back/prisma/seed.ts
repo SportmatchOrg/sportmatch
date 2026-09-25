@@ -177,6 +177,21 @@ async function main() {
     skipDuplicates: true,
   });
 
+  await prisma.match.create({
+    data: {
+      sportId: sportId('BASQUET'),
+      level: 'INTERMEDIATE',
+      date: inDays(-1, 20),
+      location: 'Polideportivo Municipal',
+      capacity: 4,
+      description: 'Partido jugado sin calificar',
+      organizerId: marta.id,
+      participants: {
+        create: [demoUser, pablo, sofia].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
   const [ratedMatch, secondPlayedMatch, thirdPlayedMatch] = playedMatches;
 
   if (!ratedMatch || !secondPlayedMatch || !thirdPlayedMatch) {
@@ -215,6 +230,26 @@ async function main() {
         matchId: thirdPlayedMatch.id,
         type: 'MATCH_CANCELED',
         payload: { reason: 'Canceled because of rain' },
+      },
+      {
+        userId: demoUser.id,
+        actorId: sofia.id,
+        matchId: ratedMatch.id,
+        type: 'JOIN_REQUEST_RECEIVED',
+        readAt: new Date(),
+      },
+      {
+        userId: demoUser.id,
+        actorId: pablo.id,
+        matchId: secondPlayedMatch.id,
+        type: 'PARTICIPANT_LEFT',
+      },
+      {
+        userId: demoUser.id,
+        actorId: ana.id,
+        matchId: thirdPlayedMatch.id,
+        type: 'MATCH_UPDATED',
+        payload: { changed: ['date', 'location'] },
       },
     ],
   });
