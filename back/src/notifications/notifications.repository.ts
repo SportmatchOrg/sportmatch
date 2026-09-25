@@ -73,7 +73,7 @@ export class NotificationsRepository {
     });
   }
 
-  create(input: CreateNotificationInput) {
-    return this.prisma.notification.create({ data: input });
+  createMany(inputs: CreateNotificationInput[]) {
+    return this.prisma.notification.createMany({ data: inputs });
   }
 }

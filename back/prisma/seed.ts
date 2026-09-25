@@ -216,6 +216,26 @@ async function main() {
         type: 'MATCH_CANCELED',
         payload: { reason: 'Canceled because of rain' },
       },
+      {
+        userId: demoUser.id,
+        actorId: sofia.id,
+        matchId: ratedMatch.id,
+        type: 'JOIN_REQUEST_RECEIVED',
+        readAt: new Date(),
+      },
+      {
+        userId: demoUser.id,
+        actorId: pablo.id,
+        matchId: secondPlayedMatch.id,
+        type: 'PARTICIPANT_LEFT',
+      },
+      {
+        userId: demoUser.id,
+        actorId: ana.id,
+        matchId: thirdPlayedMatch.id,
+        type: 'MATCH_UPDATED',
+        payload: { changed: ['date', 'location'] },
+      },
     ],
   });
 }

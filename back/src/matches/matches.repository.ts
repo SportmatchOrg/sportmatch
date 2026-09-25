@@ -164,6 +164,25 @@ export class MatchesRepository {
     return this.prisma.match.delete({ where: { id } });
   }
 
+  async findPlayersAndPendingIds(matchId: string) {
+    const [participants, pendingRequests] = await Promise.all([
+      this.prisma.participant.findMany({
+        where: { matchId },
+        select: { userId: true },
+      }),
+      this.prisma.joinRequest.findMany({
+        where: { matchId, status: 'PENDING' },
+        select: { userId: true },
+      }),
+    ]);
+
+    return [
+      ...new Set(
+        [...participants, ...pendingRequests].map(({ userId }) => userId),
+      ),
+    ];
+  }
+
   removeParticipant(matchId: string, userId: string) {
     return this.prisma.$transaction([
       this.prisma.participant.delete({

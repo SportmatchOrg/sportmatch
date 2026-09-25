@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { MatchStatus } from '../generated/prisma/client';
+import type { CreateNotificationInput } from '../notifications/notifications.repository';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CancelMatchDto } from './dto/cancel-match.dto';
@@ -19,6 +21,7 @@ export class MatchesService {
   constructor(
     private readonly matchesRepository: MatchesRepository,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findUpcoming(firebaseUid: string) {
@@ -115,12 +118,25 @@ export class MatchesService {
       );
     }
 
+    const changed = this.getNotifiableChanges(match, updateMatchDto);
+    const recipientIds =
+      changed.length > 0
+        ? await this.matchesRepository.findPlayersAndPendingIds(id)
+        : [];
+
     try {
       const updated = await this.matchesRepository.update(
         id,
         user.id,
         updateMatchDto,
       );
+
+      await this.notifyUsers(recipientIds, {
+        actorId: user.id,
+        matchId: id,
+        type: 'MATCH_UPDATED',
+        payload: { changed },
+      });
 
       return this.toListResponse(updated, user.id);
     } catch (error) {
@@ -139,11 +155,21 @@ export class MatchesService {
     this.assertNotCanceled(match.status);
     this.assertNotPlayed(match.date);
 
+    // Read before canceling, while the match still lists who was in it.
+    const recipientIds =
+      await this.matchesRepository.findPlayersAndPendingIds(id);
     const canceled = await this.matchesRepository.cancel(
       id,
       user.id,
       cancelMatchDto.reason,
     );
+
+    await this.notifyUsers(recipientIds, {
+      actorId: user.id,
+      matchId: id,
+      type: 'MATCH_CANCELED',
+      payload: { reason: cancelMatchDto.reason },
+    });
 
     return this.toListResponse(canceled, user.id);
   }
@@ -175,6 +201,45 @@ export class MatchesService {
     } catch (error) {
       throw this.toHttpException(error, matchId);
     }
+
+    await this.notificationsService.notify({
+      userId: match.organizerId,
+      actorId: user.id,
+      matchId,
+      type: 'PARTICIPANT_LEFT',
+    });
+  }
+
+  private getNotifiableChanges(
+    before: { date: Date; location: string },
+    updateMatchDto: UpdateMatchDto,
+  ) {
+    const changed: ('date' | 'location')[] = [];
+
+    if (
+      updateMatchDto.date &&
+      updateMatchDto.date.getTime() !== before.date.getTime()
+    ) {
+      changed.push('date');
+    }
+
+    if (
+      updateMatchDto.location !== undefined &&
+      updateMatchDto.location !== before.location
+    ) {
+      changed.push('location');
+    }
+
+    return changed;
+  }
+
+  private notifyUsers(
+    userIds: string[],
+    notification: Omit<CreateNotificationInput, 'userId'>,
+  ) {
+    return this.notificationsService.notifyMany(
+      userIds.map((userId) => ({ ...notification, userId })),
+    );
   }
 
   private async getOrFail(id: string, userId: string) {
