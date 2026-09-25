@@ -11,6 +11,7 @@ import { SportsModule } from './sports/sports.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { RatingsModule } from './ratings/ratings.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     JoinRequestsModule,
     RatingsModule,
     NotificationsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
