@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { NotificationsRepository } from './notifications.repository';
 import type { CreateNotificationInput } from './notifications.repository';
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     private readonly notificationsRepository: NotificationsRepository,
     private readonly usersService: UsersService,
@@ -49,7 +51,29 @@ export class NotificationsService {
   }
 
   notify(input: CreateNotificationInput) {
-    return this.notificationsRepository.create(input);
+    return this.notifyMany([input]);
+  }
+
+  // Never throws: the user's action is already saved when this runs, so a
+  // failed notification must not turn it into an error response.
+  async notifyMany(inputs: CreateNotificationInput[]) {
+    const recipients = inputs.filter(
+      ({ userId, actorId }) => userId !== actorId,
+    );
+
+    if (recipients.length === 0) {
+      return;
+    }
+
+    try {
+      await this.notificationsRepository.createMany(recipients);
+    } catch (error) {
+      this.logger.warn(
+        `Could not create ${recipients.length} notification(s): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   private async getUserId(firebaseUid: string) {
