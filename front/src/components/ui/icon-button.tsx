@@ -16,27 +16,39 @@ const VARIANT = {
 
 const SIZE = {
   sm: 'size-9',
+  nav: 'size-nav-item-desktop',
   md: 'size-11',
 } as const;
 
+type IconButtonVariant = keyof typeof VARIANT;
+export type IconButtonSize = keyof typeof SIZE;
+
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
-  variant?: keyof typeof VARIANT;
-  size?: keyof typeof SIZE;
+  variant?: IconButtonVariant;
+  size?: IconButtonSize;
 };
 
+// Lets a Link look like an IconButton without nesting a <button> inside an <a>.
+export function iconButtonClassName(
+  variant: IconButtonVariant = 'glass',
+  size: IconButtonSize = 'md'
+) {
+  return cn(BASE, VARIANT[variant], SIZE[size]);
+}
+
 export function IconButton({
-  label,
-  variant = 'glass',
-  size = 'md',
-  className,
-  ...props
-}: IconButtonProps) {
+                             label,
+                             variant = 'glass',
+                             size = 'md',
+                             className,
+                             ...props
+                           }: IconButtonProps) {
   return (
     <button
       type="button"
       aria-label={label}
-      className={cn(BASE, VARIANT[variant], SIZE[size], className)}
+      className={cn(iconButtonClassName(variant, size), className)}
       {...props}
     />
   );

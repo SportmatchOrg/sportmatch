@@ -11,9 +11,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { CountBadge } from '@/components/ui/count-badge';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
-import { NAV_ITEMS, NEW_MATCH_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
+import {
+  NAV_ITEMS,
+  NEW_MATCH_HREF,
+  PROFILE_HREF,
+  isNavItemActive,
+  type NavItem,
+} from '@/lib/nav-items';
+import { withUnreadLabel } from '@/lib/notifications';
 
 const LEFT_ITEMS = NAV_ITEMS.slice(0, 2);
 const RIGHT_ITEMS = NAV_ITEMS.slice(2);
@@ -22,12 +30,14 @@ const SHEET_SHADOW =
   'shadow-float-glass';
 
 function TabBarLink({
-  item,
-  active,
-  onUnavailable,
-}: {
+                      item,
+                      active,
+                      badgeCount = 0,
+                      onUnavailable,
+                    }: {
   item: NavItem;
   active: boolean;
+  badgeCount?: number;
   onUnavailable: () => void;
 }) {
   const Icon = item.icon;
@@ -40,6 +50,7 @@ function TabBarLink({
   const content = (
     <>
       <Icon className="size-6" aria-hidden="true" />
+      <CountBadge count={badgeCount} className="absolute top-1.5 right-1.5 ring-sheet" />
       {active && (
         <span
           className="absolute bottom-[7px] left-1/2 size-[5px] -translate-x-1/2 rounded-full bg-brand shadow-brand-glow"
@@ -69,7 +80,7 @@ function TabBarLink({
   return (
     <Link
       href={item.href}
-      aria-label={item.label}
+      aria-label={withUnreadLabel(item.label, badgeCount)}
       aria-current={active ? 'page' : undefined}
       className={cn(itemClassName, !active && 'hover:text-white')}
     >
@@ -78,7 +89,11 @@ function TabBarLink({
   );
 }
 
-export function TabBar() {
+type TabBarProps = {
+  unreadCount: number;
+};
+
+export function TabBar({ unreadCount }: TabBarProps) {
   const pathname = usePathname();
   const [toast, setToast] = useState(false);
 
@@ -128,6 +143,7 @@ export function TabBar() {
             key={item.href}
             item={item}
             active={isNavItemActive(pathname, item.href)}
+            badgeCount={item.href === PROFILE_HREF ? unreadCount : 0}
             onUnavailable={() => setToast(true)}
           />
         ))}

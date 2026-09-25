@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { BrandLogo } from '@/components/brand-logo';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -69,7 +70,11 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-export function TopNavBar() {
+type TopNavBarProps = {
+  unreadCount: number;
+};
+
+export function TopNavBar({ unreadCount }: TopNavBarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const profileActive = isNavItemActive(pathname, PROFILE_HREF);
@@ -99,6 +104,8 @@ export function TopNavBar() {
               <Plus className="size-[18px]" />
               Crear partido
             </Button>
+
+            <NotificationBell unreadCount={unreadCount} size="nav" badgeClassName="ring-raised" />
 
             <Link
               href={PROFILE_HREF}
