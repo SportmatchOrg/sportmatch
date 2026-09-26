@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { TabBar } from '@/components/tab-bar';
 import { TopNavBar } from '@/components/top-nav-bar';
 import { useAuth } from '@/context/auth-context';
+import { useUnreadCount } from '@/hooks/use-unread-count';
 import { LoadingScreen } from '@/components/loading-screen';
 import { MapsProvider } from '@/components/map/maps-provider';
 import { SplashScreen } from '@/components/splash-screen';
@@ -17,6 +18,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [splashVisible, setSplashVisible] = useState(isSplashPending);
+  const { count: unreadCount } = useUnreadCount();
 
   useEffect(() => {
     clearSplashPending();
@@ -37,9 +39,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <MapsProvider>
       <div className="min-h-dvh bg-base pb-28 text-white lg:pb-0 lg:pt-20">
-        <TopNavBar />
+        <TopNavBar unreadCount={unreadCount} />
         {children}
-        <TabBar />
+        <TabBar unreadCount={unreadCount} />
         {splashVisible ? (
           <SplashScreen onDone={hideSplash} soundSrc={SPLASH_SOUND_SRC} />
         ) : null}
