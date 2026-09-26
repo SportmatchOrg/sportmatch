@@ -336,6 +336,7 @@ export function MatchWizard({
                 >
                   <AdvancedMarker
                     position={{ lat: form.latitude, lng: form.longitude }}
+                    clickable
                     draggable
                     title="Arrastrá el pin para ajustar el lugar"
                     onDragEnd={(event) => {
