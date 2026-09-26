@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchUnreadCount } from '@/lib/notifications';
@@ -11,6 +18,11 @@ type UnreadCountState = {
   error: string | null;
 };
 
+type UnreadCountContextValue = UnreadCountState & {
+  reload: () => void;
+};
+
+// Polling is a stopgap until BUG-9 decides on TanStack Query.
 const POLL_INTERVAL_MS = 30_000;
 
 const ERROR_MESSAGE = 'No pudimos cargar tus notificaciones. Probá de nuevo en un momento.';
@@ -21,7 +33,9 @@ const INITIAL_STATE: UnreadCountState = {
   error: null,
 };
 
-export function useUnreadCount() {
+const UnreadCountContext = createContext<UnreadCountContextValue | undefined>(undefined);
+
+export function UnreadCountProvider({ children }: { children: ReactNode }) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<UnreadCountState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
@@ -68,10 +82,21 @@ export function useUnreadCount() {
     };
   }, [sessionLoading, firebaseUser, reloadToken]);
 
-  return {
-    count: state.count,
-    loading: sessionLoading || state.loading,
-    error: state.error,
-    reload,
-  };
+  return (
+    <UnreadCountContext.Provider
+      value={{ ...state, loading: sessionLoading || state.loading, reload }}
+    >
+      {children}
+    </UnreadCountContext.Provider>
+  );
+}
+
+export function useUnreadCount(): UnreadCountContextValue {
+  const context = useContext(UnreadCountContext);
+
+  if (context === undefined) {
+    throw new Error('useUnreadCount must be used within an <UnreadCountProvider>');
+  }
+
+  return context;
 }

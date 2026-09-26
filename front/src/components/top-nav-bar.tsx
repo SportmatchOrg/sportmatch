@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/context/auth-context';
+import { useUnreadCount } from '@/context/unread-count-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
 
@@ -70,13 +71,10 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-type TopNavBarProps = {
-  unreadCount: number;
-};
-
-export function TopNavBar({ unreadCount }: TopNavBarProps) {
+export function TopNavBar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { count: unreadCount } = useUnreadCount();
   const profileActive = isNavItemActive(pathname, PROFILE_HREF);
 
   return (
