@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 const BADGE =
-  'pointer-events-none flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-brand px-1 text-overline leading-none tracking-normal text-brand-ink ring-2';
+  'pointer-events-none flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-overline leading-none tracking-normal text-white ring-2';
 
 const DEFAULT_MAX = 9;
 

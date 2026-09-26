@@ -12,6 +12,7 @@ const VARIANT = {
   soft: 'bg-glass text-white shadow-bevel-lit hover:bg-glass-strong',
   strong: 'bg-glass-strong text-white shadow-bevel-lit hover:bg-glass-solid',
   brand: 'bg-brand text-brand-ink shadow-glow hover:bg-brand-bright',
+  ghost: 'text-ink-64 hover:bg-glass hover:text-white',
 } as const;
 
 const SIZE = {
@@ -20,7 +21,7 @@ const SIZE = {
   md: 'size-11',
 } as const;
 
-type IconButtonVariant = keyof typeof VARIANT;
+export type IconButtonVariant = keyof typeof VARIANT;
 export type IconButtonSize = keyof typeof SIZE;
 
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -29,7 +30,6 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: IconButtonSize;
 };
 
-// Lets a Link look like an IconButton without nesting a <button> inside an <a>.
 export function iconButtonClassName(
   variant: IconButtonVariant = 'glass',
   size: IconButtonSize = 'md'
@@ -38,12 +38,12 @@ export function iconButtonClassName(
 }
 
 export function IconButton({
-                             label,
-                             variant = 'glass',
-                             size = 'md',
-                             className,
-                             ...props
-                           }: IconButtonProps) {
+  label,
+  variant = 'glass',
+  size = 'md',
+  className,
+  ...props
+}: IconButtonProps) {
   return (
     <button
       type="button"

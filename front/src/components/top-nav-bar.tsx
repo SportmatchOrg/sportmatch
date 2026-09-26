@@ -105,7 +105,12 @@ export function TopNavBar({ unreadCount }: TopNavBarProps) {
               Crear partido
             </Button>
 
-            <NotificationBell unreadCount={unreadCount} size="nav" badgeClassName="ring-raised" />
+            <NotificationBell
+              unreadCount={unreadCount}
+              variant="ghost"
+              size="nav"
+              badgeClassName="ring-raised"
+            />
 
             <Link
               href={PROFILE_HREF}
