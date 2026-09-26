@@ -9,6 +9,7 @@ export type NavItem = {
 
 export const NEW_MATCH_HREF = '/partidos/nuevo';
 export const PROFILE_HREF = '/perfil';
+export const NOTIFICATIONS_HREF = '/notificaciones';
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/buscar', label: 'Descubrir', icon: Search, enabled: true },
