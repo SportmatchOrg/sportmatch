@@ -1,6 +1,6 @@
 'use client';
 
-import type { InputHTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 
 import { FieldError } from '@/components/matches/field-error';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const CONTROL =
   'w-full rounded-sm bg-glass px-4 py-3 text-body text-white shadow-bevel outline-none transition placeholder:text-white/46 focus:shadow-[inset_0_0_0_1px_var(--color-brand)]';
 
-type TextFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type TextFieldProps = ComponentPropsWithRef<'input'> & {
   id: string;
   label: string;
   hideLabel?: boolean;
@@ -21,6 +21,7 @@ export function TextField({
   hideLabel,
   error,
   className,
+  ref,
   ...inputProps
 }: TextFieldProps) {
   const errorId = `error-${id}`;
@@ -32,6 +33,7 @@ export function TextField({
       </label>
 
       <input
+        ref={ref}
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}

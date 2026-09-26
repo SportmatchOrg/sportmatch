@@ -1,11 +1,13 @@
 'use client';
 
-import { MapPin } from 'lucide-react';
+import { Autocomplete } from '@base-ui/react/autocomplete';
+import { MapPin as MapPinIcon } from 'lucide-react';
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
+import { MapPin } from '@/components/map/map-pin';
 import { CapacityStepper } from '@/components/matches/capacity-stepper';
 import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
@@ -23,7 +25,6 @@ import {
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
 import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
-import { cn } from '@/lib/utils';
 import {
   validateMatchForm,
   type MatchForm,
@@ -41,16 +42,15 @@ type WizardToast = { message: string; tone: ToastTone };
 type PlaceSearch = {
   status: 'idle' | 'loading' | 'ready' | 'empty' | 'error' | 'selecting';
   suggestions: PlaceSuggestion[];
-  activeIndex: number;
   open: boolean;
 };
 
-const PLACE_SEARCH_DELAY = 300;
 const PLACE_SEARCH_ERROR = 'No pudimos buscar direcciones. Probá de nuevo.';
+const CLOSING_REASONS = ['escape-key', 'outside-press', 'focus-out'];
 const SUGGESTIONS =
-  'w-full overflow-hidden rounded-sm border border-glass-strong bg-panel shadow-bevel';
+  'w-(--anchor-width) overflow-hidden rounded-sm border border-glass-strong bg-panel shadow-bevel';
 const SUGGESTION_OPTION =
-  'flex w-full flex-col gap-1 px-4 py-3 text-left text-white hover:bg-glass focus:bg-glass focus:outline-none';
+  'flex w-full flex-col gap-1 px-4 py-3 text-left text-white outline-none data-highlighted:bg-glass-solid';
 
 type MatchWizardProps = {
   mode: 'create' | 'edit';
@@ -81,7 +81,6 @@ export function MatchWizard({
   const [placeSearch, setPlaceSearch] = useState<PlaceSearch>({
     status: 'idle',
     suggestions: [],
-    activeIndex: -1,
     open: false,
   });
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -112,26 +111,22 @@ export function MatchWizard({
 
     const query = form.location.trim();
     let current = true;
-    const timer = setTimeout(() => {
-      searchPlaces(query)
-        .then((found) => {
-          if (!current) return;
-          setPlaceSearch((state) => ({
-            ...state,
-            status: found.length > 0 ? 'ready' : 'empty',
-            suggestions: found,
-            activeIndex: -1,
-          }));
-        })
-        .catch(() => {
-          if (!current) return;
-          setPlaceSearch((state) => ({ ...state, status: 'error' }));
-        });
-    }, PLACE_SEARCH_DELAY);
+    searchPlaces(query)
+      .then((found) => {
+        if (!current) return;
+        setPlaceSearch((state) => ({
+          ...state,
+          status: found.length > 0 ? 'ready' : 'empty',
+          suggestions: found,
+        }));
+      })
+      .catch(() => {
+        if (!current) return;
+        setPlaceSearch((state) => ({ ...state, status: 'error' }));
+      });
 
     return () => {
       current = false;
-      clearTimeout(timer);
     };
   }, [step, placeSearch.open, placeSearch.status, placesReady, form.location, form.latitude, form.longitude, searchPlaces]);
 
@@ -154,8 +149,13 @@ export function MatchWizard({
     }));
     setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
     const status = value.trim().length >= MIN_PLACE_SEARCH_LENGTH ? 'loading' : 'idle';
-    setPlaceSearch({ status, suggestions: [], activeIndex: -1, open: true });
+    setPlaceSearch({ status, suggestions: [], open: true });
     if (status === 'idle') void searchPlaces(value);
+  }
+
+  function closeSuggestions() {
+    setPlaceSearch({ status: 'idle', suggestions: [], open: false });
+    void searchPlaces('');
   }
 
   async function selectSuggestion(suggestion: PlaceSuggestion) {
@@ -173,37 +173,11 @@ export function MatchWizard({
         longitude: place.longitude,
       }));
       setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
-      setPlaceSearch({ status: 'idle', suggestions: [], activeIndex: -1, open: false });
+      closeSuggestions();
     } catch {
       if (revision === inputRevision.current) {
-        setPlaceSearch({ status: 'error', suggestions: [], activeIndex: -1, open: false });
+        setPlaceSearch({ status: 'error', suggestions: [], open: false });
       }
-    }
-  }
-
-  function handleLocationKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (!showingSuggestions) return;
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setPlaceSearch((state) => ({
-        ...state,
-        activeIndex: (state.activeIndex + 1) % state.suggestions.length,
-      }));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setPlaceSearch((state) => ({
-        ...state,
-        activeIndex: state.activeIndex < 0
-          ? state.suggestions.length - 1
-          : (state.activeIndex - 1 + state.suggestions.length) % state.suggestions.length,
-      }));
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      void selectSuggestion(placeSearch.suggestions[Math.max(placeSearch.activeIndex, 0)]);
-    } else if (event.key === 'Escape') {
-      setPlaceSearch({ status: 'idle', suggestions: [], activeIndex: -1, open: false });
-      void searchPlaces('');
     }
   }
 
@@ -277,74 +251,73 @@ export function MatchWizard({
         )}
 
         {step === 1 && (
-          <div className="flex flex-col gap-4">
-            <div
-              className="relative flex flex-col gap-2"
-              onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget)) {
-                  setPlaceSearch({ status: 'idle', suggestions: [], activeIndex: -1, open: false });
-                  void searchPlaces('');
-                }
+          <div className="flex h-full flex-col gap-4">
+            <Autocomplete.Root
+              mode="none"
+              autoHighlight
+              items={placeSearch.suggestions}
+              itemToStringValue={(suggestion: PlaceSuggestion) => suggestion.title}
+              value={form.location}
+              onValueChange={(value, details) => {
+                if (details.reason !== 'item-press') changeLocation(value);
+              }}
+              open={showingSuggestions}
+              onOpenChange={(open, details) => {
+                if (!open && CLOSING_REASONS.includes(details.reason)) closeSuggestions();
               }}
             >
-              <MapPin
-                className="pointer-events-none absolute top-3.5 left-4 size-[18px] text-ink-46"
-                aria-hidden="true"
-              />
-
-              <TextField
-                id="ubicacion"
-                label="Lugar"
-                hideLabel
-                placeholder="Buscá una cancha o dirección"
-                maxLength={LOCATION_MAX}
-                value={form.location}
-                onChange={(event) => changeLocation(event.target.value)}
-                onKeyDown={handleLocationKeyDown}
-                onFocus={() => {
-                  if (form.latitude !== null && form.longitude !== null) return;
-                  setPlaceSearch({
-                    status: form.location.trim().length >= MIN_PLACE_SEARCH_LENGTH ? 'loading' : 'idle',
-                    suggestions: [],
-                    activeIndex: -1,
-                    open: true,
-                  });
-                }}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={showingSuggestions}
-                aria-controls="ubicacion-sugerencias"
-                aria-activedescendant={
-                  showingSuggestions && placeSearch.activeIndex >= 0
-                    ? `ubicacion-sugerencia-${placeSearch.activeIndex}`
-                    : undefined
-                }
-                error={placeSearch.status === 'error' ? PLACE_SEARCH_ERROR : errors.latitude ?? errors.location}
-                className="pl-11"
-              />
+              <div className="relative">
+                <MapPinIcon
+                  className="pointer-events-none absolute top-3.5 left-4 size-[18px] text-ink-46"
+                  aria-hidden="true"
+                />
+                <Autocomplete.Input
+                  id="ubicacion"
+                  placeholder="Buscá una cancha o dirección"
+                  maxLength={LOCATION_MAX}
+                  onFocus={() => {
+                    if (form.latitude !== null && form.longitude !== null) return;
+                    setPlaceSearch({
+                      status: form.location.trim().length >= MIN_PLACE_SEARCH_LENGTH ? 'loading' : 'idle',
+                      suggestions: [],
+                      open: true,
+                    });
+                  }}
+                  render={
+                    <TextField
+                      id="ubicacion"
+                      label="Lugar"
+                      hideLabel
+                      error={placeSearch.status === 'error' ? PLACE_SEARCH_ERROR : errors.latitude ?? errors.location}
+                      className="pl-11"
+                    />
+                  }
+                />
+              </div>
 
               {showingSuggestions && (
-                <div id="ubicacion-sugerencias" role="listbox" className={SUGGESTIONS}>
-                  {placeSearch.suggestions.map((suggestion, index) => (
-                    <button
-                      key={suggestion.id}
-                      id={`ubicacion-sugerencia-${index}`}
-                      type="button"
-                      role="option"
-                      aria-selected={index === placeSearch.activeIndex}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onMouseEnter={() => setPlaceSearch((state) => ({ ...state, activeIndex: index }))}
-                      onClick={() => void selectSuggestion(suggestion)}
-                      className={cn(SUGGESTION_OPTION, index === placeSearch.activeIndex && 'bg-glass-solid')}
-                    >
-                      <span className="text-callout font-semibold">{suggestion.title}</span>
-                      <span className="text-caption text-ink-46">{suggestion.subtitle}</span>
-                    </button>
-                  ))}
-                  <p className="px-4 py-2 text-right text-caption text-ink-46">Google Maps</p>
-                </div>
+                <Autocomplete.Portal>
+                  <Autocomplete.Positioner sideOffset={8} className="z-[70]">
+                    <Autocomplete.Popup className={SUGGESTIONS}>
+                      <Autocomplete.List>
+                        {(suggestion: PlaceSuggestion) => (
+                          <Autocomplete.Item
+                            key={suggestion.id}
+                            value={suggestion}
+                            onClick={() => void selectSuggestion(suggestion)}
+                            className={SUGGESTION_OPTION}
+                          >
+                            <span className="text-callout font-semibold">{suggestion.title}</span>
+                            <span className="text-caption text-ink-46">{suggestion.subtitle}</span>
+                          </Autocomplete.Item>
+                        )}
+                      </Autocomplete.List>
+                      <p className="px-4 py-2 text-right text-caption text-ink-46">Google Maps</p>
+                    </Autocomplete.Popup>
+                  </Autocomplete.Positioner>
+                </Autocomplete.Portal>
               )}
-            </div>
+            </Autocomplete.Root>
 
             {(placeSearch.status === 'loading' || placeSearch.status === 'selecting') && (
               <p className="text-caption text-ink-46">Buscando lugares…</p>
@@ -354,7 +327,7 @@ export function MatchWizard({
             )}
 
             {form.latitude !== null && form.longitude !== null && (
-              <div className="h-[180px] overflow-hidden rounded-md" aria-label="Ubicación del partido en el mapa">
+              <div className="min-h-48 flex-1 overflow-hidden rounded-md" aria-label="Ubicación del partido en el mapa">
                 <BaseMap
                   key={form.location}
                   defaultCenter={{ lat: form.latitude, lng: form.longitude }}
@@ -374,7 +347,9 @@ export function MatchWizard({
                         longitude: position.lng(),
                       }));
                     }}
-                  />
+                  >
+                    <MapPin />
+                  </AdvancedMarker>
                 </BaseMap>
               </div>
             )}
