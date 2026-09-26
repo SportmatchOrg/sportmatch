@@ -15,6 +15,8 @@ export type MatchForm = {
   level: Level | '';
   date: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   capacity: string;
   title: string;
   description: string;
@@ -27,6 +29,8 @@ export const EMPTY_MATCH_FORM: MatchForm = {
   level: '',
   date: '',
   location: '',
+  latitude: null,
+  longitude: null,
   capacity: String(CAPACITY_DEFAULT),
   title: '',
   description: '',
@@ -55,6 +59,10 @@ export function validateMatchForm(form: MatchForm): MatchFormErrors {
     errors.location = `La ubicación necesita al menos ${LOCATION_MIN} caracteres.`;
   } else if (location.length > LOCATION_MAX) {
     errors.location = `La ubicación no puede superar los ${LOCATION_MAX} caracteres.`;
+  }
+
+  if (form.latitude === null || form.longitude === null) {
+    errors.latitude = 'Elegí una dirección de la lista.';
   }
 
   const capacity = Number(form.capacity);
@@ -97,6 +105,8 @@ export function toCreateMatchBody(form: MatchForm) {
     level: form.level as Level,
     date: new Date(form.date).toISOString(),
     location: form.location.trim(),
+    latitude: form.latitude,
+    longitude: form.longitude,
     capacity: Number(form.capacity),
     ...(form.description.trim() ? { description: form.description.trim() } : {}),
   };
@@ -108,6 +118,8 @@ export function toMatchForm(match: Match): MatchForm {
     level: match.level,
     date: localDateTimeValue(new Date(match.date)),
     location: match.location,
+    latitude: match.latitude ?? null,
+    longitude: match.longitude ?? null,
     capacity: String(match.capacity),
     title: '',
     description: match.description ?? '',
@@ -120,6 +132,8 @@ export function toUpdateMatchBody(form: MatchForm) {
     level: form.level as Level,
     date: new Date(form.date).toISOString(),
     location: form.location.trim(),
+    latitude: form.latitude,
+    longitude: form.longitude,
     capacity: Number(form.capacity),
     description: form.description.trim(),
   };

@@ -8,7 +8,7 @@ export type WizardStep = {
 
 export const WIZARD_STEPS: WizardStep[] = [
   { name: 'Deporte', question: '¿A qué vas a jugar?', fields: ['sportId'] },
-  { name: 'Lugar', question: '¿Dónde se juega?', fields: ['location'] },
+  { name: 'Lugar', question: '¿Dónde se juega?', fields: ['location', 'latitude'] },
   { name: 'Horario', question: '¿A qué hora arranca?', fields: ['date'] },
   {
     name: 'Jugadores',
