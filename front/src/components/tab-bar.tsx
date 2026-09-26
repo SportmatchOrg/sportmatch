@@ -30,11 +30,11 @@ const SHEET_SHADOW =
   'shadow-float-glass';
 
 function TabBarLink({
-                      item,
-                      active,
-                      badgeCount = 0,
-                      onUnavailable,
-                    }: {
+  item,
+  active,
+  badgeCount = 0,
+  onUnavailable,
+}: {
   item: NavItem;
   active: boolean;
   badgeCount?: number;
