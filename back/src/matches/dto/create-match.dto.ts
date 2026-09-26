@@ -3,7 +3,10 @@ import {
   IsDate,
   IsEnum,
   IsInt,
+  IsLatitude,
+  IsLongitude,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Length,
@@ -27,6 +30,14 @@ export class CreateMatchDto {
   @IsString()
   @Length(3, 120)
   location: string;
+
+  @IsNumber()
+  @IsLatitude()
+  latitude: number;
+
+  @IsNumber()
+  @IsLongitude()
+  longitude: number;
 
   @IsInt()
   @Min(2)

@@ -63,6 +63,8 @@ model Match {
   level         Level
   date          DateTime
   location      String
+  latitude      Float?
+  longitude     Float?
   capacity      Int
   description   String?
   status        MatchStatus    @default(ACTIVE)
