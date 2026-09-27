@@ -10,6 +10,7 @@ import type { CreateNotificationInput } from '../notifications/notifications.rep
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { distanceKm } from '../utils/geo/distance-km';
+import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CancelMatchDto } from './dto/cancel-match.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
@@ -325,7 +326,7 @@ export class MatchesService {
   }): boolean | null {
     const played = input.date.getTime() <= Date.now();
 
-    if (!played || !input.isPlayer) {
+    if (!played || !input.isPlayer || !isRatingWindowOpen(input.date)) {
       return null;
     }
 

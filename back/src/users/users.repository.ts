@@ -37,6 +37,26 @@ export class UsersRepository {
     });
   }
 
+  findReceivedRatings(userId: string) {
+    return this.prisma.rating.findMany({
+      where: { ratedUserId: userId },
+      select: { score: true, matchId: true, raterId: true },
+    });
+  }
+
+  findNoShowReportsByMatch(matchIds: string[]) {
+    return this.prisma.match.findMany({
+      where: { id: { in: matchIds } },
+      select: {
+        id: true,
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
+    });
+  }
+
   findPlayedDates(userId: string) {
     return this.prisma.match.findMany({
       where: {
