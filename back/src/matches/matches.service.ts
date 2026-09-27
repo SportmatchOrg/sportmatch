@@ -18,6 +18,8 @@ import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesRepository } from './matches.repository';
 import type { DetailedMatch, ListedMatch } from './types';
 
+const DEFAULT_RADIUS_KM = 5;
+
 @Injectable()
 export class MatchesService {
   constructor(
@@ -52,7 +54,7 @@ export class MatchesService {
           (match.latitude !== null &&
             match.longitude !== null &&
             distanceKm(lat, lng, match.latitude, match.longitude) <
-              (radiusKm ?? 5)),
+              (radiusKm ?? DEFAULT_RADIUS_KM)),
       )
       .map((match) => this.toListResponse(match, user.id));
   }

@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsLatitude,
   IsLongitude,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
@@ -14,9 +15,13 @@ import { Level } from '../../generated/prisma/client';
 const toArray = ({ value }: TransformFnParams): unknown =>
   value == null || Array.isArray(value) ? value : [value];
 
+const toOptionalNumber = ({ value }: TransformFnParams): unknown =>
+  value === '' || value == null ? undefined : Number(value);
+
 export class FindMatchesQueryDto {
   @IsOptional()
   @IsString({ each: true })
+  @IsNotEmpty({ each: true })
   @Transform(toArray)
   sportId?: string[];
 
@@ -36,17 +41,17 @@ export class FindMatchesQueryDto {
   to?: Date;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(toOptionalNumber)
   @IsLatitude()
   lat?: number;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(toOptionalNumber)
   @IsLongitude()
   lng?: number;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(toOptionalNumber)
   @Min(0.5)
   @Max(50)
   radiusKm?: number;
