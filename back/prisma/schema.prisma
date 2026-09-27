@@ -39,6 +39,7 @@ model User {
   ratingsReceived        Rating[]       @relation("RatingsReceived")
   noShowReportsGiven     NoShowReport[] @relation("NoShowReportsGiven")
   noShowReportsReceived  NoShowReport[] @relation("NoShowReportsReceived")
+  lateWithdrawals        LateWithdrawal[]
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
 
@@ -77,8 +78,9 @@ model Match {
   participants  Participant[]
   joinRequests  JoinRequest[]
   ratings       Rating[]
-  noShowReports NoShowReport[]
-  notifications Notification[]
+  noShowReports   NoShowReport[]
+  lateWithdrawals LateWithdrawal[]
+  notifications   Notification[]
 
   @@index([date])
   @@index([sportId])
@@ -164,6 +166,18 @@ enum NotificationType {
   USER_SUSPENDED
 
   @@map("notification_type")
+}
+
+model LateWithdrawal {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("late_withdrawals")
 }
 
 model Notification {

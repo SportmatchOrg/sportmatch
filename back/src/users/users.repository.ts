@@ -29,11 +29,30 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
 
-  aggregateReceivedRatings(userId: string) {
-    return this.prisma.rating.aggregate({
-      where: { ratedUserId: userId },
-      _avg: { score: true },
-      _count: true,
+  findMatchesReportedIn(userId: string) {
+    return this.prisma.match.findMany({
+      where: { noShowReports: { some: { reportedUserId: userId } } },
+      select: {
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
+    });
+  }
+
+  countLateWithdrawals(userId: string) {
+    return this.prisma.lateWithdrawal.count({ where: { userId } });
+  }
+
+  findCanceledMatchDates(userId: string) {
+    return this.prisma.match.findMany({
+      where: {
+        organizerId: userId,
+        status: 'CANCELED',
+        canceledAt: { not: null },
+      },
+      select: { date: true, canceledAt: true },
     });
   }
 

@@ -1,11 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { weekStreak } from '../utils/time/week-streak';
+
+const NO_SHOW_SCORE = 1;
+const LATE_WITHDRAWAL_SCORE = 2;
+
+type UserScore = {
+  rating: number | null;
+  ratingCount: number;
+};
 
 @Injectable()
 export class UsersService {
@@ -106,19 +115,64 @@ export class UsersService {
       .map(({ score }) => score);
   }
 
+  async getScores(userIds: string[]): Promise<Map<string, UserScore>> {
+    const scores = await Promise.all(
+      userIds.map(
+        async (userId) => [userId, await this.getScore(userId)] as const,
+      ),
+    );
+
+    return new Map(scores);
+  }
+
+  private async getScore(userId: string): Promise<UserScore> {
+    const [effectiveScores, reportedMatches, lateWithdrawals, canceledMatches] =
+      await Promise.all([
+        this.findEffectiveReceivedScores(userId),
+        this.usersRepository.findMatchesReportedIn(userId),
+        this.usersRepository.countLateWithdrawals(userId),
+        this.usersRepository.findCanceledMatchDates(userId),
+      ]);
+
+    const noShows = reportedMatches.filter((match) =>
+      confirmedNoShowIds(match.noShowReports, match.organizerId).includes(
+        userId,
+      ),
+    ).length;
+
+    const lateCancels = canceledMatches.filter(
+      ({ date, canceledAt }) =>
+        canceledAt !== null && isLateWithdrawal(date, canceledAt.getTime()),
+    ).length;
+
+    const penalties = [
+      ...Array<number>(noShows).fill(NO_SHOW_SCORE),
+      ...Array<number>(lateWithdrawals + lateCancels).fill(
+        LATE_WITHDRAWAL_SCORE,
+      ),
+    ];
+    const scores = [...effectiveScores, ...penalties];
+    const total = scores.reduce((sum, score) => sum + score, 0);
+
+    return {
+      rating:
+        scores.length === 0
+          ? null
+          : Math.round((total / scores.length) * 10) / 10,
+      ratingCount: effectiveScores.length,
+    };
+  }
+
   private async withStats<T extends { id: string }>(user: T) {
-    const [received, playedDates] = await Promise.all([
-      this.usersRepository.aggregateReceivedRatings(user.id),
+    const [score, playedDates] = await Promise.all([
+      this.getScore(user.id),
       this.usersRepository.findPlayedDates(user.id),
     ]);
-
-    const average = received._avg.score;
 
     return {
       ...user,
       stats: {
-        rating: average === null ? null : Math.round(average * 10) / 10,
-        ratingCount: received._count,
+        ...score,
         playedCount: playedDates.length,
         weekStreak: weekStreak(playedDates.map(({ date }) => date)),
       },
