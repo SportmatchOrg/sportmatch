@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import type { RatingItemDto } from './dto/create-ratings.dto';
 
 const PUBLIC_USER = {
@@ -21,6 +22,24 @@ export class RatingsRepository {
         participants: { select: { user: PUBLIC_USER } },
       },
     });
+  }
+
+  async findConfirmedNoShows(matchId: string): Promise<string[]> {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      select: {
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
+    });
+
+    if (!match) {
+      return [];
+    }
+
+    return confirmedNoShowIds(match.noShowReports, match.organizerId);
   }
 
   async countSubmittedBy(matchId: string, userId: string) {

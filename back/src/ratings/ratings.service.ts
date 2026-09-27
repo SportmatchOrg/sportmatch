@@ -5,10 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { assignRatingTargets } from '../utils/ratings/assign-rating-targets';
+import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import type { CreateRatingsDto, RatingItemDto } from './dto/create-ratings.dto';
 import { RatingsRepository } from './ratings.repository';
 
@@ -17,6 +19,7 @@ export class RatingsService {
   constructor(
     private readonly ratingsRepository: RatingsRepository,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findPending(firebaseUid: string, matchId: string) {
@@ -56,6 +59,9 @@ export class RatingsService {
       targets.filter(({ id }) => !noShowIds.has(id)),
     );
 
+    const confirmedBefore =
+      await this.ratingsRepository.findConfirmedNoShows(matchId);
+
     try {
       const { count, noShowCount } =
         await this.ratingsRepository.createSubmission(
@@ -65,12 +71,30 @@ export class RatingsService {
           noShowUserIds,
         );
 
+      await this.notifyNewNoShows(matchId, confirmedBefore);
+
       return { matchId, count, noShowCount };
     } catch (error) {
       throw toPrismaHttpException(error, {
         P2002: 'You already rated this match',
       });
     }
+  }
+
+  private async notifyNewNoShows(matchId: string, confirmedBefore: string[]) {
+    const confirmedAfter =
+      await this.ratingsRepository.findConfirmedNoShows(matchId);
+    const alreadyConfirmed = new Set(confirmedBefore);
+
+    await this.notificationsService.notifyMany(
+      confirmedAfter
+        .filter((userId) => !alreadyConfirmed.has(userId))
+        .map((userId) => ({
+          userId,
+          type: 'NO_SHOW_CONFIRMED' as const,
+          matchId,
+        })),
+    );
   }
 
   private async hasSubmitted(matchId: string, userId: string) {
@@ -96,6 +120,10 @@ export class RatingsService {
 
     if (match.date.getTime() > Date.now()) {
       throw new BadRequestException('The match has not been played yet');
+    }
+
+    if (!isRatingWindowOpen(match.date)) {
+      throw new BadRequestException('The rating window is closed');
     }
 
     const players: PublicUser[] = [
