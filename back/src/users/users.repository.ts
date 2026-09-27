@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
@@ -38,18 +37,15 @@ export class UsersRepository {
     });
   }
 
-  async findEffectiveReceivedScores(userId: string): Promise<number[]> {
-    const ratings = await this.prisma.rating.findMany({
+  findReceivedRatings(userId: string) {
+    return this.prisma.rating.findMany({
       where: { ratedUserId: userId },
       select: { score: true, matchId: true, raterId: true },
     });
+  }
 
-    if (ratings.length === 0) {
-      return [];
-    }
-
-    const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
-    const matches = await this.prisma.match.findMany({
+  findNoShowReportsByMatch(matchIds: string[]) {
+    return this.prisma.match.findMany({
       where: { id: { in: matchIds } },
       select: {
         id: true,
@@ -59,21 +55,6 @@ export class UsersRepository {
         },
       },
     });
-
-    const confirmedByMatch = new Map(
-      matches.map((match) => [
-        match.id,
-        new Set(confirmedNoShowIds(match.noShowReports, match.organizerId)),
-      ]),
-    );
-
-    return ratings
-      .filter(({ matchId, raterId }) => {
-        const confirmed = confirmedByMatch.get(matchId);
-
-        return !confirmed?.has(userId) && !confirmed?.has(raterId);
-      })
-      .map(({ score }) => score);
   }
 
   findPlayedDates(userId: string) {

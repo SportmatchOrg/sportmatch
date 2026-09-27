@@ -10,6 +10,7 @@ import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { assignRatingTargets } from '../utils/ratings/assign-rating-targets';
+import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import type { CreateRatingsDto, RatingItemDto } from './dto/create-ratings.dto';
 import { RatingsRepository } from './ratings.repository';
@@ -59,8 +60,10 @@ export class RatingsService {
       targets.filter(({ id }) => !noShowIds.has(id)),
     );
 
-    const confirmedBefore =
-      await this.ratingsRepository.findConfirmedNoShows(matchId);
+    const reportsNoShows = noShowUserIds.length > 0;
+    const confirmedBefore = reportsNoShows
+      ? await this.findConfirmedNoShows(matchId)
+      : [];
 
     try {
       const { count, noShowCount } =
@@ -71,7 +74,9 @@ export class RatingsService {
           noShowUserIds,
         );
 
-      await this.notifyNewNoShows(matchId, confirmedBefore);
+      if (reportsNoShows) {
+        await this.notifyNewNoShows(matchId, confirmedBefore);
+      }
 
       return { matchId, count, noShowCount };
     } catch (error) {
@@ -81,9 +86,18 @@ export class RatingsService {
     }
   }
 
+  private async findConfirmedNoShows(matchId: string): Promise<string[]> {
+    const match = await this.ratingsRepository.findNoShowReports(matchId);
+
+    if (!match) {
+      return [];
+    }
+
+    return confirmedNoShowIds(match.noShowReports, match.organizerId);
+  }
+
   private async notifyNewNoShows(matchId: string, confirmedBefore: string[]) {
-    const confirmedAfter =
-      await this.ratingsRepository.findConfirmedNoShows(matchId);
+    const confirmedAfter = await this.findConfirmedNoShows(matchId);
     const alreadyConfirmed = new Set(confirmedBefore);
 
     await this.notificationsService.notifyMany(

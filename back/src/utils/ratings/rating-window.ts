@@ -1,5 +1,6 @@
+import { MS_PER_HOUR } from '../time/milliseconds';
+
 const HOURS = 48;
-const MS_PER_HOUR = 60 * 60 * 1000;
 
 export const RATING_WINDOW_MS = HOURS * MS_PER_HOUR;
 
