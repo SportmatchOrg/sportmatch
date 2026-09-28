@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { hoursAgo } from '../src/utils/time/hours-ago';
 import { inDays } from '../src/utils/time/in-days';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -169,6 +170,64 @@ async function main() {
     },
   });
 
+  await prisma.match.create({
+    data: {
+      sportId: sportId('TENIS'),
+      level: 'INTERMEDIATE',
+      date: hoursAgo(3),
+      location: 'Club del Oeste · Cancha 3',
+      latitude: -34.4663,
+      longitude: -58.9183,
+      capacity: 4,
+      description: 'Partido jugado hace un rato: todavia se puede calificar',
+      organizerId: ana.id,
+      participants: {
+        create: [luis, marta].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
+  const noShowMatches = await Promise.all(
+    [
+      { organizer: ana, date: inDays(-4, 20), location: 'Cancha Central' },
+      { organizer: luis, date: inDays(-6, 21), location: 'Parque Sur' },
+    ].map(({ organizer, date, location }) =>
+      prisma.match.create({
+        data: {
+          sportId: sportId('FUTBOL'),
+          level: 'INTERMEDIATE',
+          date,
+          location,
+          latitude: -34.46896,
+          longitude: -58.91957,
+          capacity: 10,
+          description: 'Partido jugado con una falta confirmada',
+          organizerId: organizer.id,
+          participants: {
+            create: [pablo, marta].map(({ id }) => ({ userId: id })),
+          },
+        },
+      }),
+    ),
+  );
+
+  await prisma.noShowReport.createMany({
+    data: noShowMatches.map((match) => ({
+      matchId: match.id,
+      reporterId: match.organizerId,
+      reportedUserId: pablo.id,
+    })),
+  });
+
+  await prisma.rating.createMany({
+    data: noShowMatches.map((match) => ({
+      matchId: match.id,
+      raterId: pablo.id,
+      ratedUserId: marta.id,
+      score: 5,
+    })),
+  });
+
   const demoEmail = process.env.SEED_DEMO_EMAIL;
 
   if (!demoEmail) {
@@ -182,7 +241,11 @@ async function main() {
   }
 
   const playedMatches = await prisma.match.findMany({
-    where: { date: { lt: new Date() }, organizerId: { not: demoUser.id } },
+    where: {
+      date: { lt: new Date() },
+      organizerId: { not: demoUser.id },
+      id: { notIn: noShowMatches.map(({ id }) => id) },
+    },
     orderBy: { date: 'asc' },
     select: { id: true, organizerId: true },
   });

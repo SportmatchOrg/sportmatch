@@ -9,12 +9,17 @@ import type { MatchStatus } from '../generated/prisma/client';
 import type { CreateNotificationInput } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { distanceKm } from '../utils/geo/distance-km';
+import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CancelMatchDto } from './dto/cancel-match.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
+import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesRepository } from './matches.repository';
 import type { DetailedMatch, ListedMatch } from './types';
+
+const DEFAULT_RADIUS_KM = 5;
 
 @Injectable()
 export class MatchesService {
@@ -24,12 +29,34 @@ export class MatchesService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async findUpcoming(firebaseUid: string) {
+  async findUpcoming(firebaseUid: string, query: FindMatchesQueryDto) {
+    if ((query.lat === undefined) !== (query.lng === undefined)) {
+      throw new BadRequestException('lat and lng must be provided together');
+    }
+
+    if (query.radiusKm !== undefined && query.lat === undefined) {
+      throw new BadRequestException('radiusKm requires lat and lng');
+    }
+
+    if (query.from && query.to && query.from > query.to) {
+      throw new BadRequestException('from cannot be later than to');
+    }
+
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const matches = await this.matchesRepository.findUpcoming(user.id);
+    const matches = await this.matchesRepository.findUpcoming(user.id, query);
+    const { lat, lng, radiusKm } = query;
 
     return matches
       .filter((match) => match._count.participants < match.capacity)
+      .filter(
+        (match) =>
+          lat === undefined ||
+          lng === undefined ||
+          (match.latitude !== null &&
+            match.longitude !== null &&
+            distanceKm(lat, lng, match.latitude, match.longitude) <
+              (radiusKm ?? DEFAULT_RADIUS_KM)),
+      )
       .map((match) => this.toListResponse(match, user.id));
   }
 
@@ -299,7 +326,7 @@ export class MatchesService {
   }): boolean | null {
     const played = input.date.getTime() <= Date.now();
 
-    if (!played || !input.isPlayer) {
+    if (!played || !input.isPlayer || !isRatingWindowOpen(input.date)) {
       return null;
     }
 
