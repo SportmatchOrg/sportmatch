@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchDto } from './dto/create-match.dto';
+import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 
 const PUBLIC_ORGANIZER = {
@@ -43,10 +44,17 @@ const matchInclude = (userId: string) =>
 export class MatchesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUpcoming(userId: string) {
+  findUpcoming(userId: string, query: FindMatchesQueryDto) {
+    const now = new Date();
+
     return this.prisma.match.findMany({
       where: {
-        date: { gte: new Date() },
+        date: {
+          gte: query.from && query.from > now ? query.from : now,
+          ...(query.to && { lte: query.to }),
+        },
+        ...(query.sportId && { sportId: { in: query.sportId } }),
+        ...(query.level && { level: { in: query.level } }),
         status: 'ACTIVE',
         organizerId: { not: userId },
         participants: { none: { userId } },

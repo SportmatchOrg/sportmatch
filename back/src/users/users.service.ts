@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
@@ -76,6 +77,33 @@ export class UsersService {
     } catch (error) {
       throw this.toHttpException(error, id);
     }
+  }
+
+  async findEffectiveReceivedScores(userId: string): Promise<number[]> {
+    const ratings = await this.usersRepository.findReceivedRatings(userId);
+
+    if (ratings.length === 0) {
+      return [];
+    }
+
+    const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
+    const matches =
+      await this.usersRepository.findNoShowReportsByMatch(matchIds);
+
+    const confirmedByMatch = new Map(
+      matches.map((match) => [
+        match.id,
+        new Set(confirmedNoShowIds(match.noShowReports, match.organizerId)),
+      ]),
+    );
+
+    return ratings
+      .filter(({ matchId, raterId }) => {
+        const confirmed = confirmedByMatch.get(matchId);
+
+        return !confirmed?.has(userId) && !confirmed?.has(raterId);
+      })
+      .map(({ score }) => score);
   }
 
   private async withStats<T extends { id: string }>(user: T) {

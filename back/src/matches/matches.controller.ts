@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -15,6 +16,7 @@ import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { CancelMatchDto } from './dto/cancel-match.dto';
 import { CreateMatchDto } from './dto/create-match.dto';
+import { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesService } from './matches.service';
 
@@ -38,8 +40,11 @@ export class MatchesController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: FirebaseUser) {
-    return this.matchesService.findUpcoming(user.uid);
+  findAll(
+    @CurrentUser() user: FirebaseUser,
+    @Query() query: FindMatchesQueryDto,
+  ) {
+    return this.matchesService.findUpcoming(user.uid, query);
   }
 
   @Get('mine')
