@@ -25,7 +25,10 @@ export function useNotifications() {
   const [state, setState] = useState<NotificationsState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
 
-  const reload = useCallback(() => setReloadToken((token) => token + 1), []);
+  const reload = useCallback(() => {
+    setState((current) => (current.error ? { ...current, loading: true, error: null } : current));
+    setReloadToken((token) => token + 1);
+  }, []);
 
   useEffect(() => {
     if (sessionLoading || !firebaseUser) return;

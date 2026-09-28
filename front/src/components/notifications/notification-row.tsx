@@ -1,5 +1,6 @@
 'use client';
 
+import { Bell } from 'lucide-react';
 import { SPORT_ICON } from '@/components/matches/sport-icon';
 import { UserAvatar } from '@/components/user-avatar';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
@@ -37,13 +38,11 @@ function NotificationIcon({ notification, showActor }: NotificationIconProps) {
     );
   }
 
-  if (!notification.match) return null;
-
-  const SportIcon = SPORT_ICON[notification.match.sport.name];
+  const Icon = notification.match ? SPORT_ICON[notification.match.sport.name] : Bell;
 
   return (
     <span className={ICON_DISC}>
-      <SportIcon className="size-5" aria-hidden="true" />
+      <Icon className="size-5" aria-hidden="true" />
     </span>
   );
 }

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
@@ -22,7 +23,6 @@ type UnreadCountContextValue = UnreadCountState & {
   reload: () => void;
 };
 
-// Polling is a stopgap until BUG-9 decides on TanStack Query.
 const POLL_INTERVAL_MS = 30_000;
 
 const ERROR_MESSAGE = 'No pudimos cargar tus notificaciones. Probá de nuevo en un momento.';
@@ -82,13 +82,12 @@ export function UnreadCountProvider({ children }: { children: ReactNode }) {
     };
   }, [sessionLoading, firebaseUser, reloadToken]);
 
-  return (
-    <UnreadCountContext.Provider
-      value={{ ...state, loading: sessionLoading || state.loading, reload }}
-    >
-      {children}
-    </UnreadCountContext.Provider>
+  const value = useMemo(
+    () => ({ ...state, loading: sessionLoading || state.loading, reload }),
+    [state, sessionLoading, reload]
   );
+
+  return <UnreadCountContext.Provider value={value}>{children}</UnreadCountContext.Provider>;
 }
 
 export function useUnreadCount(): UnreadCountContextValue {
