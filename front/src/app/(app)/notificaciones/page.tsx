@@ -2,7 +2,7 @@
 
 import { Bell, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   NotificationList,
@@ -29,9 +29,22 @@ const MARK_ALL_ERROR = 'No pudimos marcarlas como leídas. Probá de nuevo.';
 export default function NotificationsPage() {
   const router = useRouter();
   const { notifications, loading, error, reload } = useNotifications();
-  const { count: unreadCount, reload: reloadUnreadCount } = useUnreadCount();
+  const {
+    count: unreadCount,
+    loading: unreadLoading,
+    reload: reloadUnreadCount,
+  } = useUnreadCount();
   const [markingAll, setMarkingAll] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const lastUnreadCount = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (unreadLoading) return;
+
+    if (lastUnreadCount.current !== null && unreadCount > lastUnreadCount.current) reload();
+
+    lastUnreadCount.current = unreadCount;
+  }, [unreadCount, unreadLoading, reload]);
 
   useEffect(() => {
     if (!toast) return;
