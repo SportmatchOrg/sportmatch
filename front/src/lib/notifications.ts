@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/api';
+import { PROFILE_HREF } from '@/lib/nav-items';
 import type { AppNotification, NotificationCount } from '@/types/notification';
 
 export async function fetchNotifications(): Promise<AppNotification[]> {
@@ -23,4 +24,8 @@ export async function markAllAsRead(): Promise<number> {
 
 export function withUnreadLabel(label: string, unreadCount: number): string {
   return unreadCount > 0 ? `${label}, ${unreadCount} sin leer` : label;
+}
+
+export function notificationHref(notification: AppNotification): string {
+  return notification.match ? `/partidos/${notification.match.id}` : PROFILE_HREF;
 }

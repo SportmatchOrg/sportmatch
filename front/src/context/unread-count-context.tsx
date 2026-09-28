@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchUnreadCount } from '@/lib/notifications';
@@ -9,6 +17,10 @@ type UnreadCountState = {
   count: number;
   loading: boolean;
   error: string | null;
+};
+
+type UnreadCountContextValue = UnreadCountState & {
+  reload: () => void;
 };
 
 const POLL_INTERVAL_MS = 30_000;
@@ -21,7 +33,9 @@ const INITIAL_STATE: UnreadCountState = {
   error: null,
 };
 
-export function useUnreadCount() {
+const UnreadCountContext = createContext<UnreadCountContextValue | undefined>(undefined);
+
+export function UnreadCountProvider({ children }: { children: ReactNode }) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<UnreadCountState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
@@ -68,10 +82,20 @@ export function useUnreadCount() {
     };
   }, [sessionLoading, firebaseUser, reloadToken]);
 
-  return {
-    count: state.count,
-    loading: sessionLoading || state.loading,
-    error: state.error,
-    reload,
-  };
+  const value = useMemo(
+    () => ({ ...state, loading: sessionLoading || state.loading, reload }),
+    [state, sessionLoading, reload]
+  );
+
+  return <UnreadCountContext.Provider value={value}>{children}</UnreadCountContext.Provider>;
+}
+
+export function useUnreadCount(): UnreadCountContextValue {
+  const context = useContext(UnreadCountContext);
+
+  if (context === undefined) {
+    throw new Error('useUnreadCount must be used within an <UnreadCountProvider>');
+  }
+
+  return context;
 }
