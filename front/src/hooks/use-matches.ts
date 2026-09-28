@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchMatches } from '@/lib/matches';
@@ -16,9 +16,15 @@ const ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un mom
 
 const INITIAL_STATE: MatchesState = { matches: [], loading: true, error: null };
 
-export function useMatches(): MatchesState {
+export function useMatches() {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<MatchesState>(INITIAL_STATE);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const reload = useCallback(() => {
+    setState((current) => (current.error ? { ...current, loading: true, error: null } : current));
+    setReloadToken((token) => token + 1);
+  }, []);
 
   useEffect(() => {
     if (sessionLoading || !firebaseUser) return;
@@ -36,7 +42,7 @@ export function useMatches(): MatchesState {
     return () => {
       active = false;
     };
-  }, [sessionLoading, firebaseUser]);
+  }, [sessionLoading, firebaseUser, reloadToken]);
 
-  return { ...state, loading: sessionLoading || state.loading };
+  return { ...state, loading: sessionLoading || state.loading, reload };
 }
