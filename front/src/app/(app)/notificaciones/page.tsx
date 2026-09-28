@@ -9,6 +9,7 @@ import {
   NotificationListSkeleton,
 } from '@/components/notifications/notification-list';
 import { EmptyState } from '@/components/ui/empty-state';
+import { RetryButton } from '@/components/ui/retry-button';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { useUnreadCount } from '@/context/unread-count-context';
@@ -20,9 +21,6 @@ const PAGE = 'flex w-full flex-col gap-6 px-5 py-6 lg:px-6 lg:py-10 xl:px-8';
 
 const MARK_ALL =
   'text-caption font-semibold text-brand transition-colors hover:text-brand-bright disabled:cursor-not-allowed disabled:text-ink-32';
-
-const RETRY =
-  'rounded-full bg-glass-strong px-6 py-3 text-callout font-semibold text-white shadow-bevel transition-colors hover:bg-glass-solid';
 
 const MARK_ALL_ERROR = 'No pudimos marcarlas como leídas. Probá de nuevo.';
 
@@ -87,11 +85,7 @@ export default function NotificationsPage() {
             icon={TriangleAlert}
             title="No pudimos cargar tus notificaciones"
             text={error}
-            action={
-              <button type="button" onClick={reload} className={RETRY}>
-                Reintentar
-              </button>
-            }
+            action={<RetryButton onRetry={reload} />}
           />
         </div>
       );
