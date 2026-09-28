@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/tooltip';
 import { CountBadge } from '@/components/ui/count-badge';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
+import { useUnreadCount } from '@/context/unread-count-context';
 import { cn } from '@/lib/utils';
 import {
   NAV_ITEMS,
@@ -89,12 +90,9 @@ function TabBarLink({
   );
 }
 
-type TabBarProps = {
-  unreadCount: number;
-};
-
-export function TabBar({ unreadCount }: TabBarProps) {
+export function TabBar() {
   const pathname = usePathname();
+  const { count: unreadCount } = useUnreadCount();
   const [toast, setToast] = useState(false);
 
   useEffect(() => {
