@@ -66,7 +66,6 @@ export default function MapPage() {
 
   const located = useMemo(() => matches.filter(isLocated), [matches]);
   const points = useMemo(() => located.map(position), [located]);
-  const showList = loading || located.length > 0;
 
   useEffect(() => {
     if (!map || !location || centeredOnUser.current) return;
@@ -81,6 +80,36 @@ export default function MapPage() {
 
     map.panTo(userPosition(location));
     map.setZoom(USER_ZOOM);
+  }
+
+  function renderList() {
+    if (loading) {
+      return (
+        <>
+          <Skeleton className="h-7 w-40 rounded-md" />
+          {[0, 1, 2, 3].map((index) => (
+            <Skeleton key={index} className="h-[100px] shrink-0 rounded-md" />
+          ))}
+        </>
+      );
+    }
+
+    if (located.length === 0) return null;
+
+    return (
+      <>
+        <h1 className="text-headline font-bold text-white">
+          {located.length === 1 ? '1 partido' : `${located.length} partidos`}
+        </h1>
+        <ul className="flex flex-col gap-3">
+          {located.map((match) => (
+            <li key={match.id}>
+              <MatchRow match={match} layout="row" />
+            </li>
+          ))}
+        </ul>
+      </>
+    );
   }
 
   function renderOverlay() {
@@ -124,33 +153,10 @@ export default function MapPage() {
 
   return (
     <main className={SCREEN}>
-      {showList && (
-        <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
-          <MapSearchBar />
-
-          {loading ? (
-            <>
-              <Skeleton className="h-7 w-40 rounded-md" />
-              {[0, 1, 2, 3].map((index) => (
-                <Skeleton key={index} className="h-[100px] shrink-0 rounded-md" />
-              ))}
-            </>
-          ) : (
-            <>
-              <h1 className="text-headline font-bold text-white">
-                {located.length === 1 ? '1 partido' : `${located.length} partidos`}
-              </h1>
-              <ul className="flex flex-col gap-3">
-                {located.map((match) => (
-                  <li key={match.id}>
-                    <MatchRow match={match} layout="row" />
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </aside>
-      )}
+      <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
+        <MapSearchBar />
+        {renderList()}
+      </aside>
 
       <div className="relative min-w-0 flex-1">
         <BaseMap defaultCenter={DEFAULT_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full">
