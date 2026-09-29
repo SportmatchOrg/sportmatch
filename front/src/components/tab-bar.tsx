@@ -16,9 +16,9 @@ import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { useUnreadCount } from '@/context/unread-count-context';
 import { cn } from '@/lib/utils';
 import {
+  HOME_HREF,
   NAV_ITEMS,
   NEW_MATCH_HREF,
-  PROFILE_HREF,
   isNavItemActive,
   type NavItem,
 } from '@/lib/nav-items';
@@ -31,11 +31,11 @@ const SHEET_SHADOW =
   'shadow-float-glass';
 
 function TabBarLink({
-  item,
-  active,
-  badgeCount = 0,
-  onUnavailable,
-}: {
+                      item,
+                      active,
+                      badgeCount = 0,
+                      onUnavailable,
+                    }: {
   item: NavItem;
   active: boolean;
   badgeCount?: number;
@@ -102,6 +102,10 @@ export function TabBar() {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  function badgeFor(item: NavItem) {
+    return item.href === HOME_HREF ? unreadCount : 0;
+  }
+
   return (
     <TooltipProvider>
       {toast && (
@@ -123,6 +127,7 @@ export function TabBar() {
             key={item.href}
             item={item}
             active={isNavItemActive(pathname, item.href)}
+            badgeCount={badgeFor(item)}
             onUnavailable={() => setToast(true)}
           />
         ))}
@@ -141,7 +146,7 @@ export function TabBar() {
             key={item.href}
             item={item}
             active={isNavItemActive(pathname, item.href)}
-            badgeCount={item.href === PROFILE_HREF ? unreadCount : 0}
+            badgeCount={badgeFor(item)}
             onUnavailable={() => setToast(true)}
           />
         ))}
