@@ -6,8 +6,7 @@ import { useEffect } from 'react';
 import { Landing } from '@/components/landing/landing';
 import { LoadingScreen } from '@/components/loading-screen';
 import { useAuth } from '@/context/auth-context';
-
-const SIGNED_IN_ROUTE = '/buscar';
+import { HOME_HREF } from '@/lib/nav-items';
 
 export default function RootPage() {
   const { user, loading } = useAuth();
@@ -15,7 +14,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(SIGNED_IN_ROUTE);
+      router.replace(HOME_HREF);
     }
   }, [loading, user, router]);
 

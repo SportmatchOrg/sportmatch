@@ -4,9 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { useAuth } from '@/context/auth-context';
+import { HOME_HREF } from '@/lib/nav-items';
 import { markSplashPending } from '@/lib/splash';
-
-const HOME_ROUTE = '/buscar';
 
 export function useRedirectIfAuthenticated() {
   const { user, loading } = useAuth();
@@ -15,7 +14,7 @@ export function useRedirectIfAuthenticated() {
   useEffect(() => {
     if (!loading && user) {
       markSplashPending();
-      router.replace(HOME_ROUTE);
+      router.replace(HOME_HREF);
     }
   }, [user, loading, router]);
 
