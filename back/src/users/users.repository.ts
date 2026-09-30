@@ -29,9 +29,9 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
 
-  findMatchesReportedIn(userId: string) {
+  findMatchesReportedIn(userIds: string[]) {
     return this.prisma.match.findMany({
-      where: { noShowReports: { some: { reportedUserId: userId } } },
+      where: { noShowReports: { some: { reportedUserId: { in: userIds } } } },
       select: {
         organizerId: true,
         noShowReports: {
@@ -41,25 +41,29 @@ export class UsersRepository {
     });
   }
 
-  countLateWithdrawals(userId: string) {
-    return this.prisma.lateWithdrawal.count({ where: { userId } });
-  }
-
-  findCanceledMatchDates(userId: string) {
-    return this.prisma.match.findMany({
-      where: {
-        organizerId: userId,
-        status: 'CANCELED',
-        canceledAt: { not: null },
-      },
-      select: { date: true, canceledAt: true },
+  countLateWithdrawalsBy(userIds: string[]) {
+    return this.prisma.lateWithdrawal.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds } },
+      _count: { _all: true },
     });
   }
 
-  findReceivedRatings(userId: string) {
+  findCanceledMatchDates(userIds: string[]) {
+    return this.prisma.match.findMany({
+      where: {
+        organizerId: { in: userIds },
+        status: 'CANCELED',
+        canceledAt: { not: null },
+      },
+      select: { organizerId: true, date: true, canceledAt: true },
+    });
+  }
+
+  findReceivedRatings(userIds: string[]) {
     return this.prisma.rating.findMany({
-      where: { ratedUserId: userId },
-      select: { score: true, matchId: true, raterId: true },
+      where: { ratedUserId: { in: userIds } },
+      select: { score: true, matchId: true, raterId: true, ratedUserId: true },
     });
   }
 
