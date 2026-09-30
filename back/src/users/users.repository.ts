@@ -29,18 +29,41 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
 
-  aggregateReceivedRatings(userId: string) {
-    return this.prisma.rating.aggregate({
-      where: { ratedUserId: userId },
-      _avg: { score: true },
-      _count: true,
+  findMatchesReportedIn(userIds: string[]) {
+    return this.prisma.match.findMany({
+      where: { noShowReports: { some: { reportedUserId: { in: userIds } } } },
+      select: {
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
     });
   }
 
-  findReceivedRatings(userId: string) {
+  countLateWithdrawalsBy(userIds: string[]) {
+    return this.prisma.lateWithdrawal.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds } },
+      _count: { _all: true },
+    });
+  }
+
+  findCanceledMatchDates(userIds: string[]) {
+    return this.prisma.match.findMany({
+      where: {
+        organizerId: { in: userIds },
+        status: 'CANCELED',
+        canceledAt: { not: null },
+      },
+      select: { organizerId: true, date: true, canceledAt: true },
+    });
+  }
+
+  findReceivedRatings(userIds: string[]) {
     return this.prisma.rating.findMany({
-      where: { ratedUserId: userId },
-      select: { score: true, matchId: true, raterId: true },
+      where: { ratedUserId: { in: userIds } },
+      select: { score: true, matchId: true, raterId: true, ratedUserId: true },
     });
   }
 
