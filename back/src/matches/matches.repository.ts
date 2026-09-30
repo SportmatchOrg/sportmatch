@@ -191,12 +191,20 @@ export class MatchesRepository {
     ];
   }
 
-  removeParticipant(matchId: string, userId: string) {
-    return this.prisma.$transaction([
+  removeParticipant(matchId: string, userId: string, wasLate: boolean) {
+    const operations = [
       this.prisma.participant.delete({
         where: { matchId_userId: { matchId, userId } },
       }),
       this.prisma.joinRequest.deleteMany({ where: { matchId, userId } }),
-    ]);
+    ];
+
+    if (wasLate) {
+      operations.push(
+        this.prisma.lateWithdrawal.create({ data: { matchId, userId } }),
+      );
+    }
+
+    return this.prisma.$transaction(operations);
   }
 }

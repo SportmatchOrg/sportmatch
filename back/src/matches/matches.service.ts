@@ -10,6 +10,7 @@ import type { CreateNotificationInput } from '../notifications/notifications.rep
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { distanceKm } from '../utils/geo/distance-km';
+import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CancelMatchDto } from './dto/cancel-match.dto';
@@ -224,7 +225,11 @@ export class MatchesService {
     }
 
     try {
-      await this.matchesRepository.removeParticipant(matchId, user.id);
+      await this.matchesRepository.removeParticipant(
+        matchId,
+        user.id,
+        isLateWithdrawal(match.date),
+      );
     } catch (error) {
       throw this.toHttpException(error, matchId);
     }
