@@ -10,6 +10,13 @@ const PUBLIC_USER = {
   photoUrl: true,
 } as const;
 
+const USER_PROFILE = {
+  ...PUBLIC_USER,
+  city: true,
+} as const;
+
+const SEARCH_LIMIT = 10;
+
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -18,10 +25,22 @@ export class UsersRepository {
     return this.prisma.user.findMany({ select: PUBLIC_USER });
   }
 
+  searchByName(query: string, excludedUserId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        id: { not: excludedUserId },
+        name: { contains: query, mode: 'insensitive' },
+      },
+      select: PUBLIC_USER,
+      orderBy: { name: 'asc' },
+      take: SEARCH_LIMIT,
+    });
+  }
+
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: PUBLIC_USER,
+      select: USER_PROFILE,
     });
   }
 
@@ -111,11 +130,7 @@ export class UsersRepository {
   upsertByFirebaseUid(user: FirebaseUser) {
     return this.prisma.user.upsert({
       where: { firebaseUid: user.uid },
-      update: {
-        email: user.email,
-        name: user.name,
-        photoUrl: user.photoUrl,
-      },
+      update: { email: user.email },
       create: {
         firebaseUid: user.uid,
         email: user.email,
