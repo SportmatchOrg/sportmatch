@@ -10,7 +10,6 @@ import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { assignRatingTargets } from '../utils/ratings/assign-rating-targets';
-import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import type { CreateRatingsDto, RatingItemDto } from './dto/create-ratings.dto';
 import { RatingsRepository } from './ratings.repository';
@@ -63,7 +62,7 @@ export class RatingsService {
     const reportsNoShows = noShowUserIds.length > 0;
     const confirmedBefore = reportsNoShows
       ? await this.findConfirmedNoShows(matchId)
-      : [];
+      : new Set<string>();
 
     try {
       const { count, noShowCount } =
@@ -86,23 +85,23 @@ export class RatingsService {
     }
   }
 
-  private async findConfirmedNoShows(matchId: string): Promise<string[]> {
-    const match = await this.ratingsRepository.findNoShowReports(matchId);
+  private async findConfirmedNoShows(matchId: string): Promise<Set<string>> {
+    const noShowsByMatch = await this.usersService.findConfirmedNoShows({
+      matchIds: [matchId],
+    });
 
-    if (!match) {
-      return [];
-    }
-
-    return confirmedNoShowIds(match.noShowReports, match.organizerId);
+    return noShowsByMatch.get(matchId) ?? new Set();
   }
 
-  private async notifyNewNoShows(matchId: string, confirmedBefore: string[]) {
+  private async notifyNewNoShows(
+    matchId: string,
+    confirmedBefore: Set<string>,
+  ) {
     const confirmedAfter = await this.findConfirmedNoShows(matchId);
-    const alreadyConfirmed = new Set(confirmedBefore);
 
     await this.notificationsService.notifyMany(
-      confirmedAfter
-        .filter((userId) => !alreadyConfirmed.has(userId))
+      [...confirmedAfter]
+        .filter((userId) => !confirmedBefore.has(userId))
         .map((userId) => ({
           userId,
           type: 'NO_SHOW_CONFIRMED' as const,

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
+import type { NoShowReportsFilter } from './types';
 
 const PUBLIC_USER = {
   id: true,
@@ -27,18 +28,6 @@ export class UsersRepository {
 
   findByFirebaseUid(firebaseUid: string) {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
-  }
-
-  findMatchesReportedIn(userIds: string[]) {
-    return this.prisma.match.findMany({
-      where: { noShowReports: { some: { reportedUserId: { in: userIds } } } },
-      select: {
-        organizerId: true,
-        noShowReports: {
-          select: { reporterId: true, reportedUserId: true },
-        },
-      },
-    });
   }
 
   countLateWithdrawalsBy(userIds: string[]) {
@@ -67,9 +56,16 @@ export class UsersRepository {
     });
   }
 
-  findNoShowReportsByMatch(matchIds: string[]) {
+  findNoShowReportsByMatch(filter: NoShowReportsFilter) {
     return this.prisma.match.findMany({
-      where: { id: { in: matchIds } },
+      where:
+        'matchIds' in filter
+          ? { id: { in: filter.matchIds } }
+          : {
+              noShowReports: {
+                some: { reportedUserId: { in: filter.reportedUserIds } },
+              },
+            },
       select: {
         id: true,
         organizerId: true,

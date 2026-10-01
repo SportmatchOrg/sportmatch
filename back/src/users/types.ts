@@ -3,3 +3,6 @@ export type PublicUser = {
   name: string;
   photoUrl: string | null;
 };
+
+export type NoShowReportsFilter =
+  { matchIds: string[] } | { reportedUserIds: string[] };

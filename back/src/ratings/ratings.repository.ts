@@ -23,18 +23,6 @@ export class RatingsRepository {
     });
   }
 
-  findNoShowReports(matchId: string) {
-    return this.prisma.match.findUnique({
-      where: { id: matchId },
-      select: {
-        organizerId: true,
-        noShowReports: {
-          select: { reporterId: true, reportedUserId: true },
-        },
-      },
-    });
-  }
-
   async countSubmittedBy(matchId: string, userId: string) {
     const [ratings, noShowReports] = await Promise.all([
       this.prisma.rating.count({ where: { matchId, raterId: userId } }),
