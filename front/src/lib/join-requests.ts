@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api';
-import type { JoinRequestStatus, PublicUser } from '@/types/partido';
+import type { JoinRequestStatus, PublicUser } from '@/types/match';
 
 export type JoinRequest = {
   id: string;
@@ -7,16 +7,16 @@ export type JoinRequest = {
   user: PublicUser;
 };
 
-export async function fetchJoinRequests(partidoId: string): Promise<JoinRequest[]> {
-  return apiFetch<JoinRequest[]>(`/partidos/${partidoId}/join-requests`);
+export async function fetchJoinRequests(matchId: string): Promise<JoinRequest[]> {
+  return apiFetch<JoinRequest[]>(`/matches/${matchId}/join-requests`);
 }
 
 export async function resolveJoinRequest(
-  partidoId: string,
+  matchId: string,
   joinRequestId: string,
   status: 'ACCEPTED' | 'REJECTED'
 ): Promise<void> {
-  await apiFetch(`/partidos/${partidoId}/join-requests/${joinRequestId}`, {
+  await apiFetch(`/matches/${matchId}/join-requests/${joinRequestId}`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
   });

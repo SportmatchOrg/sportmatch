@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 const PUBLIC_USER = {
-  select: { id: true, nombre: true, fotoUrl: true },
+  select: { id: true, name: true, photoUrl: true },
 } as const;
 
 @Injectable()
@@ -10,16 +10,17 @@ export class JoinRequestsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findMatchById(matchId: string, userId: string) {
-    return this.prisma.partido.findUnique({
+    return this.prisma.match.findUnique({
       where: { id: matchId },
       select: {
         id: true,
-        organizadorId: true,
-        fecha: true,
-        cupo: true,
-        _count: { select: { participantes: true } },
-        participantes: {
-          where: { usuarioId: userId },
+        organizerId: true,
+        date: true,
+        status: true,
+        capacity: true,
+        _count: { select: { participants: true } },
+        participants: {
+          where: { userId },
           select: { id: true },
         },
       },
@@ -67,15 +68,30 @@ export class JoinRequestsRepository {
   }
 
   accept(joinRequestId: string, matchId: string, userId: string) {
-    return this.prisma.$transaction([
-      this.prisma.joinRequest.update({
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
+
+      const [joined, match] = await Promise.all([
+        tx.participant.count({ where: { matchId } }),
+        tx.match.findUniqueOrThrow({
+          where: { id: matchId },
+          select: { capacity: true },
+        }),
+      ]);
+
+      if (joined >= match.capacity) {
+        return null;
+      }
+
+      const request = await tx.joinRequest.update({
         where: { id: joinRequestId },
         data: { status: 'ACCEPTED' },
-      }),
-      this.prisma.participante.create({
-        data: { partidoId: matchId, usuarioId: userId },
-      }),
-    ]);
+      });
+
+      await tx.participant.create({ data: { matchId, userId } });
+
+      return request;
+    });
   }
 
   deletePending(matchId: string, userId: string) {

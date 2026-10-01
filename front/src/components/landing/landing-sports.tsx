@@ -5,14 +5,14 @@ import { useState } from "react";
 
 import { LANDING_CONTAINER } from "@/components/landing/landing-container";
 import { cn } from "@/lib/utils";
-import { DEPORTE_LABEL, type DeporteNombre } from "@/types/partido";
+import { SPORT_LABEL, type SportName } from "@/types/match";
 
-const SPORTS: { nombre: DeporteNombre; photo: string }[] = [
-  { nombre: "FUTBOL", photo: "/deportes/football-match.jpg" },
-  { nombre: "BASQUET", photo: "/deportes/basketball-aerial.jpg" },
-  { nombre: "TENIS", photo: "/deportes/tennis-clay.jpg" },
-  { nombre: "PADEL", photo: "/deportes/padel-pro.jpg" },
-  { nombre: "RUNNING", photo: "/deportes/running-bw.jpg" },
+const SPORTS: { name: SportName; photo: string }[] = [
+  { name: "FUTBOL", photo: "/deportes/football-match.jpg" },
+  { name: "BASQUET", photo: "/deportes/basketball-aerial.jpg" },
+  { name: "TENIS", photo: "/deportes/tennis-clay.jpg" },
+  { name: "PADEL", photo: "/deportes/padel-pro.jpg" },
+  { name: "RUNNING", photo: "/deportes/running-bw.jpg" },
 ];
 
 const DEFAULT_INDEX = 0;
@@ -35,12 +35,12 @@ export function LandingSports() {
         </h2>
 
         <ul className="flex h-70 gap-3 lg:h-75">
-          {SPORTS.map(({ nombre, photo }, index) => {
+          {SPORTS.map(({ name, photo }, index) => {
             const isActive = index === activeIndex;
 
             return (
               <li
-                key={nombre}
+                key={name}
                 style={{ flexBasis: flexBasisFor(isActive) }}
                 className={cn(
                   "relative grow-0 overflow-hidden rounded-md shadow-bevel",
@@ -78,7 +78,7 @@ export function LandingSports() {
                   >
                     <span className="h-6 w-[3px] shrink-0 rounded-full bg-brand shadow-brand-glow" />
                     <span className="truncate text-subhead">
-                      {DEPORTE_LABEL[nombre]}
+                      {SPORT_LABEL[name]}
                     </span>
                   </span>
                 </button>

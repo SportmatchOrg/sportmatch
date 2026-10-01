@@ -67,9 +67,9 @@ Resultado esperado: ambos métodos permiten iniciar sesión en el dominio de Ver
 
 - [ ] Abrir el listado de partidos.
 - [ ] Confirmar que cada partido muestre deporte, fecha, lugar y cupo.
-- [ ] Buscar `/partidos` en Network y verificar que la petición de la aplicación responda correctamente.
+- [ ] Buscar `/matches` en Network y verificar que la petición de la aplicación responda correctamente.
 - [ ] Si el entorno es `dev`, confirmar que la Request URL pertenezca a `sportmatch-dev` en Azure y no al backend productivo.
-- [ ] Confirmar que Console no muestre errores de CORS al solicitar `/partidos`.
+- [ ] Confirmar que Console no muestre errores de CORS al solicitar `/matches`.
 
 ### 5. Unirse y salir de un partido
 

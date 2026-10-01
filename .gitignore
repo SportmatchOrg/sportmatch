@@ -15,3 +15,4 @@ docker-compose.override.yml
 # Skills de Claude Code instaladas por cada dev (no son del equipo, son herramientas personales)
 .claude/skills/
 skills-lock.json
+.DS_Store

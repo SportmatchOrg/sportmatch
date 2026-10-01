@@ -1,39 +1,40 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { hoursAgo } from '../src/utils/time/hours-ago';
 import { inDays } from '../src/utils/time/in-days';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const NOMBRES_DEPORTES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
+const SPORT_NAMES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
 
 async function main() {
-  const deportes = await Promise.all(
-    NOMBRES_DEPORTES.map((nombre) =>
-      prisma.deporte.upsert({
-        where: {nombre},
+  const sports = await Promise.all(
+    SPORT_NAMES.map((name) =>
+      prisma.sport.upsert({
+        where: { name },
         update: {},
-        create: {nombre},
+        create: { name },
       }),
     ),
   );
 
-  const deporteId = (nombre: string): string => {
-    const deporte = deportes.find((candidato) => candidato.nombre === nombre);
+  const sportId = (name: string): string => {
+    const sport = sports.find((candidate) => candidate.name === name);
 
-    if (!deporte) {
-      throw new Error(`Deporte ${nombre} was not seeded`);
+    if (!sport) {
+      throw new Error(`Sport ${name} was not seeded`);
     }
 
-    return deporte.id;
+    return sport.id;
   };
 
-  const seedUser = (firebaseUid: string, email: string, nombre: string) =>
+  const seedUser = (firebaseUid: string, email: string, name: string) =>
     prisma.user.upsert({
-      where: {firebaseUid},
+      where: { firebaseUid },
       update: {},
-      create: {firebaseUid, email, nombre},
+      create: { firebaseUid, email, name },
     });
 
   const [ana, luis, marta, pablo, sofia] = await Promise.all([
@@ -44,111 +45,187 @@ async function main() {
     seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
   ]);
 
-  await prisma.partido.deleteMany();
+  await prisma.match.deleteMany();
 
-  await prisma.partido.createMany({
+  await prisma.match.createMany({
     data: [
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(2, 19),
-        ubicacion: 'Parque Sur',
-        cupo: 10,
-        descripcion: 'Faltan dos para completar los equipos',
-        organizadorId: ana.id,
+        sportId: sportId('FUTBOL'),
+        level: 'INTERMEDIATE',
+        date: inDays(2, 19),
+        location: 'Parque Sur',
+        latitude: -34.60655,
+        longitude: -58.43556,
+        capacity: 10,
+        description: 'Faltan dos para completar los equipos',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('PADEL'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(3, 20),
-        ubicacion: 'Club Norte · Cancha 3',
-        cupo: 4,
-        organizadorId: luis.id,
+        sportId: sportId('PADEL'),
+        level: 'BEGINNER',
+        date: inDays(3, 20),
+        location: 'Club Norte · Cancha 3',
+        latitude: -34.46472,
+        longitude: -58.91042,
+        capacity: 4,
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('BASQUET'),
-        nivel: 'AVANZADO',
-        fecha: inDays(5, 21),
-        ubicacion: 'Polideportivo Municipal',
-        cupo: 10,
-        organizadorId: ana.id,
+        sportId: sportId('BASQUET'),
+        level: 'ADVANCED',
+        date: inDays(5, 21),
+        location: 'Polideportivo Municipal',
+        latitude: -34.46775,
+        longitude: -58.9204,
+        capacity: 10,
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('TENIS'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(7, 18),
-        ubicacion: 'River Courts · Cancha 2',
-        cupo: 2,
-        descripcion: 'Singles, traer pelotas',
-        organizadorId: luis.id,
+        sportId: sportId('TENIS'),
+        level: 'INTERMEDIATE',
+        date: inDays(7, 18),
+        location: 'River Courts · Cancha 2',
+        latitude: -34.55818,
+        longitude: -58.49974,
+        capacity: 2,
+        description: 'Singles, traer pelotas',
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('RUNNING'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(9, 8),
-        ubicacion: 'Costanera, kilómetro 0',
-        cupo: 15,
-        descripcion: 'Ritmo suave, 5 km',
-        organizadorId: ana.id,
+        sportId: sportId('RUNNING'),
+        level: 'BEGINNER',
+        date: inDays(9, 8),
+        location: 'Costanera, kilómetro 0',
+        latitude: -34.60841,
+        longitude: -58.35904,
+        capacity: 15,
+        description: 'Ritmo suave, 5 km',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'AVANZADO',
-        fecha: inDays(12, 22),
-        ubicacion: 'Complejo Del Este',
-        cupo: 14,
-        organizadorId: luis.id,
+        sportId: sportId('FUTBOL'),
+        level: 'ADVANCED',
+        date: inDays(12, 22),
+        location: 'Complejo Del Este',
+        latitude: -34.46896,
+        longitude: -58.91957,
+        capacity: 14,
+        organizerId: luis.id,
       },
       {
-        deporteId: deporteId('FUTBOL'),
-        nivel: 'INTERMEDIO',
-        fecha: inDays(-3, 20),
-        ubicacion: 'Parque Sur',
-        cupo: 10,
-        descripcion: 'Partido ya jugado',
-        organizadorId: ana.id,
+        sportId: sportId('FUTBOL'),
+        level: 'INTERMEDIATE',
+        date: inDays(-3, 20),
+        location: 'Parque Sur',
+        latitude: -34.60655,
+        longitude: -58.43556,
+        capacity: 10,
+        description: 'Partido ya jugado',
+        organizerId: ana.id,
       },
       {
-        deporteId: deporteId('PADEL'),
-        nivel: 'PRINCIPIANTE',
-        fecha: inDays(-10, 19),
-        ubicacion: 'Club Norte · Cancha 1',
-        cupo: 4,
-        organizadorId: luis.id,
+        sportId: sportId('PADEL'),
+        level: 'BEGINNER',
+        date: inDays(-10, 19),
+        location: 'Club Norte · Cancha 1',
+        latitude: -34.46472,
+        longitude: -58.91042,
+        capacity: 4,
+        organizerId: luis.id,
       },
     ],
   });
 
-  const createdPartidos = await prisma.partido.findMany({
-    orderBy: {fecha: 'asc'},
+  const createdMatches = await prisma.match.findMany({
+    orderBy: { date: 'asc' },
   });
 
   const now = new Date();
-  const played = createdPartidos.filter((partido) => partido.fecha < now);
-  const upcoming = createdPartidos.filter((partido) => partido.fecha >= now);
+  const played = createdMatches.filter((match) => match.date < now);
+  const upcoming = createdMatches.filter((match) => match.date >= now);
 
-  await prisma.participante.createMany({
-    data: [...played, ...upcoming.slice(0, 3)].map((partido) => ({
-      partidoId: partido.id,
-      usuarioId: partido.organizadorId === ana.id ? luis.id : ana.id,
+  await prisma.participant.createMany({
+    data: [...played, ...upcoming.slice(0, 3)].map((match) => ({
+      matchId: match.id,
+      userId: match.organizerId === ana.id ? luis.id : ana.id,
     })),
   });
 
-  await prisma.partido.create({
+  await prisma.match.create({
     data: {
-      deporteId: deporteId('FUTBOL'),
-      nivel: 'INTERMEDIO',
-      fecha: inDays(-2, 19),
-      ubicacion: 'Cancha Central',
-      cupo: 10,
-      descripcion: 'Partido jugado con cinco jugadores',
-      organizadorId: ana.id,
-      participantes: {
-        create: [luis, marta, pablo, sofia].map(({id}) => ({
-          usuarioId: id,
+      sportId: sportId('FUTBOL'),
+      level: 'INTERMEDIATE',
+      date: inDays(-2, 19),
+      location: 'Cancha Central',
+      latitude: -34.46896,
+      longitude: -58.91957,
+      capacity: 10,
+      description: 'Partido jugado con cinco jugadores',
+      organizerId: ana.id,
+      participants: {
+        create: [luis, marta, pablo, sofia].map(({ id }) => ({
+          userId: id,
         })),
       },
     },
+  });
+
+  await prisma.match.create({
+    data: {
+      sportId: sportId('TENIS'),
+      level: 'INTERMEDIATE',
+      date: hoursAgo(3),
+      location: 'Club del Oeste · Cancha 3',
+      latitude: -34.4663,
+      longitude: -58.9183,
+      capacity: 4,
+      description: 'Partido jugado hace un rato: todavia se puede calificar',
+      organizerId: ana.id,
+      participants: {
+        create: [luis, marta].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
+  const noShowMatches = await Promise.all(
+    [
+      { organizer: ana, date: inDays(-4, 20), location: 'Cancha Central' },
+      { organizer: luis, date: inDays(-6, 21), location: 'Parque Sur' },
+    ].map(({ organizer, date, location }) =>
+      prisma.match.create({
+        data: {
+          sportId: sportId('FUTBOL'),
+          level: 'INTERMEDIATE',
+          date,
+          location,
+          latitude: -34.46896,
+          longitude: -58.91957,
+          capacity: 10,
+          description: 'Partido jugado con una falta confirmada',
+          organizerId: organizer.id,
+          participants: {
+            create: [pablo, marta].map(({ id }) => ({ userId: id })),
+          },
+        },
+      }),
+    ),
+  );
+
+  await prisma.noShowReport.createMany({
+    data: noShowMatches.map((match) => ({
+      matchId: match.id,
+      reporterId: match.organizerId,
+      reportedUserId: pablo.id,
+    })),
+  });
+
+  await prisma.rating.createMany({
+    data: noShowMatches.map((match) => ({
+      matchId: match.id,
+      raterId: pablo.id,
+      ratedUserId: marta.id,
+      score: 5,
+    })),
   });
 
   const demoEmail = process.env.SEED_DEMO_EMAIL;
@@ -157,29 +234,50 @@ async function main() {
     return;
   }
 
-  const demoUser = await prisma.user.findUnique({where: {email: demoEmail}});
+  const demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
 
   if (!demoUser) {
     return;
   }
 
-  const playedMatches = await prisma.partido.findMany({
-    where: {fecha: {lt: new Date()}, organizadorId: {not: demoUser.id}},
-    orderBy: {fecha: 'asc'},
-    select: {id: true, organizadorId: true},
+  const playedMatches = await prisma.match.findMany({
+    where: {
+      date: { lt: new Date() },
+      organizerId: { not: demoUser.id },
+      id: { notIn: noShowMatches.map(({ id }) => id) },
+    },
+    orderBy: { date: 'asc' },
+    select: { id: true, organizerId: true },
   });
 
-  await prisma.participante.createMany({
-    data: playedMatches.map(({id}) => ({
-      partidoId: id,
-      usuarioId: demoUser.id,
+  await prisma.participant.createMany({
+    data: playedMatches.map(({ id }) => ({
+      matchId: id,
+      userId: demoUser.id,
     })),
     skipDuplicates: true,
   });
 
-  const [ratedMatch] = playedMatches;
+  await prisma.match.create({
+    data: {
+      sportId: sportId('BASQUET'),
+      level: 'INTERMEDIATE',
+      date: inDays(-1, 20),
+      location: 'Polideportivo Municipal',
+      latitude: -34.46775,
+      longitude: -58.9204,
+      capacity: 4,
+      description: 'Partido jugado sin calificar',
+      organizerId: marta.id,
+      participants: {
+        create: [demoUser, pablo, sofia].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
 
-  if (!ratedMatch) {
+  const [ratedMatch, secondPlayedMatch, thirdPlayedMatch] = playedMatches;
+
+  if (!ratedMatch || !secondPlayedMatch || !thirdPlayedMatch) {
     return;
   }
 
@@ -187,9 +285,56 @@ async function main() {
     data: {
       matchId: ratedMatch.id,
       raterId: demoUser.id,
-      ratedUserId: ratedMatch.organizadorId,
+      ratedUserId: ratedMatch.organizerId,
       score: 5,
     },
+  });
+
+  await prisma.notification.deleteMany({ where: { userId: demoUser.id } });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: demoUser.id,
+        actorId: ana.id,
+        matchId: ratedMatch.id,
+        type: 'JOIN_REQUEST_ACCEPTED',
+        readAt: new Date(),
+      },
+      {
+        userId: demoUser.id,
+        actorId: luis.id,
+        matchId: secondPlayedMatch.id,
+        type: 'JOIN_REQUEST_REJECTED',
+      },
+      {
+        userId: demoUser.id,
+        actorId: marta.id,
+        matchId: thirdPlayedMatch.id,
+        type: 'MATCH_CANCELED',
+        payload: { reason: 'Canceled because of rain' },
+      },
+      {
+        userId: demoUser.id,
+        actorId: sofia.id,
+        matchId: ratedMatch.id,
+        type: 'JOIN_REQUEST_RECEIVED',
+        readAt: new Date(),
+      },
+      {
+        userId: demoUser.id,
+        actorId: pablo.id,
+        matchId: secondPlayedMatch.id,
+        type: 'PARTICIPANT_LEFT',
+      },
+      {
+        userId: demoUser.id,
+        actorId: ana.id,
+        matchId: thirdPlayedMatch.id,
+        type: 'MATCH_UPDATED',
+        payload: { changed: ['date', 'location'] },
+      },
+    ],
   });
 }
 

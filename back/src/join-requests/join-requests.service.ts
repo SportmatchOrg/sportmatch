@@ -5,6 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { MatchStatus } from '../generated/prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
@@ -15,6 +17,7 @@ export class JoinRequestsService {
   constructor(
     private readonly joinRequestsRepository: JoinRequestsRepository,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(firebaseUid: string, matchId: string) {
@@ -25,43 +28,50 @@ export class JoinRequestsService {
     );
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
-    if (match.organizadorId === user.id) {
+    this.assertNotCanceled(match.status);
+
+    if (match.organizerId === user.id) {
       throw new BadRequestException('The organizer cannot request to join');
     }
 
-    this.assertNotPlayed(match.fecha);
+    this.assertNotPlayed(match.date);
 
-    if (match.participantes.length > 0) {
-      throw new ConflictException('You already joined this partido');
+    if (match.participants.length > 0) {
+      throw new ConflictException('You already joined this match');
     }
 
-    if (match._count.participantes >= match.cupo) {
-      throw new ConflictException('The partido is full');
+    if (match._count.participants >= match.capacity) {
+      throw new ConflictException('The match is full');
     }
 
     const existingRequest =
       await this.joinRequestsRepository.findByMatchAndUser(matchId, user.id);
 
     if (existingRequest?.status === 'PENDING') {
-      throw new ConflictException('You already requested to join this partido');
+      throw new ConflictException('You already requested to join this match');
     }
 
-    try {
-      if (existingRequest) {
-        return await this.joinRequestsRepository.resetToPending(
-          existingRequest.id,
-        );
-      }
-
-      return await this.joinRequestsRepository.create(matchId, user.id);
-    } catch (error) {
+    const joinRequest = await (
+      existingRequest
+        ? this.joinRequestsRepository.resetToPending(existingRequest.id)
+        : this.joinRequestsRepository.create(matchId, user.id)
+    ).catch((error: unknown) => {
       throw toPrismaHttpException(error, {
-        P2002: 'You already requested to join this partido',
+        P2002: 'You already requested to join this match',
       });
-    }
+    });
+
+    await this.notificationsService.notify({
+      userId: match.organizerId,
+      actorId: user.id,
+      matchId,
+      type: 'JOIN_REQUEST_RECEIVED',
+    });
+
+    return joinRequest;
   }
 
   async cancel(firebaseUid: string, matchId: string) {
@@ -88,7 +98,9 @@ export class JoinRequestsService {
     id: string,
     updateJoinRequestDto: UpdateJoinRequestDto,
   ) {
-    const { match } = await this.getOrganizerMatch(firebaseUid, matchId);
+    const { user, match } = await this.getOrganizerMatch(firebaseUid, matchId);
+
+    this.assertNotCanceled(match.status);
 
     if (updateJoinRequestDto.status === 'PENDING') {
       throw new BadRequestException('A join request cannot return to pending');
@@ -107,22 +119,42 @@ export class JoinRequestsService {
       throw new ConflictException('The join request is already resolved');
     }
 
-    this.assertNotPlayed(match.fecha);
+    this.assertNotPlayed(match.date);
 
     try {
       if (updateJoinRequestDto.status === 'REJECTED') {
-        return await this.joinRequestsRepository.reject(id);
+        const rejectedRequest = await this.joinRequestsRepository.reject(id);
+
+        await this.notificationsService.notify({
+          userId: joinRequest.userId,
+          actorId: user.id,
+          matchId,
+          type: 'JOIN_REQUEST_REJECTED',
+        });
+
+        return rejectedRequest;
       }
 
-      if (match._count.participantes >= match.cupo) {
+      if (match._count.participants >= match.capacity) {
         throw new ConflictException('The match is full');
       }
 
-      const [acceptedRequest] = await this.joinRequestsRepository.accept(
+      const acceptedRequest = await this.joinRequestsRepository.accept(
         id,
         matchId,
         joinRequest.userId,
       );
+
+      if (!acceptedRequest) {
+        throw new ConflictException('The match is full');
+      }
+
+      await this.notificationsService.notify({
+        userId: joinRequest.userId,
+        actorId: user.id,
+        matchId,
+        type: 'JOIN_REQUEST_ACCEPTED',
+      });
 
       return acceptedRequest;
     } catch (error) {
@@ -134,7 +166,13 @@ export class JoinRequestsService {
 
   private assertNotPlayed(date: Date) {
     if (date.getTime() <= Date.now()) {
-      throw new BadRequestException('The partido has already been played');
+      throw new BadRequestException('The match has already been played');
+    }
+  }
+
+  private assertNotCanceled(status: MatchStatus) {
+    if (status === 'CANCELED') {
+      throw new ConflictException('The match is canceled');
     }
   }
 
@@ -146,15 +184,15 @@ export class JoinRequestsService {
     );
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
-    if (match.organizadorId !== user.id) {
+    if (match.organizerId !== user.id) {
       throw new ForbiddenException(
         'Only the organizer can manage join requests',
       );
     }
 
-    return { match };
+    return { user, match };
   }
 }

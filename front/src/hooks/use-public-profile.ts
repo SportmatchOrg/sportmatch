@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { ApiError } from '@/lib/api';
 import { fetchPlayedBy, fetchPublicProfile } from '@/lib/users';
-import type { Partido } from '@/types/partido';
+import type { Match } from '@/types/match';
 import type { PublicProfile } from '@/types/user';
 
 type PublicProfileResult = {
   profile: PublicProfile | null;
-  matches: Partido[];
+  matches: Match[];
   loading: boolean;
   notFound: boolean;
   error: string | null;

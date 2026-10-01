@@ -7,13 +7,15 @@ export type NavItem = {
   enabled: boolean;
 };
 
+export const HOME_HREF = '/mapa';
 export const NEW_MATCH_HREF = '/partidos/nuevo';
 export const PROFILE_HREF = '/perfil';
+export const NOTIFICATIONS_HREF = '/notificaciones';
 
 export const NAV_ITEMS: NavItem[] = [
+  { href: HOME_HREF, label: 'Mapa', icon: Map, enabled: true },
   { href: '/buscar', label: 'Descubrir', icon: Search, enabled: true },
   { href: '/mis-partidos', label: 'Partidos', icon: Calendar, enabled: true },
-  { href: '/mapa', label: 'Mapa', icon: Map, enabled: false },
   { href: PROFILE_HREF, label: 'Perfil', icon: User, enabled: true },
 ];
 

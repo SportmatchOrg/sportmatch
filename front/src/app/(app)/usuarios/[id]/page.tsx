@@ -51,7 +51,12 @@ export default function PublicProfilePage({ params }: PageProps<'/usuarios/[id]'
     <main className="w-full pb-10">
       <ProfileHeader user={profile} isOwnProfile={false} />
       <ProfileStats stats={profile.stats} />
-      <RecentMatches partidos={matches} error={null} showSeeAll={false} />
+      <RecentMatches
+        matches={matches}
+        error={null}
+        seeAllHref={`/usuarios/${id}/partidos`}
+        emptyTitle="Todavía no jugó ningún partido"
+      />
     </main>
   );
 }

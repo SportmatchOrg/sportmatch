@@ -1,12 +1,12 @@
 import type { Request } from 'express';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 
-export interface FirebaseUser {
+export type FirebaseUser = {
   uid: string;
   email: string;
-  nombre: string;
-  fotoUrl?: string;
-}
+  name: string;
+  photoUrl?: string;
+};
 
 export interface FirebaseIdToken extends DecodedIdToken {
   name?: string;

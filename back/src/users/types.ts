@@ -1,5 +1,5 @@
 export type PublicUser = {
   id: string;
-  nombre: string;
-  fotoUrl: string | null;
+  name: string;
+  photoUrl: string | null;
 };

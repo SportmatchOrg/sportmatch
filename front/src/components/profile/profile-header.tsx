@@ -7,7 +7,7 @@ import { ProfileMenu } from '@/components/profile/profile-menu';
 import { IMAGES } from '@/lib/images';
 
 type ProfileHeaderProps = {
-  user: { nombre: string; fotoUrl: string | null; email?: string };
+  user: { name: string; photoUrl: string | null; email?: string };
   isOwnProfile: boolean;
 };
 
@@ -32,11 +32,11 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
       </div>
 
       <ProfileIdentityRow>
-        <ProfileAvatar name={user.nombre} photoUrl={user.fotoUrl} />
+        <ProfileAvatar name={user.name} photoUrl={user.photoUrl} />
 
         <div className="flex flex-col items-center gap-[2.5px] lg:flex-1 lg:items-start lg:pb-2">
           <h1 className="text-center text-[26.6px] font-bold leading-[32.48px] tracking-[-0.17px] text-white lg:text-left lg:text-[36.2px] lg:font-extrabold lg:leading-[44px] lg:tracking-[-1.33px]">
-            {user.nombre}
+            {user.name}
           </h1>
           {isOwnProfile && user.email && (
             <p className="flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]">

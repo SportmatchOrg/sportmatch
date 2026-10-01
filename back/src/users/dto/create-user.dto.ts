@@ -15,9 +15,9 @@ export class CreateUserDto {
 
   @IsString()
   @MinLength(2)
-  nombre: string;
+  name: string;
 
   @IsOptional()
   @IsUrl()
-  fotoUrl?: string;
+  photoUrl?: string;
 }

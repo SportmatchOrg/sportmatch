@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { BrandLogo } from '@/components/brand-logo';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { UserAvatar } from '@/components/user-avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/context/auth-context';
+import { useUnreadCount } from '@/context/unread-count-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +74,7 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
 export function TopNavBar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { count: unreadCount } = useUnreadCount();
   const profileActive = isNavItemActive(pathname, PROFILE_HREF);
 
   return (
@@ -99,6 +102,13 @@ export function TopNavBar() {
               <Plus className="size-[18px]" />
               Crear partido
             </Button>
+
+            <NotificationBell
+              unreadCount={unreadCount}
+              variant="ghost"
+              size="nav"
+              badgeClassName="ring-raised"
+            />
 
             <Link
               href={PROFILE_HREF}

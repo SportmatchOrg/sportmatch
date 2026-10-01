@@ -5,10 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { assignRatingTargets } from '../utils/ratings/assign-rating-targets';
+import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
+import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import type { CreateRatingsDto, RatingItemDto } from './dto/create-ratings.dto';
 import { RatingsRepository } from './ratings.repository';
 
@@ -17,16 +20,21 @@ export class RatingsService {
   constructor(
     private readonly ratingsRepository: RatingsRepository,
     private readonly usersService: UsersService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findPending(firebaseUid: string, matchId: string) {
-    const { user, targets } = await this.getAssignment(firebaseUid, matchId);
-    const alreadyRated = await this.ratingsRepository.countGivenBy(
+    const { user, targets, otherPlayers } = await this.getAssignment(
+      firebaseUid,
       matchId,
-      user.id,
     );
+    const alreadySubmitted = await this.hasSubmitted(matchId, user.id);
 
-    return { matchId, targets: alreadyRated > 0 ? [] : targets };
+    return {
+      matchId,
+      targets: alreadySubmitted ? [] : targets,
+      players: alreadySubmitted ? [] : otherPlayers,
+    };
   }
 
   async create(
@@ -34,26 +42,43 @@ export class RatingsService {
     matchId: string,
     createRatingsDto: CreateRatingsDto,
   ) {
-    const { user, targets } = await this.getAssignment(firebaseUid, matchId);
-    const alreadyRated = await this.ratingsRepository.countGivenBy(
+    const { user, targets, otherPlayers } = await this.getAssignment(
+      firebaseUid,
       matchId,
-      user.id,
     );
 
-    if (alreadyRated > 0) {
+    if (await this.hasSubmitted(matchId, user.id)) {
       throw new ConflictException('You already rated this match');
     }
 
-    this.assertMatchesAssignment(createRatingsDto.ratings, targets);
+    const { ratings, noShowUserIds = [] } = createRatingsDto;
+    const noShowIds = new Set(noShowUserIds);
+
+    this.assertNoShowsArePlayers(noShowIds, otherPlayers);
+    this.assertMatchesAssignment(
+      ratings,
+      targets.filter(({ id }) => !noShowIds.has(id)),
+    );
+
+    const reportsNoShows = noShowUserIds.length > 0;
+    const confirmedBefore = reportsNoShows
+      ? await this.findConfirmedNoShows(matchId)
+      : [];
 
     try {
-      const { count } = await this.ratingsRepository.createMany(
-        matchId,
-        user.id,
-        createRatingsDto.ratings,
-      );
+      const { count, noShowCount } =
+        await this.ratingsRepository.createSubmission(
+          matchId,
+          user.id,
+          ratings,
+          noShowUserIds,
+        );
 
-      return { matchId, count };
+      if (reportsNoShows) {
+        await this.notifyNewNoShows(matchId, confirmedBefore);
+      }
+
+      return { matchId, count, noShowCount };
     } catch (error) {
       throw toPrismaHttpException(error, {
         P2002: 'You already rated this match',
@@ -61,21 +86,63 @@ export class RatingsService {
     }
   }
 
+  private async findConfirmedNoShows(matchId: string): Promise<string[]> {
+    const match = await this.ratingsRepository.findNoShowReports(matchId);
+
+    if (!match) {
+      return [];
+    }
+
+    return confirmedNoShowIds(match.noShowReports, match.organizerId);
+  }
+
+  private async notifyNewNoShows(matchId: string, confirmedBefore: string[]) {
+    const confirmedAfter = await this.findConfirmedNoShows(matchId);
+    const alreadyConfirmed = new Set(confirmedBefore);
+
+    await this.notificationsService.notifyMany(
+      confirmedAfter
+        .filter((userId) => !alreadyConfirmed.has(userId))
+        .map((userId) => ({
+          userId,
+          type: 'NO_SHOW_CONFIRMED' as const,
+          matchId,
+        })),
+    );
+  }
+
+  private async hasSubmitted(matchId: string, userId: string) {
+    const submitted = await this.ratingsRepository.countSubmittedBy(
+      matchId,
+      userId,
+    );
+
+    return submitted > 0;
+  }
+
   private async getAssignment(firebaseUid: string, matchId: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
     const match = await this.ratingsRepository.findMatchWithPlayers(matchId);
 
     if (!match) {
-      throw new NotFoundException(`Partido with id ${matchId} was not found`);
+      throw new NotFoundException(`Match with id ${matchId} was not found`);
     }
 
-    if (match.fecha.getTime() > Date.now()) {
+    if (match.status === 'CANCELED') {
+      throw new BadRequestException('The match is canceled');
+    }
+
+    if (match.date.getTime() > Date.now()) {
       throw new BadRequestException('The match has not been played yet');
     }
 
+    if (!isRatingWindowOpen(match.date)) {
+      throw new BadRequestException('The rating window is closed');
+    }
+
     const players: PublicUser[] = [
-      match.organizador,
-      ...match.participantes.map(({ usuario }) => usuario),
+      match.organizer,
+      ...match.participants.map(({ user: participant }) => participant),
     ];
 
     if (!players.some((player) => player.id === user.id)) {
@@ -92,7 +159,22 @@ export class RatingsService {
       .map((id) => playersById.get(id))
       .filter((player): player is PublicUser => player !== undefined);
 
-    return { user, targets };
+    const otherPlayers = players.filter(({ id }) => id !== user.id);
+
+    return { user, targets, otherPlayers };
+  }
+
+  private assertNoShowsArePlayers(
+    noShowIds: Set<string>,
+    otherPlayers: PublicUser[],
+  ) {
+    const otherPlayerIds = new Set(otherPlayers.map(({ id }) => id));
+
+    if ([...noShowIds].some((id) => !otherPlayerIds.has(id))) {
+      throw new BadRequestException(
+        'No-shows must be other players of this match',
+      );
+    }
   }
 
   private assertMatchesAssignment(

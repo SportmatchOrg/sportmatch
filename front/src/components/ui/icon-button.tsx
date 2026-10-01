@@ -12,18 +12,30 @@ const VARIANT = {
   soft: 'bg-glass text-white shadow-bevel-lit hover:bg-glass-strong',
   strong: 'bg-glass-strong text-white shadow-bevel-lit hover:bg-glass-solid',
   brand: 'bg-brand text-brand-ink shadow-glow hover:bg-brand-bright',
+  ghost: 'text-ink-64 hover:bg-glass hover:text-white',
 } as const;
 
 const SIZE = {
   sm: 'size-9',
+  nav: 'size-nav-item-desktop',
   md: 'size-11',
 } as const;
 
+export type IconButtonVariant = keyof typeof VARIANT;
+export type IconButtonSize = keyof typeof SIZE;
+
 type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
-  variant?: keyof typeof VARIANT;
-  size?: keyof typeof SIZE;
+  variant?: IconButtonVariant;
+  size?: IconButtonSize;
 };
+
+export function iconButtonClassName(
+  variant: IconButtonVariant = 'glass',
+  size: IconButtonSize = 'md'
+) {
+  return cn(BASE, VARIANT[variant], SIZE[size]);
+}
 
 export function IconButton({
   label,
@@ -36,7 +48,7 @@ export function IconButton({
     <button
       type="button"
       aria-label={label}
-      className={cn(BASE, VARIANT[variant], SIZE[size], className)}
+      className={cn(iconButtonClassName(variant, size), className)}
       {...props}
     />
   );

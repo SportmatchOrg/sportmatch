@@ -28,6 +28,9 @@
   --shadow-glow: 0 0 28px -6px var(--color-brand-glow);
   --shadow-brand-glow: 0 0 8px 0 var(--color-brand-glow);
   --drop-shadow-brand-glow: 0 3px 6px var(--color-brand-glow);
+  --drop-shadow-map-pin: 0 1px 0 var(--color-glass-border), 0 -1px 0 var(--color-glass-border),
+    1px 0 0 var(--color-glass-border), -1px 0 0 var(--color-glass-border),
+    0 8px 18px rgba(0, 0, 0, 0.55);
   --shadow-field-error: inset 0 0 0 1px color-mix(in srgb, var(--color-danger) 30%, transparent);
 
   --blur-chip: 12px;
@@ -39,6 +42,7 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
   --animate-logo-glow: logo-glow 3.2s ease-in-out infinite;
+  --animate-user-aura: user-aura 2s ease-out infinite;
 }
 
 :root {

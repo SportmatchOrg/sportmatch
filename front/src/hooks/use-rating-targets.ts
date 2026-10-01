@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { ApiError } from '@/lib/api';
 import { fetchRatingTargets } from '@/lib/ratings';
-import type { PublicUser } from '@/types/partido';
+import type { PublicUser } from '@/types/match';
 
 const FORBIDDEN = 403;
 

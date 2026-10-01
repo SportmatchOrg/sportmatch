@@ -6,8 +6,8 @@ import { FirebaseUser } from '../auth/types';
 
 const PUBLIC_USER = {
   id: true,
-  nombre: true,
-  fotoUrl: true,
+  name: true,
+  photoUrl: true,
 } as const;
 
 @Injectable()
@@ -29,24 +29,65 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
 
-  aggregateReceivedRatings(userId: string) {
-    return this.prisma.rating.aggregate({
-      where: { ratedUserId: userId },
-      _avg: { score: true },
-      _count: true,
+  findMatchesReportedIn(userIds: string[]) {
+    return this.prisma.match.findMany({
+      where: { noShowReports: { some: { reportedUserId: { in: userIds } } } },
+      select: {
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
+    });
+  }
+
+  countLateWithdrawalsBy(userIds: string[]) {
+    return this.prisma.lateWithdrawal.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds } },
+      _count: { _all: true },
+    });
+  }
+
+  findCanceledMatchDates(userIds: string[]) {
+    return this.prisma.match.findMany({
+      where: {
+        organizerId: { in: userIds },
+        status: 'CANCELED',
+        canceledAt: { not: null },
+      },
+      select: { organizerId: true, date: true, canceledAt: true },
+    });
+  }
+
+  findReceivedRatings(userIds: string[]) {
+    return this.prisma.rating.findMany({
+      where: { ratedUserId: { in: userIds } },
+      select: { score: true, matchId: true, raterId: true, ratedUserId: true },
+    });
+  }
+
+  findNoShowReportsByMatch(matchIds: string[]) {
+    return this.prisma.match.findMany({
+      where: { id: { in: matchIds } },
+      select: {
+        id: true,
+        organizerId: true,
+        noShowReports: {
+          select: { reporterId: true, reportedUserId: true },
+        },
+      },
     });
   }
 
   findPlayedDates(userId: string) {
-    return this.prisma.partido.findMany({
+    return this.prisma.match.findMany({
       where: {
-        fecha: { lt: new Date() },
-        OR: [
-          { organizadorId: userId },
-          { participantes: { some: { usuarioId: userId } } },
-        ],
+        date: { lt: new Date() },
+        status: 'ACTIVE',
+        OR: [{ organizerId: userId }, { participants: { some: { userId } } }],
       },
-      select: { fecha: true },
+      select: { date: true },
     });
   }
 
@@ -61,8 +102,8 @@ export class UsersRepository {
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
     });
   }
@@ -72,14 +113,14 @@ export class UsersRepository {
       where: { firebaseUid: user.uid },
       update: {
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
       create: {
         firebaseUid: user.uid,
         email: user.email,
-        nombre: user.nombre,
-        fotoUrl: user.fotoUrl,
+        name: user.name,
+        photoUrl: user.photoUrl,
       },
     });
   }
