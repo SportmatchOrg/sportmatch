@@ -6,10 +6,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
+import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -34,6 +36,14 @@ export class UsersController {
   @Get('me')
   me(@CurrentUser() user: FirebaseUser) {
     return this.usersService.upsertFromFirebase(user);
+  }
+
+  @Get('search')
+  search(
+    @CurrentUser() user: FirebaseUser,
+    @Query() { q }: SearchUsersQueryDto,
+  ) {
+    return this.usersService.search(user.uid, q);
   }
 
   @Get(':id')
