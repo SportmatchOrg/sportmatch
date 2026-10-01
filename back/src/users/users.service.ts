@@ -5,6 +5,7 @@ import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
+import type { NoShowReportsFilter } from './types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { weekStreak } from '../utils/time/week-streak';
 
@@ -132,18 +133,16 @@ export class UsersService {
       return new Map();
     }
 
-    const [effectiveScores, reportedMatches, lateWithdrawals, canceledMatches] =
+    const [effectiveScores, noShowsByMatch, lateWithdrawals, canceledMatches] =
       await Promise.all([
         this.findEffectiveScoresBy(userIds),
-        this.usersRepository.findMatchesReportedIn(userIds),
+        this.findConfirmedNoShows({ reportedUserIds: userIds }),
         this.usersRepository.countLateWithdrawalsBy(userIds),
         this.usersRepository.findCanceledMatchDates(userIds),
       ]);
 
     const noShowsByUser = countByUser(
-      reportedMatches.flatMap((match) =>
-        confirmedNoShowIds(match.noShowReports, match.organizerId),
-      ),
+      [...noShowsByMatch.values()].flatMap((noShowIds) => [...noShowIds]),
     );
 
     const lateWithdrawalsByUser = new Map(
@@ -172,6 +171,19 @@ export class UsersService {
     );
   }
 
+  async findConfirmedNoShows(
+    filter: NoShowReportsFilter,
+  ): Promise<Map<string, Set<string>>> {
+    const matches = await this.usersRepository.findNoShowReportsByMatch(filter);
+
+    return new Map(
+      matches.map((match) => [
+        match.id,
+        new Set(confirmedNoShowIds(match.noShowReports, match.organizerId)),
+      ]),
+    );
+  }
+
   private async findEffectiveScoresBy(
     userIds: string[],
   ): Promise<Map<string, number[]>> {
@@ -185,15 +197,7 @@ export class UsersService {
     }
 
     const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
-    const matches =
-      await this.usersRepository.findNoShowReportsByMatch(matchIds);
-
-    const confirmedByMatch = new Map(
-      matches.map((match) => [
-        match.id,
-        new Set(confirmedNoShowIds(match.noShowReports, match.organizerId)),
-      ]),
-    );
+    const confirmedByMatch = await this.findConfirmedNoShows({ matchIds });
 
     for (const { score, matchId, raterId, ratedUserId } of ratings) {
       const confirmed = confirmedByMatch.get(matchId);
