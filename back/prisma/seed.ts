@@ -3,11 +3,43 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
 import { hoursAgo } from '../src/utils/time/hours-ago';
 import { inDays } from '../src/utils/time/in-days';
+import { MS_PER_HOUR } from '../src/utils/time/milliseconds';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const SPORT_NAMES = ['FUTBOL', 'BASQUET', 'TENIS', 'PADEL', 'RUNNING'];
+
+const SEED_GUIDE = [
+  {
+    user: 'Pablo Díaz',
+    scenario:
+      'Tiene 2 faltas confirmadas. Si Ana lo marca como ausente en el partido de tenis de hace 3 h, suma la 3ª y queda suspendido 7 días',
+  },
+  {
+    user: 'Sofía Torres',
+    scenario: 'Se bajó tarde de un partido: puntaje penalizado por baja tarde',
+  },
+  {
+    user: 'Luis Pérez',
+    scenario: 'Canceló tarde un partido como organizador: puntaje penalizado',
+  },
+  {
+    user: 'Tomás Herrera',
+    scenario:
+      'Suspendido ahora: 3 faltas en los últimos días (noShowCount90d = 3)',
+  },
+  {
+    user: 'SEED_DEMO_EMAIL',
+    scenario: 'Tiene los 8 tipos de notificación en /notificaciones',
+  },
+];
+
+const hoursBefore = (date: Date, hours: number): Date =>
+  new Date(date.getTime() - hours * MS_PER_HOUR);
+
+const hoursAfter = (date: Date, hours: number): Date =>
+  hoursBefore(date, -hours);
 
 async function main() {
   const sports = await Promise.all(
@@ -37,12 +69,13 @@ async function main() {
       create: { firebaseUid, email, name },
     });
 
-  const [ana, luis, marta, pablo, sofia] = await Promise.all([
+  const [ana, luis, marta, pablo, sofia, tomas] = await Promise.all([
     seedUser('seed-uid-1', 'ana@sportmatch.dev', 'Ana Gómez'),
     seedUser('seed-uid-2', 'luis@sportmatch.dev', 'Luis Pérez'),
     seedUser('seed-uid-3', 'marta@sportmatch.dev', 'Marta Ruiz'),
     seedUser('seed-uid-4', 'pablo@sportmatch.dev', 'Pablo Díaz'),
     seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
+    seedUser('seed-uid-6', 'tomas@sportmatch.dev', 'Tomás Herrera'),
   ]);
 
   await prisma.match.deleteMany();
@@ -182,7 +215,7 @@ async function main() {
       description: 'Partido jugado hace un rato: todavia se puede calificar',
       organizerId: ana.id,
       participants: {
-        create: [luis, marta].map(({ id }) => ({ userId: id })),
+        create: [luis, marta, pablo].map(({ id }) => ({ userId: id })),
       },
     },
   });
@@ -228,13 +261,74 @@ async function main() {
     })),
   });
 
+  const lateWithdrawalMatch = played[played.length - 1];
+
+  await prisma.lateWithdrawal.create({
+    data: {
+      matchId: lateWithdrawalMatch.id,
+      userId: sofia.id,
+      createdAt: hoursBefore(lateWithdrawalMatch.date, 1),
+    },
+  });
+
+  const lateCancelDate = inDays(-5, 20);
+
+  const lateCanceledMatch = await prisma.match.create({
+    data: {
+      sportId: sportId('BASQUET'),
+      level: 'INTERMEDIATE',
+      date: lateCancelDate,
+      location: 'Club Norte · Cancha 2',
+      latitude: -34.46472,
+      longitude: -58.91042,
+      capacity: 10,
+      description: 'Cancelado a último momento',
+      organizerId: luis.id,
+      status: 'CANCELED',
+      canceledAt: hoursBefore(lateCancelDate, 1),
+      cancelReason: 'No conseguimos cancha',
+    },
+  });
+
+  const suspensionMatches = await Promise.all(
+    [inDays(-20, 20), inDays(-12, 20), inDays(-3, 21)].map((date) =>
+      prisma.match.create({
+        data: {
+          sportId: sportId('FUTBOL'),
+          level: 'BEGINNER',
+          date,
+          location: 'Parque Sur',
+          latitude: -34.60655,
+          longitude: -58.43556,
+          capacity: 10,
+          description: 'Partido jugado con una falta confirmada',
+          organizerId: marta.id,
+          participants: {
+            create: [tomas, sofia].map(({ id }) => ({ userId: id })),
+          },
+        },
+      }),
+    ),
+  );
+
+  await prisma.noShowReport.createMany({
+    data: suspensionMatches.map((match) => ({
+      matchId: match.id,
+      reporterId: match.organizerId,
+      reportedUserId: tomas.id,
+      createdAt: hoursAfter(match.date, 1),
+    })),
+  });
+
   const demoEmail = process.env.SEED_DEMO_EMAIL;
 
   if (!demoEmail) {
     return;
   }
 
-  const demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
+  const demoUser = await prisma.user.findUnique({
+    where: { email: demoEmail },
+  });
 
   if (!demoUser) {
     return;
@@ -244,7 +338,11 @@ async function main() {
     where: {
       date: { lt: new Date() },
       organizerId: { not: demoUser.id },
-      id: { notIn: noShowMatches.map(({ id }) => id) },
+      id: {
+        notIn: [...noShowMatches, ...suspensionMatches, lateCanceledMatch].map(
+          ({ id }) => id,
+        ),
+      },
     },
     orderBy: { date: 'asc' },
     select: { id: true, organizerId: true },
@@ -334,11 +432,22 @@ async function main() {
         type: 'MATCH_UPDATED',
         payload: { changed: ['date', 'location'] },
       },
+      {
+        userId: demoUser.id,
+        matchId: secondPlayedMatch.id,
+        type: 'NO_SHOW_CONFIRMED',
+      },
+      {
+        userId: demoUser.id,
+        type: 'USER_SUSPENDED',
+        payload: { until: inDays(5, 21).toISOString() },
+      },
     ],
   });
 }
 
 void main()
+  .then(() => console.table(SEED_GUIDE))
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;
