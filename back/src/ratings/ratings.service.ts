@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import type { CreateNotificationInput } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { PublicUser } from '../users/types';
 import { UsersService } from '../users/users.service';
@@ -60,9 +61,12 @@ export class RatingsService {
     );
 
     const reportsNoShows = noShowUserIds.length > 0;
-    const confirmedBefore = reportsNoShows
-      ? await this.findConfirmedNoShows(matchId)
-      : new Set<string>();
+    const [confirmedBefore, suspensionsBefore] = reportsNoShows
+      ? await Promise.all([
+          this.findConfirmedNoShows(matchId),
+          this.usersService.getSuspensions(noShowUserIds),
+        ])
+      : [new Set<string>(), new Map<string, Date | null>()];
 
     try {
       const { count, noShowCount } =
@@ -74,7 +78,11 @@ export class RatingsService {
         );
 
       if (reportsNoShows) {
-        await this.notifyNewNoShows(matchId, confirmedBefore);
+        await this.notifyNewNoShows(
+          matchId,
+          confirmedBefore,
+          suspensionsBefore,
+        );
       }
 
       return { matchId, count, noShowCount };
@@ -90,24 +98,49 @@ export class RatingsService {
       matchIds: [matchId],
     });
 
-    return noShowsByMatch.get(matchId) ?? new Set();
+    return new Set(noShowsByMatch.get(matchId)?.keys());
   }
 
   private async notifyNewNoShows(
     matchId: string,
     confirmedBefore: Set<string>,
+    suspensionsBefore: Map<string, Date | null>,
   ) {
     const confirmedAfter = await this.findConfirmedNoShows(matchId);
-
-    await this.notificationsService.notifyMany(
-      [...confirmedAfter]
-        .filter((userId) => !confirmedBefore.has(userId))
-        .map((userId) => ({
-          userId,
-          type: 'NO_SHOW_CONFIRMED' as const,
-          matchId,
-        })),
+    const newNoShowIds = [...confirmedAfter].filter(
+      (userId) => !confirmedBefore.has(userId),
     );
+    const suspensionsAfter =
+      await this.usersService.getSuspensions(newNoShowIds);
+
+    const noShowNotifications = newNoShowIds.map(
+      (userId): CreateNotificationInput => ({
+        userId,
+        type: 'NO_SHOW_CONFIRMED',
+        matchId,
+      }),
+    );
+
+    const suspensionNotifications = newNoShowIds.flatMap(
+      (userId): CreateNotificationInput[] => {
+        const until = suspensionsAfter.get(userId);
+
+        return suspensionsBefore.get(userId) || !until
+          ? []
+          : [
+              {
+                userId,
+                type: 'USER_SUSPENDED',
+                payload: { until: until.toISOString() },
+              },
+            ];
+      },
+    );
+
+    await this.notificationsService.notifyMany([
+      ...noShowNotifications,
+      ...suspensionNotifications,
+    ]);
   }
 
   private async hasSubmitted(matchId: string, userId: string) {

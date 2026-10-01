@@ -70,7 +70,7 @@ export class UsersRepository {
         id: true,
         organizerId: true,
         noShowReports: {
-          select: { reporterId: true, reportedUserId: true },
+          select: { reporterId: true, reportedUserId: true, createdAt: true },
         },
       },
     });
