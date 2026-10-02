@@ -1,0 +1,27 @@
+name: Security Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    branches: [dev, main]
+    paths: ['back/**']
+  workflow_dispatch:
+    inputs:
+      run_agent:
+        description: "Correr también el loop con el modelo (gasta cuota)"
+        type: boolean
+        default: true
+
+jobs:
+  security-agent:
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    uses: SportmatchOrg/agents-copilot/.github/workflows/security-agent-reusable.yml@main
+    with:
+      run_agent: ${{ github.event_name == 'workflow_dispatch' && inputs.run_agent || contains(github.event.pull_request.labels.*.name, 'security-agent') }}
+    secrets:
+      SECURITY_LLM_API_KEY: ${{ secrets.SECURITY_LLM_API_KEY }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_API_KEY_FALLBACK: ${{ secrets.LLM_API_KEY_FALLBACK }}
