@@ -42,6 +42,7 @@ model User {
   lateWithdrawals        LateWithdrawal[]
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
+  pushSubscriptions      PushSubscription[]
 
   @@map("users")
 }
@@ -195,4 +196,17 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
