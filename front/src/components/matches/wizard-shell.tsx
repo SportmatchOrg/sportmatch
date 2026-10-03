@@ -13,6 +13,7 @@ type WizardShellProps = {
   mode: 'create' | 'edit';
   step: number;
   submitting: boolean;
+  continueDisabled?: boolean;
   onBack: () => void;
   onExit: () => void;
   onContinue: () => void;
@@ -23,6 +24,7 @@ export function WizardShell({
   mode,
   step,
   submitting,
+  continueDisabled = false,
   onBack,
   onExit,
   onContinue,
@@ -104,7 +106,7 @@ export function WizardShell({
             )}
 
             <PillButton
-              disabled={submitting}
+              disabled={submitting || continueDisabled}
               onClick={onContinue}
               className="pointer-events-auto w-full lg:w-auto lg:px-8"
             >
