@@ -16,8 +16,10 @@ export function useGeocoding(): {
   ready: boolean;
   searchPlaces(query: string): Promise<PlaceSuggestion[]>;
   getPlace(suggestion: PlaceSuggestion): Promise<Place>;
+  getAddress(lat: number, lng: number): Promise<string>;
 } {
   const placesLibrary = useMapsLibrary('places');
+  const geocodingLibrary = useMapsLibrary('geocoding');
   const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const predictions = useRef(new Map<string, google.maps.places.PlacePrediction>());
   const searchRevision = useRef(0);
@@ -102,5 +104,17 @@ export function useGeocoding(): {
     }
   }, []);
 
-  return { ready: Boolean(placesLibrary), searchPlaces, getPlace };
+  const getAddress = useCallback(async (lat: number, lng: number): Promise<string> => {
+    if (!geocodingLibrary) throw new Error('Geocoding library is not available');
+
+    const { results } = await new geocodingLibrary.Geocoder().geocode({
+      location: { lat, lng },
+    });
+    const address = results[0]?.formatted_address;
+    if (!address) throw new Error('No address found for the selected location');
+
+    return address;
+  }, [geocodingLibrary]);
+
+  return { ready: Boolean(placesLibrary), searchPlaces, getPlace, getAddress };
 }
