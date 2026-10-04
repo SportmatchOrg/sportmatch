@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   ValidateIf,
   validateSync,
 } from 'class-validator';
@@ -32,6 +33,18 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   FIREBASE_PRIVATE_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  VAPID_PUBLIC_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  VAPID_PRIVATE_KEY: string;
+
+  @IsString()
+  @Matches(/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https:\/\/\S+)$/)
+  VAPID_SUBJECT: string;
 
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsEmail()

@@ -90,6 +90,12 @@ export class UsersService {
     return user;
   }
 
+  async search(firebaseUid: string, query: string) {
+    const user = await this.findByFirebaseUid(firebaseUid);
+
+    return this.usersRepository.searchByName(query, user.id);
+  }
+
   async create(createUserDto: CreateUserDto) {
     const existingUser = await this.usersRepository.findByFirebaseUid(
       createUserDto.firebaseUid,
