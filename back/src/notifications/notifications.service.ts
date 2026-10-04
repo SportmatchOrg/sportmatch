@@ -1,7 +1,69 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { NotificationType } from '../generated/prisma/client';
+import {
+  PushSubscriptionsService,
+  type PushMessage,
+} from '../push-subscriptions/push-subscriptions.service';
 import { UsersService } from '../users/users.service';
 import { NotificationsRepository } from './notifications.repository';
 import type { CreateNotificationInput } from './notifications.repository';
+
+const PUSH_COPY: Record<NotificationType, { title: string; body: string }> = {
+  JOIN_REQUEST_RECEIVED: {
+    title: 'Nueva solicitud',
+    body: 'Un jugador quiere sumarse a tu partido.',
+  },
+  JOIN_REQUEST_ACCEPTED: {
+    title: 'Solicitud aceptada',
+    body: 'Te aceptaron en un partido.',
+  },
+  JOIN_REQUEST_REJECTED: {
+    title: 'Solicitud rechazada',
+    body: 'Tu solicitud para un partido no fue aceptada.',
+  },
+  MATCH_CANCELED: {
+    title: 'Partido cancelado',
+    body: 'Se canceló el partido.',
+  },
+  PARTICIPANT_LEFT: {
+    title: 'Un jugador se bajó',
+    body: 'Un jugador se bajó de tu partido.',
+  },
+  MATCH_UPDATED: {
+    title: 'Partido editado',
+    body: 'Cambió la fecha, hora o lugar de un partido.',
+  },
+  NO_SHOW_CONFIRMED: {
+    title: 'Te marcaron una falta',
+    body: 'Se confirmó una falta en uno de tus partidos.',
+  },
+  USER_SUSPENDED: {
+    title: 'Quedaste suspendido',
+    body: 'Estás suspendido por faltas.',
+  },
+};
+
+function toPushMessage(input: CreateNotificationInput): PushMessage {
+  const copy = PUSH_COPY[input.type];
+  let body = copy.body;
+
+  if (input.type === 'MATCH_CANCELED') {
+    const payload = input.payload;
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      const reason: unknown = (payload as Record<string, unknown>).reason;
+      if (typeof reason === 'string') body += ` Motivo: ${reason}`;
+    }
+  }
+
+  return {
+    userId: input.userId,
+    title: copy.title,
+    body,
+    url: input.matchId
+      ? `/partidos/${encodeURIComponent(input.matchId)}`
+      : '/notificaciones',
+  };
+}
 
 @Injectable()
 export class NotificationsService {
@@ -10,6 +72,7 @@ export class NotificationsService {
   constructor(
     private readonly notificationsRepository: NotificationsRepository,
     private readonly usersService: UsersService,
+    private readonly pushSubscriptionsService: PushSubscriptionsService,
   ) {}
 
   async findMine(firebaseUid: string, limit: number) {
@@ -73,6 +136,15 @@ export class NotificationsService {
           error instanceof Error ? error.message : String(error)
         }`,
       );
+      return;
+    }
+
+    try {
+      await this.pushSubscriptionsService.sendMany(
+        recipients.map(toPushMessage),
+      );
+    } catch {
+      this.logger.warn('Could not dispatch push notifications');
     }
   }
 
