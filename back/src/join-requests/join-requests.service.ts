@@ -22,6 +22,9 @@ export class JoinRequestsService {
 
   async create(firebaseUid: string, matchId: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
+
+    await this.usersService.assertNotSuspended(user.id);
+
     const match = await this.joinRequestsRepository.findMatchById(
       matchId,
       user.id,

@@ -1,5 +1,6 @@
+import { MS_PER_DAY } from './milliseconds';
+
 const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires';
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EPOCH_TO_MONDAY_OFFSET_DAYS = 3;
 
 const argentinaDate = new Intl.DateTimeFormat('en-CA', {
