@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 
 import {
   Dialog,
@@ -22,19 +22,21 @@ type ConfirmActionProps = {
   pendingLabel: string;
   pending: boolean;
   variant?: 'solid' | 'ghost';
+  trigger?: ReactElement;
   onConfirm: () => void;
 };
 
 export function ConfirmAction({
-  label,
-  message,
-  cancelLabel,
-  confirmLabel,
-  pendingLabel,
-  pending,
-  variant = 'solid',
-  onConfirm,
-}: ConfirmActionProps) {
+                                label,
+                                message,
+                                cancelLabel,
+                                confirmLabel,
+                                pendingLabel,
+                                pending,
+                                variant = 'solid',
+                                trigger,
+                                onConfirm,
+                              }: ConfirmActionProps) {
   const [open, setOpen] = useState(false);
   const wasPending = useRef(pending);
 
@@ -45,19 +47,23 @@ export function ConfirmAction({
 
   return (
     <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal>
-      <DialogTrigger
-        render={
-          <PillButton
-            variant={variant === 'ghost' ? 'dangerGhost' : 'danger'}
-            size="md"
-            disabled={pending}
-            className={cn('w-full', variant === 'ghost' && 'py-2')}
-          />
-        }
-      >
-        <X className="size-4" aria-hidden="true" />
-        {label}
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger render={trigger} />
+      ) : (
+        <DialogTrigger
+          render={
+            <PillButton
+              variant={variant === 'ghost' ? 'dangerGhost' : 'danger'}
+              size="md"
+              disabled={pending}
+              className={cn('w-full', variant === 'ghost' && 'py-2')}
+            />
+          }
+        >
+          <X className="size-4" aria-hidden="true" />
+          {label}
+        </DialogTrigger>
+      )}
 
       <DialogContent>
         <div className="flex flex-col gap-2">
