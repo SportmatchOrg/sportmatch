@@ -13,6 +13,7 @@ import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
 import { LevelPicker } from '@/components/matches/level-picker';
 import { MatchSummary } from '@/components/matches/match-summary';
+import { MatchCreationNotice } from '@/components/matches/match-creation-notice';
 import { TextField } from '@/components/matches/text-field';
 import { TextareaField } from '@/components/matches/textarea-field';
 import { WizardShell } from '@/components/matches/wizard-shell';
@@ -24,6 +25,8 @@ import {
   type PlaceSuggestion,
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
+import { suspensionErrorMessage, suspensionMessage } from '@/lib/suspension';
+import type { User } from '@/types/user';
 import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
 import {
   validateMatchForm,
@@ -76,17 +79,33 @@ type MatchWizardProps = {
   doneHref: string;
 };
 
-export function MatchWizard({
+export function MatchWizard(props: MatchWizardProps) {
+  const router = useRouter();
+  const { user, loading, error } = useCurrentUser();
+  const suspension = suspensionMessage(user?.stats.suspendedUntil);
+  if (props.mode === 'create' && (loading || !user || suspension)) {
+    return (
+      <MatchCreationNotice
+        loading={loading}
+        message={suspension ?? error ?? 'No pudimos comprobar tu perfil. Volvé a cargar la página.'}
+        onExit={() => router.back()}
+      />
+    );
+  }
+  return <MatchWizardForm {...props} user={user} />;
+}
+
+function MatchWizardForm({
   mode,
   initialForm,
   submit,
   toastMessage,
   errorMessage,
   doneHref,
-}: MatchWizardProps) {
+  user,
+}: MatchWizardProps & { user: User | null }) {
   const router = useRouter();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
-  const { user } = useCurrentUser();
   const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding();
   const [form, setForm] = useState<MatchForm>(initialForm);
   const [step, setStep] = useState(0);
@@ -258,7 +277,7 @@ export function MatchWizard({
       setToast({ message: toastMessage(form, sport), tone: 'success' });
       redirectTimer.current = setTimeout(() => router.replace(doneHref), TOAST_DURATION);
     } catch (caught) {
-      setToast({ message: errorMessage(caught), tone: 'danger' });
+      setToast({ message: suspensionErrorMessage(caught) ?? errorMessage(caught), tone: 'danger' });
       setSubmitting(false);
     }
   }

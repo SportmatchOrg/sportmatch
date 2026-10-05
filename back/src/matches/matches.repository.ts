@@ -38,6 +38,11 @@ const matchInclude = (userId: string) =>
       select: { status: true },
     },
     ratings: { where: { raterId: userId }, select: { id: true }, take: 1 },
+    noShowReports: {
+      where: { reporterId: userId },
+      select: { id: true },
+      take: 1,
+    },
   }) as const;
 
 @Injectable()
@@ -78,19 +83,8 @@ export class MatchesRepository {
     return this.prisma.match.findUnique({
       where: { id },
       include: {
-        organizer: PUBLIC_ORGANIZER,
-        sport: PUBLIC_SPORT,
-        _count: PARTICIPANT_COUNT,
+        ...matchInclude(userId),
         participants: PUBLIC_PARTICIPANTS,
-        joinRequests: {
-          where: { userId },
-          select: { status: true },
-        },
-        ratings: {
-          where: { raterId: userId },
-          select: { id: true },
-          take: 1,
-        },
       },
     });
   }

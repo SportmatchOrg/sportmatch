@@ -8,6 +8,7 @@ import { ProfileStats } from '@/components/profile/profile-stats';
 import { RecentMatches } from '@/components/profile/recent-matches';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useMyMatches } from '@/hooks/use-my-matches';
+import { suspensionMessage } from '@/lib/suspension';
 
 export default function ProfilePage() {
   const { user, loading, error } = useCurrentUser();
@@ -35,9 +36,18 @@ export default function ProfilePage() {
     );
   }
 
+  const suspension = suspensionMessage(user.stats.suspendedUntil);
+
   return (
     <main className="w-full pb-10">
       <ProfileHeader user={user} isOwnProfile />
+      {suspension && (
+        <div className={`${PROFILE_SECTION} pt-4`}>
+          <p role="status" className="rounded-md bg-danger-tint p-4 text-callout font-semibold text-danger">
+            {suspension.replace('Estás suspendido', 'Suspendido')}
+          </p>
+        </div>
+      )}
       <ProfileStats stats={user.stats} />
 
       <div className={`${PROFILE_SECTION} pt-4 lg:pt-6`}>

@@ -40,6 +40,7 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
   ];
 
   return (
+    <>
     <div className={cn(PROFILE_SECTION, 'flex items-stretch justify-center gap-3 pt-6 lg:gap-4 lg:pt-[26px]')}>
       {items.map(({ label, icon: Icon, iconClassName, value }) => (
         <div
@@ -65,5 +66,11 @@ export function ProfileStats({ stats }: ProfileStatsProps) {
         </div>
       ))}
     </div>
+    {stats && stats.noShowCount90d > 0 && (
+      <p className={cn(PROFILE_SECTION, 'pt-3 text-caption font-semibold text-danger')}>
+        Faltas (90 días): {stats.noShowCount90d}
+      </p>
+    )}
+    </>
   );
 }

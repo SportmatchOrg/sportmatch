@@ -1,6 +1,27 @@
-import { apiFetch } from '@/lib/api';
+import { ApiError, apiFetch } from '@/lib/api';
 import { toCreateMatchBody, toUpdateMatchBody, type MatchForm } from '@/lib/match-form';
+import { suspensionErrorMessage } from '@/lib/suspension';
 import type { CancelReason, Match, MatchDetail, MyMatches } from '@/types/match';
+
+const CONFLICT = 409;
+const BAD_REQUEST = 400;
+const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
+
+export function joinRequestErrorMessage(error: unknown): string {
+  const suspension = suspensionErrorMessage(error);
+  if (suspension) return suspension;
+  if (!(error instanceof ApiError)) return JOIN_REQUEST_FALLBACK;
+
+  if (error.status === CONFLICT) {
+    return error.message.toLowerCase().includes('full')
+      ? 'El partido se llenó'
+      : 'Ya pediste sumarte';
+  }
+
+  if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
+
+  return JOIN_REQUEST_FALLBACK;
+}
 
 export async function fetchMatches(): Promise<Match[]> {
   return apiFetch<Match[]>('/matches');
