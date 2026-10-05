@@ -110,6 +110,8 @@ export class MatchesService {
 
     const organizer = await this.usersService.findByFirebaseUid(firebaseUid);
 
+    await this.usersService.assertNotSuspended(organizer.id);
+
     try {
       const match = await this.matchesRepository.create(
         organizer.id,
