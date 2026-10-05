@@ -1,12 +1,13 @@
 'use client';
 
 import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
-import { LocateFixed, MapPinOff, TriangleAlert } from 'lucide-react';
+import { FunnelX, LocateFixed, MapPinOff, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
 import { FitBounds } from '@/components/map/fit-bounds';
+import { MapFilterChips } from '@/components/map/map-filter-chips';
 import { MapHeader } from '@/components/map/map-header';
 import { MapSearchBar } from '@/components/map/map-search-bar';
 import { MatchPin } from '@/components/map/match-pin';
@@ -17,10 +18,17 @@ import {
 import { MatchRow } from '@/components/matches/match-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
+import { PillButton } from '@/components/ui/pill-button';
 import { RetryButton } from '@/components/ui/retry-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMatches } from '@/hooks/use-matches';
 import { useUserLocation, type UserLocation } from '@/hooks/use-user-location';
+import {
+  EMPTY_MAP_FILTERS,
+  hasActiveFilters,
+  toMatchesQuery,
+  type MapFilters,
+} from '@/lib/map-filters';
 import { SPORT_LABEL, type Match } from '@/types/match';
 
 const DEFAULT_CENTER = { lat: -34.6037, lng: -58.3816 };
@@ -37,7 +45,9 @@ const SIDE_LIST =
   'hidden w-md shrink-0 flex-col gap-4 overflow-y-auto border-r border-glass-strong bg-raised px-6 py-6 lg:flex';
 
 const PANEL =
-  'absolute inset-x-5 top-24 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
+  'absolute inset-x-5 top-36 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
+
+const MOBILE_CHIPS = '-mx-4 -my-1 overflow-x-auto px-4 py-1 [scrollbar-width:none]';
 
 type LocatedMatch = Match & { latitude: number; longitude: number };
 
@@ -60,8 +70,10 @@ function MapPanel({ children }: { children: ReactNode }) {
 export default function MapPage() {
   const router = useRouter();
   const map = useMap();
-  const { matches, loading, error, reload } = useMatches();
   const { location } = useUserLocation();
+  const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
+  const query = useMemo(() => toMatchesQuery(filters), [filters]);
+  const { matches, loading, error, reload } = useMatches(query);
   const centeredOnUser = useRef(false);
 
   const located = useMemo(() => matches.filter(isLocated), [matches]);
@@ -80,6 +92,17 @@ export default function MapPage() {
 
     map.panTo(userPosition(location));
     map.setZoom(USER_ZOOM);
+  }
+
+  function renderChips(className: string) {
+    return (
+      <MapFilterChips
+        filters={filters}
+        onChange={setFilters}
+        location={location}
+        className={className}
+      />
+    );
   }
 
   function renderList() {
@@ -136,6 +159,23 @@ export default function MapPage() {
       );
     }
 
+    if (located.length === 0 && hasActiveFilters(filters)) {
+      return (
+        <MapPanel>
+          <EmptyState
+            icon={FunnelX}
+            title="No hay partidos con estos filtros"
+            text="Probá con otro día o nivel."
+            action={
+              <PillButton variant="glass" size="md" onClick={() => setFilters(EMPTY_MAP_FILTERS)}>
+                Limpiar filtros
+              </PillButton>
+            }
+          />
+        </MapPanel>
+      );
+    }
+
     if (located.length === 0) {
       return (
         <MapPanel>
@@ -155,6 +195,7 @@ export default function MapPage() {
     <main className={SCREEN}>
       <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
         <MapSearchBar />
+        {renderChips('flex-wrap')}
         {renderList()}
       </aside>
 
@@ -175,7 +216,7 @@ export default function MapPage() {
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
 
-        <MapHeader />
+        <MapHeader>{renderChips(MOBILE_CHIPS)}</MapHeader>
 
         {location && (
           <IconButton
