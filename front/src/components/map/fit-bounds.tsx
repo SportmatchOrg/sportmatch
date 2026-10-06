@@ -3,7 +3,7 @@
 import { useMap } from '@vis.gl/react-google-maps';
 import { useEffect } from 'react';
 
-const PADDING = { top: 96, right: 48, bottom: 48, left: 48 };
+const PADDING = { top: 144, right: 48, bottom: 48, left: 48 };
 
 const SINGLE_POINT_ZOOM = 15;
 

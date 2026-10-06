@@ -1,7 +1,13 @@
 import { ApiError, apiFetch } from '@/lib/api';
 import { toCreateMatchBody, toUpdateMatchBody, type MatchForm } from '@/lib/match-form';
 import { suspensionErrorMessage } from '@/lib/suspension';
-import type { CancelReason, Match, MatchDetail, MyMatches } from '@/types/match';
+import type {
+  CancelReason,
+  Match,
+  MatchDetail,
+  MatchesQuery,
+  MyMatches,
+} from '@/types/match';
 
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
@@ -23,10 +29,23 @@ export function joinRequestErrorMessage(error: unknown): string {
   return JOIN_REQUEST_FALLBACK;
 }
 
-export async function fetchMatches(): Promise<Match[]> {
-  return apiFetch<Match[]>('/matches');
+function toSearchParams(query: MatchesQuery): URLSearchParams {
+  const params = new URLSearchParams();
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value === undefined) return;
+
+    [value].flat().forEach((item) => params.append(key, String(item)));
+  });
+
+  return params;
 }
 
+export async function fetchMatches(query: MatchesQuery = {}): Promise<Match[]> {
+  const search = toSearchParams(query).toString();
+
+  return apiFetch<Match[]>(search ? `/matches?${search}` : '/matches');
+}
 export async function fetchMyMatches(): Promise<MyMatches> {
   return apiFetch<MyMatches>('/matches/mine');
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
@@ -44,6 +45,15 @@ const matchInclude = (userId: string) =>
       take: 1,
     },
   }) as const;
+
+const playedBy = (playerId: string): Prisma.MatchWhereInput => ({
+  date: { lt: new Date() },
+  status: 'ACTIVE',
+  OR: [
+    { organizerId: playerId },
+    { participants: { some: { userId: playerId } } },
+  ],
+});
 
 @Injectable()
 export class MatchesRepository {
@@ -122,16 +132,18 @@ export class MatchesRepository {
 
   findPlayedBy(playerId: string, viewerId: string = playerId) {
     return this.prisma.match.findMany({
-      where: {
-        date: { lt: new Date() },
-        status: 'ACTIVE',
-        OR: [
-          { organizerId: playerId },
-          { participants: { some: { userId: playerId } } },
-        ],
-      },
+      where: playedBy(playerId),
       orderBy: { date: 'desc' },
       include: matchInclude(viewerId),
+    });
+  }
+
+  findPlayedLevelsByFrequency(playerId: string) {
+    return this.prisma.match.groupBy({
+      by: ['level'],
+      where: playedBy(playerId),
+      _count: { level: true },
+      orderBy: [{ _count: { level: 'desc' } }, { level: 'asc' }],
     });
   }
 
@@ -147,6 +159,40 @@ export class MatchesRepository {
       where: { id },
       data,
       include: matchInclude(userId),
+    });
+  }
+
+  updateWithCapacity(
+    id: string,
+    userId: string,
+    data: UpdateMatchDto,
+    capacity: number,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM matches WHERE id = ${id} FOR UPDATE`;
+
+      const participants = await tx.participant.count({
+        where: { matchId: id },
+      });
+
+      if (capacity < participants) {
+        return { match: null, participants };
+      }
+
+      const current = await tx.match.findUniqueOrThrow({
+        where: { id },
+        select: { filledAt: true },
+      });
+
+      const fillsMatch = capacity === participants && current.filledAt === null;
+
+      const match = await tx.match.update({
+        where: { id },
+        data: { ...data, ...(fillsMatch && { filledAt: new Date() }) },
+        include: matchInclude(userId),
+      });
+
+      return { match, participants };
     });
   }
 
