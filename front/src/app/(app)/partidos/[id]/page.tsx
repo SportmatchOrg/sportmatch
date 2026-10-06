@@ -86,11 +86,11 @@ export default function MatchDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { match, loading, notFound, error, reload } = useMatch(id);
-  const { user } = useCurrentUser();
+  const { user, loading: userLoading } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [now] = useState(() => Date.now());
 
-  if (loading) {
+  if (loading || userLoading) {
     return <LoadingScreen />;
   }
 
@@ -266,6 +266,8 @@ export default function MatchDetailPage({
                 <MatchActions
                   match={match}
                   isOrganizer={isOrganizer}
+                  suspendedUntil={user?.stats.suspendedUntil ?? null}
+                  requestReady={!!user}
                   onDone={reload}
                 />
               </div>
@@ -279,6 +281,8 @@ export default function MatchDetailPage({
           <MatchActions
             match={match}
             isOrganizer={isOrganizer}
+            suspendedUntil={user?.stats.suspendedUntil ?? null}
+            requestReady={!!user}
             onDone={reload}
           />
         </div>

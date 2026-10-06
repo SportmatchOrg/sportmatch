@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
@@ -38,7 +39,21 @@ const matchInclude = (userId: string) =>
       select: { status: true },
     },
     ratings: { where: { raterId: userId }, select: { id: true }, take: 1 },
+    noShowReports: {
+      where: { reporterId: userId },
+      select: { id: true },
+      take: 1,
+    },
   }) as const;
+
+const playedBy = (playerId: string): Prisma.MatchWhereInput => ({
+  date: { lt: new Date() },
+  status: 'ACTIVE',
+  OR: [
+    { organizerId: playerId },
+    { participants: { some: { userId: playerId } } },
+  ],
+});
 
 @Injectable()
 export class MatchesRepository {
@@ -78,19 +93,8 @@ export class MatchesRepository {
     return this.prisma.match.findUnique({
       where: { id },
       include: {
-        organizer: PUBLIC_ORGANIZER,
-        sport: PUBLIC_SPORT,
-        _count: PARTICIPANT_COUNT,
+        ...matchInclude(userId),
         participants: PUBLIC_PARTICIPANTS,
-        joinRequests: {
-          where: { userId },
-          select: { status: true },
-        },
-        ratings: {
-          where: { raterId: userId },
-          select: { id: true },
-          take: 1,
-        },
       },
     });
   }
@@ -128,16 +132,18 @@ export class MatchesRepository {
 
   findPlayedBy(playerId: string, viewerId: string = playerId) {
     return this.prisma.match.findMany({
-      where: {
-        date: { lt: new Date() },
-        status: 'ACTIVE',
-        OR: [
-          { organizerId: playerId },
-          { participants: { some: { userId: playerId } } },
-        ],
-      },
+      where: playedBy(playerId),
       orderBy: { date: 'desc' },
       include: matchInclude(viewerId),
+    });
+  }
+
+  findPlayedLevelsByFrequency(playerId: string) {
+    return this.prisma.match.groupBy({
+      by: ['level'],
+      where: playedBy(playerId),
+      _count: { level: true },
+      orderBy: [{ _count: { level: 'desc' } }, { level: 'asc' }],
     });
   }
 

@@ -3,6 +3,7 @@ export type UserStats = {
   ratingCount: number;
   playedCount: number;
   weekStreak: number;
+  noShowCount90d: number;
 };
 
 export type PublicProfile = {
@@ -20,7 +21,7 @@ export type User = {
   name: string;
   photoUrl: string | null;
   city: string | null;
-  stats: UserStats;
+  stats: UserStats & { suspendedUntil: string | null };
 };
 
 export type ProfileUpdate = {

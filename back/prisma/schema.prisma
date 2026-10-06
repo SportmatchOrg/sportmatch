@@ -225,3 +225,38 @@ model UserActivityDay {
   @@index([activityDate])
   @@map("user_activity_days")
 }
+
+enum KpiResultStatus {
+  READY
+  NO_DATA
+  ERROR
+
+  @@map("kpi_result_status")
+}
+
+model KpiRun {
+  id              String      @id @default(uuid())
+  measurementDate DateTime    @db.Date
+  createdAt       DateTime    @default(now())
+  results         KpiResult[]
+
+  @@index([measurementDate])
+  @@map("kpi_runs")
+}
+
+model KpiResult {
+  id          String          @id @default(cuid())
+  runId       String
+  run         KpiRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  kpiId       String
+  value       Decimal?        @db.Decimal(20, 6)
+  status      KpiResultStatus
+  numerator   Decimal?        @db.Decimal(20, 6)
+  denominator Decimal?        @db.Decimal(20, 6)
+  errorCode   String?
+  createdAt   DateTime        @default(now())
+
+  @@unique([runId, kpiId])
+  @@index([kpiId, createdAt])
+  @@map("kpi_results")
+}
