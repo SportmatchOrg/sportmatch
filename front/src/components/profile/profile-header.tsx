@@ -1,4 +1,4 @@
-import { Mail } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import Image from 'next/image';
 
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
@@ -6,8 +6,13 @@ import { ProfileIdentityRow } from '@/components/profile/profile-layout';
 import { SettingsLink } from '@/components/profile/settings-link';
 import { IMAGES } from '@/lib/images';
 
+const DETAIL =
+  'flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]';
+
+const DETAIL_ICON = 'size-[14px] shrink-0 lg:size-4';
+
 type ProfileHeaderProps = {
-  user: { name: string; photoUrl: string | null; email?: string };
+  user: { name: string; photoUrl: string | null; email?: string; city?: string | null };
   isOwnProfile: boolean;
 };
 
@@ -39,9 +44,15 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
             {user.name}
           </h1>
           {isOwnProfile && user.email && (
-            <p className="flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]">
-              <Mail className="size-[14px] shrink-0 lg:size-4" aria-hidden="true" />
+            <p className={DETAIL}>
+              <Mail className={DETAIL_ICON} aria-hidden="true" />
               {user.email}
+            </p>
+          )}
+          {user.city && (
+            <p className={DETAIL}>
+              <MapPin className={DETAIL_ICON} aria-hidden="true" />
+              {user.city}
             </p>
           )}
         </div>
