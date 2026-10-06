@@ -123,6 +123,13 @@ export class UsersRepository {
     });
   }
 
+  recordActivityDay(userId: string, activityDate: Date) {
+    return this.prisma.userActivityDay.createMany({
+      data: [{ userId, activityDate }],
+      skipDuplicates: true,
+    });
+  }
+
   upsertByFirebaseUid(user: FirebaseUser) {
     return this.prisma.user.upsert({
       where: { firebaseUid: user.uid },

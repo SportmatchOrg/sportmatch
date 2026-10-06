@@ -168,6 +168,40 @@ export class MatchesRepository {
     });
   }
 
+  updateWithCapacity(
+    id: string,
+    userId: string,
+    data: UpdateMatchDto,
+    capacity: number,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM matches WHERE id = ${id} FOR UPDATE`;
+
+      const participants = await tx.participant.count({
+        where: { matchId: id },
+      });
+
+      if (capacity < participants) {
+        return { match: null, participants };
+      }
+
+      const current = await tx.match.findUniqueOrThrow({
+        where: { id },
+        select: { filledAt: true },
+      });
+
+      const fillsMatch = capacity === participants && current.filledAt === null;
+
+      const match = await tx.match.update({
+        where: { id },
+        data: { ...data, ...(fillsMatch && { filledAt: new Date() }) },
+        include: matchInclude(userId),
+      });
+
+      return { match, participants };
+    });
+  }
+
   cancel(id: string, userId: string, reason: string) {
     return this.prisma.match.update({
       where: { id },

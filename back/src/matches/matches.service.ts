@@ -183,9 +183,7 @@ export class MatchesService {
       updateMatchDto.capacity !== undefined &&
       updateMatchDto.capacity < match._count.participants
     ) {
-      throw new BadRequestException(
-        `capacity cannot be lower than the ${match._count.participants} participants already joined`,
-      );
+      throw this.capacityBelowParticipants(match._count.participants);
     }
 
     const changed = this.getNotifiableChanges(match, updateMatchDto);
@@ -195,11 +193,7 @@ export class MatchesService {
         : [];
 
     try {
-      const updated = await this.matchesRepository.update(
-        id,
-        user.id,
-        updateMatchDto,
-      );
+      const updated = await this.applyUpdate(id, user.id, updateMatchDto);
 
       await this.notifyUsers(recipientIds, {
         actorId: user.id,
@@ -390,6 +384,36 @@ export class MatchesService {
     if (date.getTime() <= Date.now()) {
       throw new BadRequestException('The match has already been played');
     }
+  }
+
+  private async applyUpdate(
+    id: string,
+    userId: string,
+    updateMatchDto: UpdateMatchDto,
+  ) {
+    if (updateMatchDto.capacity === undefined) {
+      return this.matchesRepository.update(id, userId, updateMatchDto);
+    }
+
+    const { match, participants } =
+      await this.matchesRepository.updateWithCapacity(
+        id,
+        userId,
+        updateMatchDto,
+        updateMatchDto.capacity,
+      );
+
+    if (!match) {
+      throw this.capacityBelowParticipants(participants);
+    }
+
+    return match;
+  }
+
+  private capacityBelowParticipants(participants: number) {
+    return new BadRequestException(
+      `capacity cannot be lower than the ${participants} participants already joined`,
+    );
   }
 
   private assertNotCanceled(status: MatchStatus) {
