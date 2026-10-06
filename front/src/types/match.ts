@@ -78,6 +78,15 @@ export type MatchDetail = Match & {
   participants: PublicUser[];
 };
 
+export type MatchesQuery = {
+  from?: string;
+  to?: string;
+  level?: Level[];
+  lat?: number;
+  lng?: number;
+  radiusKm?: number;
+};
+
 export const CAPACITY_MIN = 2;
 export const CAPACITY_MAX = 30;
 export const CAPACITY_DEFAULT = 10;
