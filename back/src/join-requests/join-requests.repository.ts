@@ -75,7 +75,7 @@ export class JoinRequestsRepository {
         tx.participant.count({ where: { matchId } }),
         tx.match.findUniqueOrThrow({
           where: { id: matchId },
-          select: { capacity: true },
+          select: { capacity: true, filledAt: true },
         }),
       ]);
 
@@ -89,6 +89,13 @@ export class JoinRequestsRepository {
       });
 
       await tx.participant.create({ data: { matchId, userId } });
+
+      if (joined + 1 === match.capacity && match.filledAt === null) {
+        await tx.match.update({
+          where: { id: matchId },
+          data: { filledAt: new Date() },
+        });
+      }
 
       return request;
     });
