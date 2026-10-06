@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchMatches } from '@/lib/matches';
-import type { Match } from '@/types/match';
+import type { Match, MatchesQuery } from '@/types/match';
 
 type MatchesState = {
   matches: Match[];
@@ -16,7 +16,7 @@ const ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un mom
 
 const INITIAL_STATE: MatchesState = { matches: [], loading: true, error: null };
 
-export function useMatches() {
+export function useMatches(query?: MatchesQuery) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
   const [state, setState] = useState<MatchesState>(INITIAL_STATE);
   const [reloadToken, setReloadToken] = useState(0);
@@ -31,7 +31,7 @@ export function useMatches() {
 
     let active = true;
 
-    fetchMatches()
+    fetchMatches(query)
       .then((matches) => {
         if (active) setState({ matches, loading: false, error: null });
       })
@@ -42,7 +42,7 @@ export function useMatches() {
     return () => {
       active = false;
     };
-  }, [sessionLoading, firebaseUser, reloadToken]);
+  }, [sessionLoading, firebaseUser, query, reloadToken]);
 
   return { ...state, loading: sessionLoading || state.loading, reload };
 }

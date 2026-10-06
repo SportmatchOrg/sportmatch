@@ -8,6 +8,7 @@ import {
   NotificationList,
   NotificationListSkeleton,
 } from '@/components/notifications/notification-list';
+import { PushNotificationsControl } from '@/components/notifications/push-notifications-control';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RetryButton } from '@/components/ui/retry-button';
 import { ScreenHeader } from '@/components/ui/screen-header';
@@ -125,6 +126,8 @@ export default function NotificationsPage() {
           </div>
         }
       />
+
+      <PushNotificationsControl />
 
       {renderContent()}
 
