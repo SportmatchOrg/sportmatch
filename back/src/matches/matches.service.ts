@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { MatchStatus } from '../generated/prisma/client';
+import type { Level, MatchStatus } from '../generated/prisma/client';
 import type { CreateNotificationInput } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
@@ -21,6 +21,12 @@ import { MatchesRepository } from './matches.repository';
 import type { DetailedMatch, ListedMatch } from './types';
 
 const DEFAULT_RADIUS_KM = 5;
+
+type CompatibilityCandidate = {
+  level: Level;
+  organizerId: string;
+  date: Date;
+};
 
 @Injectable()
 export class MatchesService {
@@ -47,7 +53,7 @@ export class MatchesService {
     const matches = await this.matchesRepository.findUpcoming(user.id, query);
     const { lat, lng, radiusKm } = query;
 
-    return matches
+    const available = matches
       .filter((match) => match._count.participants < match.capacity)
       .filter(
         (match) =>
@@ -57,8 +63,42 @@ export class MatchesService {
             match.longitude !== null &&
             distanceKm(lat, lng, match.latitude, match.longitude) <
               (radiusKm ?? DEFAULT_RADIUS_KM)),
-      )
-      .map((match) => this.toListResponse(match, user.id));
+      );
+
+    const sorted = await this.sortByCompatibility(available, user.id);
+
+    return sorted.map((match) => this.toListResponse(match, user.id));
+  }
+
+  private async sortByCompatibility<T extends CompatibilityCandidate>(
+    matches: T[],
+    playerId: string,
+  ): Promise<T[]> {
+    const organizerIds = [
+      ...new Set(matches.map(({ organizerId }) => organizerId)),
+    ];
+    const [preferredLevel, scores] = await Promise.all([
+      this.findPreferredLevel(playerId),
+      this.usersService.getScores(organizerIds),
+    ]);
+
+    const scoreOf = (organizerId: string): number =>
+      scores.get(organizerId)?.rating ?? 0;
+
+    return [...matches].sort(
+      (a, b) =>
+        Number(b.level === preferredLevel) -
+          Number(a.level === preferredLevel) ||
+        scoreOf(b.organizerId) - scoreOf(a.organizerId) ||
+        a.date.getTime() - b.date.getTime(),
+    );
+  }
+
+  private async findPreferredLevel(playerId: string): Promise<Level | null> {
+    const [mostPlayed] =
+      await this.matchesRepository.findPlayedLevelsByFrequency(playerId);
+
+    return mostPlayed?.level ?? null;
   }
 
   async findOne(firebaseUid: string, id: string) {
