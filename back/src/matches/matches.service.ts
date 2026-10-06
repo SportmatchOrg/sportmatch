@@ -321,7 +321,14 @@ export class MatchesService {
   }
 
   private toListResponse<T extends ListedMatch>(match: T, userId: string) {
-    const { _count, participants, joinRequests, ratings, ...rest } = match;
+    const {
+      _count,
+      participants,
+      joinRequests,
+      ratings,
+      noShowReports,
+      ...rest
+    } = match;
     const isJoined = participants.length > 0;
 
     return {
@@ -334,13 +341,20 @@ export class MatchesService {
         date: rest.date,
         isPlayer: rest.organizerId === userId || isJoined,
         participants: _count.participants,
-        ratings: ratings.length,
+        submitted: ratings.length > 0 || noShowReports.length > 0,
       }),
     };
   }
 
   private toDetailResponse<T extends DetailedMatch>(match: T, userId: string) {
-    const { _count, participants, joinRequests, ratings, ...rest } = match;
+    const {
+      _count,
+      participants,
+      joinRequests,
+      ratings,
+      noShowReports,
+      ...rest
+    } = match;
     const isJoined = participants.some(({ user }) => user.id === userId);
 
     return {
@@ -353,7 +367,7 @@ export class MatchesService {
         date: rest.date,
         isPlayer: rest.organizerId === userId || isJoined,
         participants: _count.participants,
-        ratings: ratings.length,
+        submitted: ratings.length > 0 || noShowReports.length > 0,
       }),
       participants: participants.map(({ user }) => user),
     };
@@ -363,7 +377,7 @@ export class MatchesService {
     date: Date;
     isPlayer: boolean;
     participants: number;
-    ratings: number;
+    submitted: boolean;
   }): boolean | null {
     const played = input.date.getTime() <= Date.now();
 
@@ -371,7 +385,7 @@ export class MatchesService {
       return null;
     }
 
-    return input.participants >= 1 && input.ratings === 0;
+    return input.participants >= 1 && !input.submitted;
   }
 
   private assertFutureDate(date: Date) {
