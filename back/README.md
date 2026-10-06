@@ -25,6 +25,14 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Environment variables
+
+Copy `.env.example` to `.env` and fill it in. The values are in the team's shared env vars document.
+
+| Variable | Required | What it is for |
+| --- | --- | --- |
+| `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
+
 ## Project setup
 
 ```bash
