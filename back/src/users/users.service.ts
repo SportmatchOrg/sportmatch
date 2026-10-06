@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,6 +16,7 @@ import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
 import type { NoShowReportsFilter } from './types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
+import { toArgentinaDate } from '../utils/time/argentina-date';
 import { weekStreak } from '../utils/time/week-streak';
 
 const NO_SHOW_SCORE = 1;
@@ -62,6 +64,8 @@ const toScore = (
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly usersRepository: UsersRepository) {}
 
   findAll() {
@@ -112,8 +116,12 @@ export class UsersService {
     }
   }
 
-  ensureExists(user: FirebaseUser) {
-    return this.usersRepository.ensureExists(user);
+  async ensureExists(user: FirebaseUser) {
+    const saved = await this.usersRepository.ensureExists(user);
+
+    await this.recordActivity(saved.id);
+
+    return saved;
   }
 
   async upsertFromFirebase(user: FirebaseUser) {
@@ -197,6 +205,21 @@ export class UsersService {
         confirmedNoShows(match.noShowReports, match.organizerId),
       ]),
     );
+  }
+
+  private async recordActivity(userId: string) {
+    try {
+      await this.usersRepository.recordActivityDay(
+        userId,
+        new Date(toArgentinaDate(new Date())),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Could not record the activity of user ${userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   private async computeScores(
