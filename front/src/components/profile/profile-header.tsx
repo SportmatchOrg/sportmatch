@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
-import { ProfileMenu } from '@/components/profile/profile-menu';
+import { SettingsLink } from '@/components/profile/settings-link';
 import { IMAGES } from '@/lib/images';
 
 type ProfileHeaderProps = {
@@ -26,7 +26,7 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-base from-[3%] to-transparent to-[62%]" />
         {isOwnProfile && (
           <div className="absolute top-5 right-5 lg:hidden">
-            <ProfileMenu />
+            <SettingsLink />
           </div>
         )}
       </div>
@@ -47,7 +47,7 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         </div>
 
         {isOwnProfile && (
-          <ProfileMenu variant="labelled" className="hidden lg:flex lg:shrink-0" />
+          <SettingsLink variant="labelled" className="hidden lg:flex lg:shrink-0" />
         )}
       </ProfileIdentityRow>
     </header>
