@@ -5,7 +5,9 @@ import { useState, type InputHTMLAttributes } from 'react';
 
 import { AuthField } from './auth-field';
 
-type PasswordFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>;
+type PasswordFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
+  invalid?: boolean;
+};
 
 export function PasswordField(props: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
