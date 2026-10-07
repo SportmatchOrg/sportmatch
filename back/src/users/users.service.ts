@@ -1,11 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
-import { confirmedNoShowIds } from '../utils/ratings/confirmed-no-shows';
+import {
+  recentNoShowCount,
+  suspendedUntil,
+} from '../utils/no-shows/suspension';
+import { confirmedNoShows } from '../utils/ratings/confirmed-no-shows';
 import { UsersRepository } from './users.repository';
 import { FirebaseUser } from '../auth/types';
+import type { NoShowReportsFilter } from './types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
+import { toArgentinaDate } from '../utils/time/argentina-date';
 import { weekStreak } from '../utils/time/week-streak';
 
 const NO_SHOW_SCORE = 1;
@@ -53,6 +64,8 @@ const toScore = (
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly usersRepository: UsersRepository) {}
 
   findAll() {
@@ -66,7 +79,7 @@ export class UsersService {
       throw new NotFoundException(`User with id ${id} was not found`);
     }
 
-    return this.withStats(user);
+    return (await this.buildProfile(user)).profile;
   }
 
   async findByFirebaseUid(firebaseUid: string) {
@@ -79,6 +92,12 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async search(firebaseUid: string, query: string) {
+    const user = await this.findByFirebaseUid(firebaseUid);
+
+    return this.usersRepository.searchByName(query, user.id);
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -97,14 +116,25 @@ export class UsersService {
     }
   }
 
-  ensureExists(user: FirebaseUser) {
-    return this.usersRepository.ensureExists(user);
+  async ensureExists(user: FirebaseUser) {
+    const saved = await this.usersRepository.ensureExists(user);
+
+    await this.recordActivity(saved.id);
+
+    return saved;
   }
 
   async upsertFromFirebase(user: FirebaseUser) {
     const saved = await this.usersRepository.upsertByFirebaseUid(user);
+    const { profile, noShowDates } = await this.buildProfile(saved);
 
-    return this.withStats(saved);
+    return {
+      ...profile,
+      stats: {
+        ...profile.stats,
+        suspendedUntil: suspendedUntil(noShowDates),
+      },
+    };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -132,19 +162,76 @@ export class UsersService {
       return new Map();
     }
 
-    const [effectiveScores, reportedMatches, lateWithdrawals, canceledMatches] =
+    return this.computeScores(userIds, await this.findNoShowDatesBy(userIds));
+  }
+
+  async getSuspensions(userIds: string[]): Promise<Map<string, Date | null>> {
+    if (userIds.length === 0) {
+      return new Map();
+    }
+
+    const noShowDates = await this.findNoShowDatesBy(userIds);
+
+    return new Map(
+      userIds.map((userId) => [
+        userId,
+        suspendedUntil(noShowDates.get(userId) ?? []),
+      ]),
+    );
+  }
+
+  async getSuspendedUntil(userId: string): Promise<Date | null> {
+    return (await this.getSuspensions([userId])).get(userId) ?? null;
+  }
+
+  async assertNotSuspended(userId: string) {
+    const until = await this.getSuspendedUntil(userId);
+
+    if (until) {
+      throw new ForbiddenException(
+        `You are suspended until ${until.toISOString()}`,
+      );
+    }
+  }
+
+  async findConfirmedNoShows(
+    filter: NoShowReportsFilter,
+  ): Promise<Map<string, Map<string, Date>>> {
+    const matches = await this.usersRepository.findNoShowReportsByMatch(filter);
+
+    return new Map(
+      matches.map((match) => [
+        match.id,
+        confirmedNoShows(match.noShowReports, match.organizerId),
+      ]),
+    );
+  }
+
+  private async recordActivity(userId: string) {
+    try {
+      await this.usersRepository.recordActivityDay(
+        userId,
+        new Date(toArgentinaDate(new Date())),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Could not record the activity of user ${userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  private async computeScores(
+    userIds: string[],
+    noShowDates: Map<string, Date[]>,
+  ): Promise<Map<string, UserScore>> {
+    const [effectiveScores, lateWithdrawals, canceledMatches] =
       await Promise.all([
         this.findEffectiveScoresBy(userIds),
-        this.usersRepository.findMatchesReportedIn(userIds),
         this.usersRepository.countLateWithdrawalsBy(userIds),
         this.usersRepository.findCanceledMatchDates(userIds),
       ]);
-
-    const noShowsByUser = countByUser(
-      reportedMatches.flatMap((match) =>
-        confirmedNoShowIds(match.noShowReports, match.organizerId),
-      ),
-    );
 
     const lateWithdrawalsByUser = new Map(
       lateWithdrawals.map(({ userId, _count }) => [userId, _count._all]),
@@ -162,7 +249,7 @@ export class UsersService {
     return new Map(
       userIds.map((userId) => {
         const stars = effectiveScores.get(userId) ?? [];
-        const noShows = noShowsByUser.get(userId) ?? 0;
+        const noShows = noShowDates.get(userId)?.length ?? 0;
         const lates =
           (lateWithdrawalsByUser.get(userId) ?? 0) +
           (lateCancelsByUser.get(userId) ?? 0);
@@ -170,6 +257,25 @@ export class UsersService {
         return [userId, toScore(stars, noShows, lates)];
       }),
     );
+  }
+
+  private async findNoShowDatesBy(
+    userIds: string[],
+  ): Promise<Map<string, Date[]>> {
+    const noShowsByMatch = await this.findConfirmedNoShows({
+      reportedUserIds: userIds,
+    });
+    const datesByUser = new Map(
+      userIds.map((userId) => [userId, [] as Date[]]),
+    );
+
+    for (const noShows of noShowsByMatch.values()) {
+      for (const [userId, confirmedAt] of noShows) {
+        datesByUser.get(userId)?.push(confirmedAt);
+      }
+    }
+
+    return datesByUser;
   }
 
   private async findEffectiveScoresBy(
@@ -185,15 +291,7 @@ export class UsersService {
     }
 
     const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
-    const matches =
-      await this.usersRepository.findNoShowReportsByMatch(matchIds);
-
-    const confirmedByMatch = new Map(
-      matches.map((match) => [
-        match.id,
-        new Set(confirmedNoShowIds(match.noShowReports, match.organizerId)),
-      ]),
-    );
+    const confirmedByMatch = await this.findConfirmedNoShows({ matchIds });
 
     for (const { score, matchId, raterId, ratedUserId } of ratings) {
       const confirmed = confirmedByMatch.get(matchId);
@@ -208,19 +306,25 @@ export class UsersService {
     return scoresByUser;
   }
 
-  private async withStats<T extends { id: string }>(user: T) {
-    const [scores, playedDates] = await Promise.all([
-      this.getScores([user.id]),
+  private async buildProfile<T extends { id: string }>(user: T) {
+    const [noShowDates, playedDates] = await Promise.all([
+      this.findNoShowDatesBy([user.id]),
       this.usersRepository.findPlayedDates(user.id),
     ]);
+    const scores = await this.computeScores([user.id], noShowDates);
+    const userNoShowDates = noShowDates.get(user.id) ?? [];
 
     return {
-      ...user,
-      stats: {
-        ...(scores.get(user.id) ?? EMPTY_SCORE),
-        playedCount: playedDates.length,
-        weekStreak: weekStreak(playedDates.map(({ date }) => date)),
+      profile: {
+        ...user,
+        stats: {
+          ...(scores.get(user.id) ?? EMPTY_SCORE),
+          playedCount: playedDates.length,
+          weekStreak: weekStreak(playedDates.map(({ date }) => date)),
+          noShowCount90d: recentNoShowCount(userNoShowDates),
+        },
       },
+      noShowDates: userNoShowDates,
     };
   }
 

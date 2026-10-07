@@ -8,6 +8,7 @@ export type ListedMatch = {
   participants: { id: string }[];
   joinRequests: { status: JoinRequestStatus }[];
   ratings: { id: string }[];
+  noShowReports: { id: string }[];
 };
 
 export type DetailedMatch = {
@@ -17,4 +18,5 @@ export type DetailedMatch = {
   participants: { user: PublicUser; createdAt: Date }[];
   joinRequests: { status: JoinRequestStatus }[];
   ratings: { id: string }[];
+  noShowReports: { id: string }[];
 };

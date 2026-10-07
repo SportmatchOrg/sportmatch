@@ -1,16 +1,10 @@
-const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires';
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+import { toArgentinaDate } from './argentina-date';
+import { MS_PER_DAY } from './milliseconds';
+
 const EPOCH_TO_MONDAY_OFFSET_DAYS = 3;
 
-const argentinaDate = new Intl.DateTimeFormat('en-CA', {
-  timeZone: ARGENTINA_TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
 const toWeekIndex = (date: Date): number => {
-  const [year, month, day] = argentinaDate.format(date).split('-').map(Number);
+  const [year, month, day] = toArgentinaDate(date).split('-').map(Number);
   const daysSinceEpoch = Date.UTC(year, month - 1, day) / MS_PER_DAY;
 
   return Math.floor((daysSinceEpoch + EPOCH_TO_MONDAY_OFFSET_DAYS) / 7);

@@ -6,35 +6,16 @@ import { useEffect, useState } from 'react';
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { ApiError } from '@/lib/api';
-import { cancelJoinRequest, leaveMatch, requestToJoin } from '@/lib/matches';
+import { cancelJoinRequest, joinRequestErrorMessage, leaveMatch, requestToJoin } from '@/lib/matches';
+import { suspensionMessage } from '@/lib/suspension';
 import type { JoinRequestStatus, MatchDetail } from '@/types/match';
 
-const CONFLICT = 409;
-const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 
-const FULL_MESSAGE = 'El partido se llenó';
-const ALREADY_REQUESTED_MESSAGE = 'Ya pediste sumarte';
-const PLAYED_MESSAGE = 'Este partido ya se jugó';
-const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
 const LEAVE_FALLBACK = 'No pudimos darte de baja. Probá de nuevo.';
 const NOT_JOINED_MESSAGE = 'Ya no estabas anotado en este partido';
 const CANCEL_REQUEST_FALLBACK = 'No pudimos cancelar tu solicitud. Probá de nuevo.';
 const REQUEST_NOT_FOUND_MESSAGE = 'Ya no tenías una solicitud pendiente';
-
-export function joinRequestErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return JOIN_REQUEST_FALLBACK;
-
-  if (error.status === CONFLICT) {
-    return error.message.toLowerCase().includes('full')
-      ? FULL_MESSAGE
-      : ALREADY_REQUESTED_MESSAGE;
-  }
-
-  if (error.status === BAD_REQUEST) return PLAYED_MESSAGE;
-
-  return JOIN_REQUEST_FALLBACK;
-}
 
 function leaveErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.status === NOT_FOUND) {
@@ -55,6 +36,8 @@ function cancelRequestErrorMessage(error: unknown): string {
 type MatchActionsProps = {
   match: MatchDetail;
   isOrganizer: boolean;
+  suspendedUntil: string | null;
+  requestReady: boolean;
   onDone: () => void;
 };
 
@@ -116,7 +99,14 @@ function ConfirmationBlock({
   );
 }
 
-export function MatchActions({ match, isOrganizer, onDone }: MatchActionsProps) {
+export function MatchActions({
+  match,
+  isOrganizer,
+  suspendedUntil,
+  requestReady,
+  onDone,
+}: MatchActionsProps) {
+  const suspension = suspensionMessage(suspendedUntil);
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -262,7 +252,7 @@ export function MatchActions({ match, isOrganizer, onDone }: MatchActionsProps) 
           <PillButton
             variant="brand"
             size="lg"
-            disabled={lleno || submitting}
+            disabled={lleno || submitting || !requestReady || !!suspension}
             onClick={() =>
               void run(() => requestToJoin(match.id), joinRequestErrorMessage, {
                 onSuccess: () =>
@@ -274,6 +264,13 @@ export function MatchActions({ match, isOrganizer, onDone }: MatchActionsProps) 
             {submitting ? 'Enviando…' : 'Pedir sumarme'}
             {!submitting && <ArrowRight className="size-[18px]" aria-hidden="true" />}
           </PillButton>
+
+          {suspension && <p className="text-center text-caption text-danger">{suspension}</p>}
+          {!requestReady && (
+            <p className="text-center text-caption text-ink-46">
+              No pudimos comprobar tu perfil. Volvé a cargar la página.
+            </p>
+          )}
 
           {lleno && (
             <p className="text-center text-caption text-ink-46">

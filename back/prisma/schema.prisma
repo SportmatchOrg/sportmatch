@@ -29,6 +29,7 @@ model User {
   email       String   @unique
   name        String
   photoUrl    String?
+  city        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -42,6 +43,8 @@ model User {
   lateWithdrawals        LateWithdrawal[]
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
+  pushSubscriptions      PushSubscription[]
+  activityDays           UserActivityDay[]
 
   @@map("users")
 }
@@ -71,6 +74,7 @@ model Match {
   status        MatchStatus    @default(ACTIVE)
   cancelReason  String?
   canceledAt    DateTime?
+  filledAt      DateTime?
   organizerId   String
   organizer     User           @relation(fields: [organizerId], references: [id])
   createdAt     DateTime       @default(now())
@@ -195,4 +199,64 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model UserActivityDay {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityDate DateTime @db.Date
+  firstSeenAt  DateTime @default(now())
+
+  @@unique([userId, activityDate])
+  @@index([activityDate])
+  @@map("user_activity_days")
+}
+
+enum KpiResultStatus {
+  READY
+  NO_DATA
+  ERROR
+
+  @@map("kpi_result_status")
+}
+
+model KpiRun {
+  id              String      @id @default(uuid())
+  measurementDate DateTime    @db.Date
+  createdAt       DateTime    @default(now())
+  results         KpiResult[]
+
+  @@index([measurementDate])
+  @@map("kpi_runs")
+}
+
+model KpiResult {
+  id          String          @id @default(cuid())
+  runId       String
+  run         KpiRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  kpiId       String
+  value       Decimal?        @db.Decimal(20, 6)
+  status      KpiResultStatus
+  numerator   Decimal?        @db.Decimal(20, 6)
+  denominator Decimal?        @db.Decimal(20, 6)
+  errorCode   String?
+  createdAt   DateTime        @default(now())
+
+  @@unique([runId, kpiId])
+  @@index([kpiId, createdAt])
+  @@map("kpi_results")
 }

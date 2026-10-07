@@ -1,13 +1,18 @@
-import { Mail } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import Image from 'next/image';
 
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
-import { ProfileMenu } from '@/components/profile/profile-menu';
+import { SettingsLink } from '@/components/profile/settings-link';
 import { IMAGES } from '@/lib/images';
 
+const DETAIL =
+  'flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]';
+
+const DETAIL_ICON = 'size-[14px] shrink-0 lg:size-4';
+
 type ProfileHeaderProps = {
-  user: { name: string; photoUrl: string | null; email?: string };
+  user: { name: string; photoUrl: string | null; email?: string; city?: string | null };
   isOwnProfile: boolean;
 };
 
@@ -26,7 +31,7 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-base from-[3%] to-transparent to-[62%]" />
         {isOwnProfile && (
           <div className="absolute top-5 right-5 lg:hidden">
-            <ProfileMenu />
+            <SettingsLink />
           </div>
         )}
       </div>
@@ -39,15 +44,21 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
             {user.name}
           </h1>
           {isOwnProfile && user.email && (
-            <p className="flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]">
-              <Mail className="size-[14px] shrink-0 lg:size-4" aria-hidden="true" />
+            <p className={DETAIL}>
+              <Mail className={DETAIL_ICON} aria-hidden="true" />
               {user.email}
+            </p>
+          )}
+          {user.city && (
+            <p className={DETAIL}>
+              <MapPin className={DETAIL_ICON} aria-hidden="true" />
+              {user.city}
             </p>
           )}
         </div>
 
         {isOwnProfile && (
-          <ProfileMenu variant="labelled" className="hidden lg:flex lg:shrink-0" />
+          <SettingsLink variant="labelled" className="hidden lg:flex lg:shrink-0" />
         )}
       </ProfileIdentityRow>
     </header>

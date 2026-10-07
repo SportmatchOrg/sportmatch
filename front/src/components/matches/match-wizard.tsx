@@ -13,6 +13,7 @@ import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
 import { LevelPicker } from '@/components/matches/level-picker';
 import { MatchSummary } from '@/components/matches/match-summary';
+import { MatchCreationNotice } from '@/components/matches/match-creation-notice';
 import { TextField } from '@/components/matches/text-field';
 import { TextareaField } from '@/components/matches/textarea-field';
 import { WizardShell } from '@/components/matches/wizard-shell';
@@ -24,6 +25,8 @@ import {
   type PlaceSuggestion,
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
+import { suspensionErrorMessage, suspensionMessage } from '@/lib/suspension';
+import type { User } from '@/types/user';
 import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
 import {
   validateMatchForm,
@@ -46,11 +49,26 @@ type PlaceSearch = {
 };
 
 const PLACE_SEARCH_ERROR = 'No pudimos buscar direcciones. Probá de nuevo.';
+const ADDRESS_SEARCH_ERROR = 'No pudimos obtener la dirección de ese punto.';
+const KEEP_PLACE_NAME_METERS = 50;
+const EARTH_RADIUS_METERS = 6_371_000;
 const CLOSING_REASONS = ['escape-key', 'outside-press', 'focus-out'];
 const SUGGESTIONS =
   'w-(--anchor-width) overflow-hidden rounded-sm border border-glass-strong bg-panel shadow-bevel';
 const SUGGESTION_OPTION =
   'flex w-full flex-col gap-1 px-4 py-3 text-left text-white outline-none data-highlighted:bg-glass-solid';
+
+function distanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latDelta = toRadians(toLat - fromLat);
+  const lngDelta = toRadians(toLng - fromLng);
+  const a =
+    Math.sin(latDelta / 2) ** 2 +
+    Math.cos(toRadians(fromLat)) * Math.cos(toRadians(toLat)) *
+    Math.sin(lngDelta / 2) ** 2;
+
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(a)));
+}
 
 type MatchWizardProps = {
   mode: 'create' | 'edit';
@@ -61,18 +79,34 @@ type MatchWizardProps = {
   doneHref: string;
 };
 
-export function MatchWizard({
+export function MatchWizard(props: MatchWizardProps) {
+  const router = useRouter();
+  const { user, loading, error } = useCurrentUser();
+  const suspension = suspensionMessage(user?.stats.suspendedUntil);
+  if (props.mode === 'create' && (loading || !user || suspension)) {
+    return (
+      <MatchCreationNotice
+        loading={loading}
+        message={suspension ?? error ?? 'No pudimos comprobar tu perfil. Volvé a cargar la página.'}
+        onExit={() => router.back()}
+      />
+    );
+  }
+  return <MatchWizardForm {...props} user={user} />;
+}
+
+function MatchWizardForm({
   mode,
   initialForm,
   submit,
   toastMessage,
   errorMessage,
   doneHref,
-}: MatchWizardProps) {
+  user,
+}: MatchWizardProps & { user: User | null }) {
   const router = useRouter();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
-  const { user } = useCurrentUser();
-  const { ready: placesReady, searchPlaces, getPlace } = useGeocoding();
+  const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding();
   const [form, setForm] = useState<MatchForm>(initialForm);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<MatchFormErrors>({});
@@ -83,8 +117,16 @@ export function MatchWizard({
     suggestions: [],
     open: false,
   });
+  const [addressStatus, setAddressStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRevision = useRef(0);
+  const addressRevision = useRef(0);
+  const selectedPlace = useRef(
+    initialForm.latitude !== null && initialForm.longitude !== null
+      ? { latitude: initialForm.latitude, longitude: initialForm.longitude, name: initialForm.location }
+      : null,
+  );
 
   useEffect(() => {
     if (!toast) return;
@@ -140,6 +182,9 @@ export function MatchWizard({
 
   function changeLocation(value: string) {
     inputRevision.current += 1;
+    addressRevision.current += 1;
+    selectedPlace.current = null;
+    setAddressStatus('idle');
     if (placeSearch.status === 'selecting') void searchPlaces('');
     setForm((current) => ({
       ...current,
@@ -166,6 +211,13 @@ export function MatchWizard({
       const place = await getPlace(suggestion);
       if (revision !== inputRevision.current) return;
 
+      selectedPlace.current = {
+        latitude: place.latitude,
+        longitude: place.longitude,
+        name: place.label.slice(0, LOCATION_MAX),
+      };
+      setSelectedPlaceId(suggestion.id);
+      setAddressStatus('idle');
       setForm((current) => ({
         ...current,
         location: place.label.slice(0, LOCATION_MAX),
@@ -178,6 +230,34 @@ export function MatchWizard({
       if (revision === inputRevision.current) {
         setPlaceSearch({ status: 'error', suggestions: [], open: false });
       }
+    }
+  }
+
+  async function handlePinDragEnd(lat: number, lng: number) {
+    const revision = ++addressRevision.current;
+    const place = selectedPlace.current;
+    const keepPlaceName = place !== null &&
+      distanceMeters(place.latitude, place.longitude, lat, lng) <= KEEP_PLACE_NAME_METERS;
+    setForm((current) => ({
+      ...current,
+      latitude: lat,
+      longitude: lng,
+      location: keepPlaceName ? place.name : current.location,
+    }));
+
+    if (keepPlaceName) {
+      setAddressStatus('idle');
+      return;
+    }
+
+    setAddressStatus('loading');
+    try {
+      const address = await getAddress(lat, lng);
+      if (revision !== addressRevision.current) return;
+      setForm((current) => ({ ...current, location: address.slice(0, LOCATION_MAX) }));
+      setAddressStatus('idle');
+    } catch {
+      if (revision === addressRevision.current) setAddressStatus('error');
     }
   }
 
@@ -197,13 +277,13 @@ export function MatchWizard({
       setToast({ message: toastMessage(form, sport), tone: 'success' });
       redirectTimer.current = setTimeout(() => router.replace(doneHref), TOAST_DURATION);
     } catch (caught) {
-      setToast({ message: errorMessage(caught), tone: 'danger' });
+      setToast({ message: suspensionErrorMessage(caught) ?? errorMessage(caught), tone: 'danger' });
       setSubmitting(false);
     }
   }
 
   function handleContinue() {
-    if (submitting) return;
+    if (submitting || addressStatus === 'loading') return;
 
     const found = stepErrors(validateMatchForm(form), step);
     setErrors(found);
@@ -235,6 +315,7 @@ export function MatchWizard({
         mode={mode}
         step={step}
         submitting={submitting}
+        continueDisabled={step === 1 && addressStatus === 'loading'}
         onBack={handleBack}
         onExit={handleExit}
         onContinue={handleContinue}
@@ -325,11 +406,17 @@ export function MatchWizard({
             {placeSearch.open && placeSearch.status === 'empty' && (
               <p className="text-caption text-ink-46">No encontramos lugares. Probá con otra búsqueda.</p>
             )}
+            {addressStatus === 'loading' && (
+              <p role="status" className="text-caption text-ink-46">Buscando dirección…</p>
+            )}
+            {addressStatus === 'error' && (
+              <p role="alert" className="text-caption text-warning">{ADDRESS_SEARCH_ERROR}</p>
+            )}
 
             {form.latitude !== null && form.longitude !== null && (
               <div className="min-h-48 flex-1 overflow-hidden rounded-md" aria-label="Ubicación del partido en el mapa">
                 <BaseMap
-                  key={form.location}
+                  key={selectedPlaceId ?? 'initial-location'}
                   defaultCenter={{ lat: form.latitude, lng: form.longitude }}
                   defaultZoom={16}
                   className="size-full"
@@ -342,11 +429,7 @@ export function MatchWizard({
                     onDragEnd={(event) => {
                       const position = event.latLng;
                       if (!position) return;
-                      setForm((current) => ({
-                        ...current,
-                        latitude: position.lat(),
-                        longitude: position.lng(),
-                      }));
+                      void handlePinDragEnd(position.lat(), position.lng());
                     }}
                   >
                     <MapPin />

@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 
 import { SwipeCard, type SwipeDecision } from '@/components/matches/swipe-card';
-import { joinRequestErrorMessage } from '@/components/matches/match-actions';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { sportPhotoUrl } from '@/lib/sport-photo';
-import { requestToJoin } from '@/lib/matches';
+import { joinRequestErrorMessage, requestToJoin } from '@/lib/matches';
+import { suspensionMessage } from '@/lib/suspension';
 import type { Match } from '@/types/match';
 
 const DECISION_THRESHOLD = 110;
@@ -33,6 +34,9 @@ const STACK = [
   { depth: 0, className: '' },
 ];
 
+const DECK =
+  'absolute top-[max(70px,calc(env(safe-area-inset-top)_+_12px))] right-4 bottom-[max(120px,calc(env(safe-area-inset-bottom)_+_104px))] left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-18rem))] lg:w-auto lg:shrink-0';
+
 const ACTION_BUTTON =
   'flex size-20 items-center justify-center rounded-full transition active:scale-95';
 
@@ -51,6 +55,7 @@ type DeckToast = {
 
 export function SwipeDeck({ matches }: SwipeDeckProps) {
   const router = useRouter();
+  const { user, loading: userLoading } = useCurrentUser();
   const [index, setIndex] = useState(0);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
   const [flyout, setFlyout] = useState<SwipeDecision | null>(null);
@@ -70,6 +75,19 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
 
   const commit = useCallback(
     (direction: SwipeDecision) => {
+      if (direction === 'yes') {
+        const message = suspensionMessage(user?.stats.suspendedUntil);
+        if (userLoading || !user || message) {
+          setDrag(NO_DRAG);
+          setToast({
+            message: message ?? (userLoading
+              ? 'Estamos comprobando tu perfil. Probá de nuevo en un momento.'
+              : 'No pudimos comprobar tu perfil. Volvé a cargar la página.'),
+            tone: 'danger',
+          });
+          return;
+        }
+      }
       setFlyout(direction);
       setDrag((previous) => ({ ...previous, active: false }));
 
@@ -87,7 +105,7 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
         setIndex((previous) => previous + 1);
       }, FLYOUT_DURATION);
     },
-    [current]
+    [current, user, userLoading]
   );
 
   function decide(direction: SwipeDecision) {
@@ -138,6 +156,11 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
   if (!matches.length || !current) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-base lg:absolute">
+        {toast && (
+          <div className="absolute inset-x-0 top-16 flex justify-center px-4">
+            <Toast message={toast.message} tone={toast.tone} />
+          </div>
+        )}
         <EmptyState
           icon={Layers}
           title={matches.length ? 'Viste todo por hoy' : 'Todavía no hay partidos'}
@@ -166,7 +189,7 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
     flyout ?? (Math.abs(drag.x) > INDICATOR_THRESHOLD ? (drag.x > 0 ? 'yes' : 'no') : null);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-base lg:absolute lg:flex lg:flex-col lg:items-center lg:justify-center lg:gap-8">
+    <div className="fixed inset-0 overflow-hidden bg-base lg:absolute lg:flex lg:flex-col lg:items-center lg:justify-center lg:gap-8 lg:py-6">
       <div
         key={current.id}
         aria-hidden="true"
@@ -190,7 +213,7 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
         Recomendado para vos
       </span>
 
-      <div className="absolute top-[70px] right-4 bottom-[120px] left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-15rem))] lg:w-auto lg:shrink-0">
+      <div className={DECK}>
         {STACK.map(({ depth, className }) => {
           const match = matches[index + depth];
 

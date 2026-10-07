@@ -22,6 +22,22 @@ export async function markAllAsRead(): Promise<number> {
   return count;
 }
 
+export async function savePushSubscription(subscription: PushSubscription): Promise<void> {
+  const { endpoint, keys } = subscription.toJSON();
+
+  if (!endpoint || !keys?.p256dh || !keys.auth) {
+    throw new Error('Invalid push subscription');
+  }
+
+  await apiFetch('/push-subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({
+      endpoint,
+      keys: { p256dh: keys.p256dh, auth: keys.auth },
+    }),
+  });
+}
+
 export function withUnreadLabel(label: string, unreadCount: number): string {
   return unreadCount > 0 ? `${label}, ${unreadCount} sin leer` : label;
 }

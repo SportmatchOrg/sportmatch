@@ -11,7 +11,9 @@ import { SportsModule } from './sports/sports.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { RatingsModule } from './ratings/ratings.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { PushSubscriptionsModule } from './push-subscriptions/push-subscriptions.module';
 import { HealthModule } from './health/health.module';
+import { KpisModule } from './kpis/kpis.module';
 
 @Module({
   imports: [
@@ -27,7 +29,9 @@ import { HealthModule } from './health/health.module';
     JoinRequestsModule,
     RatingsModule,
     NotificationsModule,
+    PushSubscriptionsModule,
     HealthModule,
+    KpisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

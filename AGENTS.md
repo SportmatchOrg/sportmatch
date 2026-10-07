@@ -172,6 +172,7 @@ Todo cambio de schema debe acompañarse con una migración de Prisma. No modific
 - Mantener componentes tipados y evitar `any` sin justificación.
 - Reutilizar los componentes existentes en `front/src/components/` y las utilidades de Tailwind antes de crear alternativas.
 - Las variables públicas de Firebase se validan mediante `front/src/lib/env.ts`; no hardcodear credenciales ni configuración por ambiente.
+- Google Maps se configura con `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` y `NEXT_PUBLIC_GOOGLE_MAP_ID`; ver `front/README.md` para APIs, restricciones y cuotas.
 - Respetar también el `front/AGENTS.md` generado por Next.js para reglas específicas de esa versión.
 
 ## 9. Puertos y comunicación local

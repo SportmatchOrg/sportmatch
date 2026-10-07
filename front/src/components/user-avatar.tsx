@@ -1,6 +1,7 @@
 import { User } from 'lucide-react';
 import Image from 'next/image';
 
+import { sharpPhotoUrl } from '@/lib/photo-url';
 import { cn } from '@/lib/utils';
 
 export function getInitials(name: string): string {
@@ -37,7 +38,15 @@ export function UserAvatar({
         className
       )}
     >
-      {photoUrl && <Image src={photoUrl} alt="" fill sizes={sizes} className="object-cover" />}
+      {photoUrl && (
+        <Image
+          src={sharpPhotoUrl(photoUrl)}
+          alt=""
+          fill
+          sizes={sizes}
+          className="object-cover"
+        />
+      )}
 
       {!photoUrl && initials && (
         <span className={cn('font-bold text-white/46', initialsClassName)}>{initials}</span>

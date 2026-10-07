@@ -3,12 +3,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
+import type { NoShowReportsFilter } from './types';
 
 const PUBLIC_USER = {
   id: true,
   name: true,
   photoUrl: true,
 } as const;
+
+const USER_PROFILE = {
+  ...PUBLIC_USER,
+  city: true,
+} as const;
+
+const SEARCH_LIMIT = 10;
 
 @Injectable()
 export class UsersRepository {
@@ -18,27 +26,27 @@ export class UsersRepository {
     return this.prisma.user.findMany({ select: PUBLIC_USER });
   }
 
+  searchByName(query: string, excludedUserId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        id: { not: excludedUserId },
+        name: { contains: query, mode: 'insensitive' },
+      },
+      select: PUBLIC_USER,
+      orderBy: { name: 'asc' },
+      take: SEARCH_LIMIT,
+    });
+  }
+
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: PUBLIC_USER,
+      select: USER_PROFILE,
     });
   }
 
   findByFirebaseUid(firebaseUid: string) {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
-  }
-
-  findMatchesReportedIn(userIds: string[]) {
-    return this.prisma.match.findMany({
-      where: { noShowReports: { some: { reportedUserId: { in: userIds } } } },
-      select: {
-        organizerId: true,
-        noShowReports: {
-          select: { reporterId: true, reportedUserId: true },
-        },
-      },
-    });
   }
 
   countLateWithdrawalsBy(userIds: string[]) {
@@ -67,14 +75,21 @@ export class UsersRepository {
     });
   }
 
-  findNoShowReportsByMatch(matchIds: string[]) {
+  findNoShowReportsByMatch(filter: NoShowReportsFilter) {
     return this.prisma.match.findMany({
-      where: { id: { in: matchIds } },
+      where:
+        'matchIds' in filter
+          ? { id: { in: filter.matchIds } }
+          : {
+              noShowReports: {
+                some: { reportedUserId: { in: filter.reportedUserIds } },
+              },
+            },
       select: {
         id: true,
         organizerId: true,
         noShowReports: {
-          select: { reporterId: true, reportedUserId: true },
+          select: { reporterId: true, reportedUserId: true, createdAt: true },
         },
       },
     });
@@ -108,14 +123,17 @@ export class UsersRepository {
     });
   }
 
+  recordActivityDay(userId: string, activityDate: Date) {
+    return this.prisma.userActivityDay.createMany({
+      data: [{ userId, activityDate }],
+      skipDuplicates: true,
+    });
+  }
+
   upsertByFirebaseUid(user: FirebaseUser) {
     return this.prisma.user.upsert({
       where: { firebaseUid: user.uid },
-      update: {
-        email: user.email,
-        name: user.name,
-        photoUrl: user.photoUrl,
-      },
+      update: { email: user.email },
       create: {
         firebaseUid: user.uid,
         email: user.email,
