@@ -18,7 +18,7 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 const MINUTES = Array.from({ length: 60 / MINUTE_STEP }, (_, index) => index * MINUTE_STEP);
 
-const ROW = 'flex gap-2 overflow-x-auto pb-3';
+const ROW = 'app-scrollbar flex gap-2 overflow-x-auto pb-3';
 
 const ROW_LABEL = 'text-overline text-ink-46 uppercase';
 
