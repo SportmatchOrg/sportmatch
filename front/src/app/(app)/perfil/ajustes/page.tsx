@@ -1,8 +1,7 @@
 'use client';
 
 import { signOut } from 'firebase/auth';
-import { Camera, LogOut, Pencil, Share2 } from 'lucide-react';
-import Link from 'next/link';
+import { LogOut, Pencil, Share2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -25,9 +24,6 @@ const PAGE =
   'flex min-h-[calc(100dvh-(--spacing(28)))] w-full flex-col gap-6 px-5 py-6 lg:min-h-[calc(100dvh-(--spacing(20)))] lg:px-6 lg:py-10 xl:px-8';
 
 const AVATAR = 'size-22 lg:size-20';
-
-const EDIT_PHOTO =
-  'flex items-center gap-1.5 rounded-full text-callout font-semibold text-brand transition-colors outline-none hover:text-brand-bright focus-visible:ring-2 focus-visible:ring-brand';
 
 const LINK_COPIED = 'Link copiado';
 const SHARE_ERROR = 'No pudimos compartir tu perfil. Probá de nuevo.';
@@ -107,11 +103,6 @@ export default function SettingsPage() {
             className={cn(AVATAR, AVATAR_RING)}
             initialsClassName="text-title"
           />
-
-          <Link href={EDIT_PROFILE_HREF} className={EDIT_PHOTO}>
-            <Camera className="size-4.5" aria-hidden="true" />
-            Editar foto
-          </Link>
 
           <div className="flex flex-col items-center gap-0.5 text-center">
             <p className="text-headline font-bold text-white">{user.name}</p>
