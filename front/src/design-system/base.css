@@ -29,3 +29,38 @@ input:-webkit-autofill:focus {
     opacity: 0;
   }
 }
+
+@utility app-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--color-glass-border-strong);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-46);
+  }
+
+  /* Firefox has no ::-webkit-scrollbar. */
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-glass-border-strong) transparent;
+  }
+
+  /* Touch screens scroll with the finger and need no bar. */
+  @media (pointer: coarse) {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
