@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -138,6 +139,10 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    if (updateUserDto.sportIds) {
+      await this.assertSportsExist(updateUserDto.sportIds);
+    }
+
     try {
       return await this.usersRepository.update(id, updateUserDto);
     } catch (error) {
@@ -205,6 +210,19 @@ export class UsersService {
         confirmedNoShows(match.noShowReports, match.organizerId),
       ]),
     );
+  }
+
+  private async assertSportsExist(sportIds: string[]) {
+    const existing = new Set(
+      await this.usersRepository.findExistingSportIds(sportIds),
+    );
+    const missing = sportIds.filter((sportId) => !existing.has(sportId));
+
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `The following sports do not exist: ${missing.join(', ')}`,
+      );
+    }
   }
 
   private async recordActivity(userId: string) {
@@ -331,6 +349,7 @@ export class UsersService {
   private toHttpException(error: unknown, reference: string): Error {
     return toPrismaHttpException(error, {
       P2002: 'A user with that email or firebaseUid already exists',
+      P2003: 'One or more of the selected sports do not exist',
       P2025: `User with id ${reference} was not found`,
     });
   }
