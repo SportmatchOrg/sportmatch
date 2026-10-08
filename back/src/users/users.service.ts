@@ -73,13 +73,11 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    const user = await this.usersRepository.findById(id);
+    return (await this.buildProfile(await this.getById(id))).profile;
+  }
 
-    if (!user) {
-      throw new NotFoundException(`User with id ${id} was not found`);
-    }
-
-    return (await this.buildProfile(user)).profile;
+  async assertExists(id: string) {
+    await this.getById(id);
   }
 
   async findByFirebaseUid(firebaseUid: string) {
@@ -326,6 +324,16 @@ export class UsersService {
       },
       noShowDates: userNoShowDates,
     };
+  }
+
+  private async getById(id: string) {
+    const user = await this.usersRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} was not found`);
+    }
+
+    return user;
   }
 
   private toHttpException(error: unknown, reference: string): Error {
