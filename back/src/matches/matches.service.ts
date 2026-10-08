@@ -112,6 +112,18 @@ export class MatchesService {
     return this.toDetailResponse(match, user.id);
   }
 
+  async findPublic(id: string) {
+    const match = await this.matchesRepository.findPublicById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found`);
+    }
+
+    const { _count, ...publicMatch } = match;
+
+    return { ...publicMatch, joinedCount: _count.participants };
+  }
+
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 

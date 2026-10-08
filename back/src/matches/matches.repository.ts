@@ -89,6 +89,25 @@ export class MatchesRepository {
     });
   }
 
+  findPublicById(id: string) {
+    return this.prisma.match.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        date: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        level: true,
+        capacity: true,
+        status: true,
+        sport: PUBLIC_SPORT,
+        organizer: { select: { name: true, photoUrl: true } },
+        _count: { select: { participants: true } },
+      },
+    });
+  }
+
   findDetailById(id: string, userId: string) {
     return this.prisma.match.findUnique({
       where: { id },
