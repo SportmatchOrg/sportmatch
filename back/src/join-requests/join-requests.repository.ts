@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { isFull } from '../utils/matches/player-count';
 
 const PUBLIC_USER = {
   select: { id: true, name: true, photoUrl: true },
@@ -79,7 +80,7 @@ export class JoinRequestsRepository {
         }),
       ]);
 
-      if (joined >= match.capacity) {
+      if (isFull(joined, match.capacity)) {
         return null;
       }
 
@@ -90,7 +91,7 @@ export class JoinRequestsRepository {
 
       await tx.participant.create({ data: { matchId, userId } });
 
-      if (joined + 1 === match.capacity && match.filledAt === null) {
+      if (isFull(joined + 1, match.capacity) && match.filledAt === null) {
         await tx.match.update({
           where: { id: matchId },
           data: { filledAt: new Date() },
