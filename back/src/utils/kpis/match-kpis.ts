@@ -37,9 +37,7 @@ const sum = (values: number[]): number =>
 
 export const teamCompletionRate = (cohort: KpiMatch[]): KpiValue => {
   const active = cohort.filter(isActive);
-  const full = active.filter(
-    (match) => match.participants.length >= match.capacity,
-  );
+  const full = active.filter((match) => roster(match).length >= match.capacity);
 
   return percentage(full.length, active.length);
 };

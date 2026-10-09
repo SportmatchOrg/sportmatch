@@ -8,6 +8,7 @@ import {
 import type { MatchStatus } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { isFull } from '../utils/matches/player-count';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
@@ -46,7 +47,7 @@ export class JoinRequestsService {
       throw new ConflictException('You already joined this match');
     }
 
-    if (match._count.participants >= match.capacity) {
+    if (isFull(match._count.participants, match.capacity)) {
       throw new ConflictException('The match is full');
     }
 
@@ -143,7 +144,7 @@ export class JoinRequestsService {
         return rejectedRequest;
       }
 
-      if (match._count.participants >= match.capacity) {
+      if (isFull(match._count.participants, match.capacity)) {
         throw new ConflictException('The match is full');
       }
 
