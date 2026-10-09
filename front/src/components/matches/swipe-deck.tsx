@@ -4,6 +4,7 @@ import { Check, Compass, Layers, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import { SwipeCard, type SwipeDecision } from '@/components/matches/swipe-card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ const NO_DRAG: Drag = { x: 0, y: 0, active: false };
 
 type SwipeDeckProps = {
   matches: Match[];
+  onRestart: () => void;
 };
 
 type DeckToast = {
@@ -53,10 +55,11 @@ type DeckToast = {
   tone: ToastTone;
 };
 
-export function SwipeDeck({ matches }: SwipeDeckProps) {
+export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
   const router = useRouter();
   const { user, loading: userLoading } = useCurrentUser();
   const [index, setIndex] = useState(0);
+  const [previousMatches, setPreviousMatches] = useState(matches);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
   const [flyout, setFlyout] = useState<SwipeDecision | null>(null);
   const [toast, setToast] = useState<DeckToast | null>(null);
@@ -70,6 +73,11 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
 
     return () => clearTimeout(timer);
   }, [toast]);
+
+  if (matches !== previousMatches) {
+    setPreviousMatches(matches);
+    setIndex(0);
+  }
 
   const current = matches[index];
 
@@ -153,25 +161,30 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
     }
   }
 
+  const toastOverlay = toast
+    ? createPortal(
+        <div className="pointer-events-none fixed inset-x-0 top-[max(64px,calc(env(safe-area-inset-top)_+_12px))] z-50 flex justify-center px-4 lg:top-36">
+          <Toast message={toast.message} tone={toast.tone} />
+        </div>,
+        document.body
+      )
+    : null;
+
   if (!matches.length || !current) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-base lg:absolute">
-        {toast && (
-          <div className="absolute inset-x-0 top-16 flex justify-center px-4">
-            <Toast message={toast.message} tone={toast.tone} />
-          </div>
-        )}
+        {toastOverlay}
         <EmptyState
           icon={Layers}
-          title={matches.length ? 'Viste todo por hoy' : 'Todavía no hay partidos'}
+          title={matches.length ? 'Viste todo por hoy' : 'No hay más partidos por ahora'}
           text={
             matches.length
               ? 'Ya viste todos los partidos cerca. Volvé más tarde.'
-              : 'Cuando alguien cree un partido cerca tuyo, va a aparecer acá.'
+              : 'Cuando alguien cree uno cerca tuyo, va a aparecer acá.'
           }
           action={
             matches.length ? (
-              <Button onClick={() => setIndex(0)} className="gap-2 rounded-full">
+              <Button onClick={onRestart} className="gap-2 rounded-full">
                 <Compass className="size-[18px]" aria-hidden="true" />
                 Empezar de nuevo
               </Button>
@@ -268,11 +281,7 @@ export function SwipeDeck({ matches }: SwipeDeckProps) {
         </button>
       </div>
 
-      {toast && (
-        <div className="absolute inset-x-0 top-16 flex justify-center px-4">
-          <Toast message={toast.message} tone={toast.tone} />
-        </div>
-      )}
+      {toastOverlay}
     </div>
   );
 }
