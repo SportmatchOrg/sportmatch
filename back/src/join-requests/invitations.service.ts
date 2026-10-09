@@ -8,6 +8,7 @@ import {
 import type { MatchStatus } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { isFull } from '../utils/matches/player-count';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
@@ -123,7 +124,7 @@ export class InvitationsService {
       throw new ConflictException('The match has already started');
     }
 
-    if (match._count.participants >= match.capacity) {
+    if (isFull(match._count.participants, match.capacity)) {
       throw new ConflictException('The match is full');
     }
   }

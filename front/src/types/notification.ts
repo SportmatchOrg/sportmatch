@@ -1,6 +1,7 @@
 import type { MatchStatus, PublicUser, Sport } from '@/types/match';
 
 export type NotificationType =
+  | 'INVITATION_RECEIVED'
   | 'JOIN_REQUEST_RECEIVED'
   | 'JOIN_REQUEST_ACCEPTED'
   | 'JOIN_REQUEST_REJECTED'
