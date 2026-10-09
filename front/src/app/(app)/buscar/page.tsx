@@ -5,7 +5,7 @@ import { SwipeDeck } from '@/components/matches/swipe-deck';
 import { useMatches } from '@/hooks/use-matches';
 
 export default function SearchPage() {
-  const { matches, loading, error } = useMatches();
+  const { matches, loading, error, reload } = useMatches();
 
   if (loading) {
     return <LoadingScreen />;
@@ -23,7 +23,7 @@ export default function SearchPage() {
 
   return (
     <main className="relative lg:h-[calc(100dvh-5rem)]">
-      <SwipeDeck matches={matches} />
+      <SwipeDeck matches={matches} onRestart={reload} />
     </main>
   );
 }
