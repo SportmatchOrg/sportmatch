@@ -17,7 +17,7 @@ const PUBLIC_SPORT = {
 const PARTICIPANT_COUNT = {
   select: {
     participants: true,
-    joinRequests: { where: { status: 'PENDING' } },
+    joinRequests: { where: { status: 'PENDING', origin: 'REQUEST' } },
   },
 } as const;
 

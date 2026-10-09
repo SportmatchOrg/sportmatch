@@ -41,6 +41,18 @@ const PUSH_COPY: Record<NotificationType, { title: string; body: string }> = {
     title: 'Quedaste suspendido',
     body: 'Estás suspendido por faltas.',
   },
+  INVITATION_RECEIVED: {
+    title: 'Te invitaron a un partido',
+    body: 'El organizador te invitó a sumarte a su partido.',
+  },
+  INVITATION_ACCEPTED: {
+    title: 'Invitación aceptada',
+    body: 'Un jugador aceptó tu invitación.',
+  },
+  INVITATION_REJECTED: {
+    title: 'Invitación rechazada',
+    body: 'Un jugador no aceptó tu invitación.',
+  },
 };
 
 function toPushMessage(input: CreateNotificationInput): PushMessage {
