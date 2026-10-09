@@ -30,6 +30,7 @@ model User {
   name        String
   photoUrl    String?
   city        String?
+  level       Level?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -48,6 +49,7 @@ model User {
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
   pushSubscriptions      PushSubscription[]
   activityDays           UserActivityDay[]
+  sports                 UserSport[]
 
   @@map("users")
 }
@@ -59,8 +61,22 @@ model Sport {
   updatedAt DateTime @updatedAt
 
   matches Match[]
+  users   UserSport[]
 
   @@map("sports")
+}
+
+model UserSport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sportId   String
+  sport     Sport    @relation(fields: [sportId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sportId])
+  @@index([sportId])
+  @@map("user_sports")
 }
 
 model Match {
@@ -116,6 +132,13 @@ enum JoinRequestStatus {
   @@map("join_request_status")
 }
 
+enum JoinRequestOrigin {
+  REQUEST
+  INVITATION
+
+  @@map("join_request_origin")
+}
+
 model JoinRequest {
   id        String            @id @default(cuid())
   matchId   String
@@ -123,6 +146,7 @@ model JoinRequest {
   userId    String
   user      User              @relation(fields: [userId], references: [id])
   status    JoinRequestStatus @default(PENDING)
+  origin    JoinRequestOrigin @default(REQUEST)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
@@ -210,6 +234,9 @@ enum NotificationType {
   MATCH_UPDATED
   NO_SHOW_CONFIRMED
   USER_SUSPENDED
+  INVITATION_RECEIVED
+  INVITATION_ACCEPTED
+  INVITATION_REJECTED
 
   @@map("notification_type")
 }
