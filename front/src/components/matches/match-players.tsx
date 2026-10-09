@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import type { PublicUser } from '@/types/match';
 
 const LOW_SPOTS = 2;
-const EMPTY_MESSAGE = 'Todavía no se anotó nadie';
 
 type MatchPlayersProps = {
   participants: PublicUser[];
@@ -22,9 +21,10 @@ export function MatchPlayers({
 }: MatchPlayersProps) {
   const freeSpots = Math.max(0, capacity - joinedCount);
   const low = freeSpots <= LOW_SPOTS;
-  const users = played
-    ? [organizer, ...participants.filter(({ id }) => id !== organizer.id)]
-    : participants;
+  const users = [
+    organizer,
+    ...participants.filter(({ id }) => id !== organizer.id),
+  ];
 
   return (
     <section className="flex flex-col gap-5">
@@ -51,11 +51,7 @@ export function MatchPlayers({
         )}
       </header>
 
-      {users.length ? (
-        <AvatarStack users={users} />
-      ) : (
-        <p className="text-callout text-ink-46">{EMPTY_MESSAGE}</p>
-      )}
+      <AvatarStack users={users} />
     </section>
   );
 }

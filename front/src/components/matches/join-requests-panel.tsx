@@ -11,6 +11,7 @@ import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { useJoinRequests } from '@/hooks/use-join-requests';
 import { ApiError } from '@/lib/api';
 import { resolveJoinRequest, type JoinRequest } from '@/lib/join-requests';
+import { formatPlayers } from '@/lib/match-capacity';
 import { cn } from '@/lib/utils';
 
 const CONFLICT = 409;
@@ -163,7 +164,7 @@ export function JoinRequestsPanel({
           </span>
         </div>
         <p className="text-caption text-ink-46">
-          {joinedCount}/{capacity} jugadores confirmados
+          {formatPlayers(joinedCount, capacity)} jugadores confirmados
         </p>
       </header>
 

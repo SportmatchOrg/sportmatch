@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import type { JoinRequestOrigin } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isFull } from '../utils/matches/player-count';
 
 const PUBLIC_USER = {
   select: { id: true, name: true, photoUrl: true },
@@ -33,30 +35,30 @@ export class JoinRequestsRepository {
     });
   }
 
-  findByMatch(matchId: string) {
+  findByMatch(matchId: string, origin: JoinRequestOrigin) {
     return this.prisma.joinRequest.findMany({
-      where: { matchId },
+      where: { matchId, origin },
       orderBy: { createdAt: 'asc' },
       include: { user: PUBLIC_USER },
     });
   }
 
-  findByIdAndMatch(id: string, matchId: string) {
+  findRequestByIdAndMatch(id: string, matchId: string) {
     return this.prisma.joinRequest.findFirst({
-      where: { id, matchId },
+      where: { id, matchId, origin: 'REQUEST' },
     });
   }
 
-  create(matchId: string, userId: string) {
+  create(matchId: string, userId: string, origin: JoinRequestOrigin) {
     return this.prisma.joinRequest.create({
-      data: { matchId, userId },
+      data: { matchId, userId, origin },
     });
   }
 
-  resetToPending(id: string) {
+  resetToPending(id: string, origin: JoinRequestOrigin) {
     return this.prisma.joinRequest.update({
       where: { id },
-      data: { status: 'PENDING' },
+      data: { status: 'PENDING', origin },
     });
   }
 
@@ -79,7 +81,7 @@ export class JoinRequestsRepository {
         }),
       ]);
 
-      if (joined >= match.capacity) {
+      if (isFull(joined, match.capacity)) {
         return null;
       }
 
@@ -90,7 +92,7 @@ export class JoinRequestsRepository {
 
       await tx.participant.create({ data: { matchId, userId } });
 
-      if (joined + 1 === match.capacity && match.filledAt === null) {
+      if (isFull(joined + 1, match.capacity) && match.filledAt === null) {
         await tx.match.update({
           where: { id: matchId },
           data: { filledAt: new Date() },
@@ -101,9 +103,9 @@ export class JoinRequestsRepository {
     });
   }
 
-  deletePending(matchId: string, userId: string) {
+  deletePendingRequest(matchId: string, userId: string) {
     return this.prisma.joinRequest.deleteMany({
-      where: { matchId, userId, status: 'PENDING' },
+      where: { matchId, userId, status: 'PENDING', origin: 'REQUEST' },
     });
   }
 }
