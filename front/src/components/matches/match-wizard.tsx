@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
 import { MapPin } from '@/components/map/map-pin';
+import { PlaceSuggestions } from '@/components/map/place-suggestions';
 import { CapacityStepper } from '@/components/matches/capacity-stepper';
 import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
@@ -25,6 +26,7 @@ import {
   type PlaceSuggestion,
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
+import { useUserLocation } from '@/hooks/use-user-location';
 import { suspensionErrorMessage, suspensionMessage } from '@/lib/suspension';
 import type { User } from '@/types/user';
 import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
@@ -53,10 +55,6 @@ const ADDRESS_SEARCH_ERROR = 'No pudimos obtener la dirección de ese punto.';
 const KEEP_PLACE_NAME_METERS = 50;
 const EARTH_RADIUS_METERS = 6_371_000;
 const CLOSING_REASONS = ['escape-key', 'outside-press', 'focus-out'];
-const SUGGESTIONS =
-  'w-(--anchor-width) overflow-hidden rounded-sm border border-glass-strong bg-panel shadow-bevel';
-const SUGGESTION_OPTION =
-  'flex w-full flex-col gap-1 px-4 py-3 text-left text-white outline-none data-highlighted:bg-glass-solid';
 
 function distanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -106,7 +104,8 @@ function MatchWizardForm({
 }: MatchWizardProps & { user: User | null }) {
   const router = useRouter();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
-  const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding();
+  const { location } = useUserLocation();
+  const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding(location);
   const [form, setForm] = useState<MatchForm>(initialForm);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<MatchFormErrors>({});
@@ -377,26 +376,7 @@ function MatchWizardForm({
               </div>
 
               {showingSuggestions && (
-                <Autocomplete.Portal>
-                  <Autocomplete.Positioner sideOffset={8} className="z-[70]">
-                    <Autocomplete.Popup className={SUGGESTIONS}>
-                      <Autocomplete.List>
-                        {(suggestion: PlaceSuggestion) => (
-                          <Autocomplete.Item
-                            key={suggestion.id}
-                            value={suggestion}
-                            onClick={() => void selectSuggestion(suggestion)}
-                            className={SUGGESTION_OPTION}
-                          >
-                            <span className="text-callout font-semibold">{suggestion.title}</span>
-                            <span className="text-caption text-ink-46">{suggestion.subtitle}</span>
-                          </Autocomplete.Item>
-                        )}
-                      </Autocomplete.List>
-                      <p className="px-4 py-2 text-right text-caption text-ink-46">Google Maps</p>
-                    </Autocomplete.Popup>
-                  </Autocomplete.Positioner>
-                </Autocomplete.Portal>
+                <PlaceSuggestions onSelect={(suggestion) => void selectSuggestion(suggestion)} />
               )}
             </Autocomplete.Root>
 

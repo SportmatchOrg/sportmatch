@@ -1,5 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, ComponentType, SVGProps } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -12,7 +11,7 @@ const SELECTED = 'bg-white text-midnight';
 
 type FilterChipProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   selected: boolean;
-  icon?: LucideIcon;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
 export function FilterChip({

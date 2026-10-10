@@ -81,6 +81,7 @@ export type MatchDetail = Match & {
 export type MatchesQuery = {
   from?: string;
   to?: string;
+  sportId?: string[];
   level?: Level[];
   lat?: number;
   lng?: number;
