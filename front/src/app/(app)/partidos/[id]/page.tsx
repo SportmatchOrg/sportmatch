@@ -25,6 +25,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useMatch } from "@/hooks/use-match";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { sportPhotoUrl } from "@/lib/sport-photo";
+import { formatPlayers } from "@/lib/match-capacity";
 import { formatMatchDay, formatMatchTime } from "@/lib/match-date";
 import { cn } from "@/lib/utils";
 import {
@@ -213,8 +214,8 @@ export default function MatchDetailPage({
                 label="Jugadores"
                 value={
                   played
-                    ? playersLabel(match.joinedCount + 1)
-                    : `${match.joinedCount}/${match.capacity}`
+                    ? playersLabel(match.joinedCount)
+                    : formatPlayers(match.joinedCount, match.capacity)
                 }
               />
               <MetaTile

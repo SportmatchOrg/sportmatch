@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isFull, playerCount } from '../utils/matches/player-count';
 import { CreateMatchDto } from './dto/create-match.dto';
 import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -16,7 +17,7 @@ const PUBLIC_SPORT = {
 const PARTICIPANT_COUNT = {
   select: {
     participants: true,
-    joinRequests: { where: { status: 'PENDING' } },
+    joinRequests: { where: { status: 'PENDING', origin: 'REQUEST' } },
   },
 } as const;
 
@@ -86,6 +87,25 @@ export class MatchesRepository {
     return this.prisma.match.findUnique({
       where: { id },
       include: matchInclude(userId),
+    });
+  }
+
+  findPublicById(id: string) {
+    return this.prisma.match.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        date: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        level: true,
+        capacity: true,
+        status: true,
+        sport: PUBLIC_SPORT,
+        organizer: { select: { name: true, photoUrl: true } },
+        _count: { select: { participants: true } },
+      },
     });
   }
 
@@ -175,7 +195,7 @@ export class MatchesRepository {
         where: { matchId: id },
       });
 
-      if (capacity < participants) {
+      if (capacity < playerCount(participants)) {
         return { match: null, participants };
       }
 
@@ -184,7 +204,8 @@ export class MatchesRepository {
         select: { filledAt: true },
       });
 
-      const fillsMatch = capacity === participants && current.filledAt === null;
+      const fillsMatch =
+        isFull(participants, capacity) && current.filledAt === null;
 
       const match = await tx.match.update({
         where: { id },
