@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { es } from 'react-day-picker/locale';
 
 import { FieldError } from '@/components/matches/field-error';
-import { formatMatchDay, weekdayLabel } from '@/lib/match-date';
+import { Calendar } from '@/components/ui/calendar';
+import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { localDateTimeValue } from '@/lib/match-form';
-import { cn } from '@/lib/utils';
 
 const ERROR_ID = 'error-fecha';
 
-const DAYS_AHEAD = 14;
 const MINUTE_STEP = 5;
 const HOUR_MS = 3_600_000;
 const LAST_MINUTE = 60 - MINUTE_STEP;
@@ -18,22 +19,12 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 const MINUTES = Array.from({ length: 60 / MINUTE_STEP }, (_, index) => index * MINUTE_STEP);
 
-const ROW = 'app-scrollbar flex gap-2 overflow-x-auto pb-3';
-
 const ROW_LABEL = 'text-overline text-ink-46 uppercase';
 
 const ROW_VALUE = 'text-overline font-bold tabular-nums text-brand uppercase';
 
-const OPTION =
-  'flex w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-sm py-2.5 transition active:scale-[var(--press-scale-chip)] disabled:cursor-not-allowed disabled:opacity-32';
-
-const OPTION_SELECTED = 'bg-brand text-brand-ink shadow-glow';
-
-const OPTION_IDLE = 'bg-glass text-white shadow-bevel hover:bg-glass-strong';
-
-const OPTION_TOP = 'text-overline uppercase opacity-64';
-
-const OPTION_VALUE = 'text-callout font-bold tabular-nums';
+const SELECT =
+  'h-12 w-full appearance-none rounded-sm bg-glass pr-10 pl-4 text-callout font-bold tabular-nums text-white shadow-bevel transition outline-none [color-scheme:dark] hover:bg-glass-strong focus-visible:ring-2 focus-visible:ring-brand';
 
 function RowLabel({ label, value }: { label: string; value: string }) {
   return (
@@ -58,11 +49,38 @@ function defaultFecha(): Date {
   return start;
 }
 
-function isSameDay(one: Date, other: Date): boolean {
+function slot(day: Date, hour: number, minute: number): Date {
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
+}
+
+type TimeSelectProps = {
+  label: string;
+  value: number;
+  options: number[];
+  isDisabled: (option: number) => boolean;
+  onChange: (option: number) => void;
+};
+
+function TimeSelect({ label, value, options, isDisabled, onChange }: TimeSelectProps) {
   return (
-    one.getFullYear() === other.getFullYear() &&
-    one.getMonth() === other.getMonth() &&
-    one.getDate() === other.getDate()
+    <label className="relative flex-1">
+      <span className="sr-only">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className={SELECT}
+      >
+        {options.map((option) => (
+          <option key={option} value={option} disabled={isDisabled(option)}>
+            {pad(option)}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-ink-46"
+        aria-hidden="true"
+      />
+    </label>
   );
 }
 
@@ -76,35 +94,24 @@ export function SchedulePicker({ value, onChange, error }: HorarioPickerProps) {
   const parsed = new Date(value);
   const selected = value && !Number.isNaN(parsed.getTime()) ? parsed : null;
   const current = selected ?? defaultFecha();
-  const currentTime = current.getTime();
   const hasFecha = selected !== null;
+  const currentValue = localDateTimeValue(current);
 
-  const dayRef = useRef<HTMLButtonElement | null>(null);
-  const hourRef = useRef<HTMLButtonElement | null>(null);
-  const minuteRef = useRef<HTMLButtonElement | null>(null);
+  const today = useMemo(() => {
+    const now = new Date();
 
-  const days = useMemo(() => {
-    const today = new Date();
-
-    return Array.from(
-      { length: DAYS_AHEAD },
-      (_, index) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + index)
-    );
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }, []);
+
+  // A match saved with minutes outside the 5-minute steps still shows its own time.
+  const currentMinute = current.getMinutes();
+  const minutes = MINUTES.includes(currentMinute)
+    ? MINUTES
+    : [...MINUTES, currentMinute].sort((first, second) => first - second);
 
   useEffect(() => {
     if (!hasFecha) onChange(localDateTimeValue(defaultFecha()));
   }, [hasFecha, onChange]);
-
-  useEffect(() => {
-    for (const ref of [dayRef, hourRef, minuteRef]) {
-      ref.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
-    }
-  }, [currentTime]);
-
-  function slot(day: Date, hour: number, minute: number): Date {
-    return new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
-  }
 
   function emit(next: Date) {
     onChange(localDateTimeValue(next));
@@ -134,90 +141,45 @@ export function SchedulePicker({ value, onChange, error }: HorarioPickerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <FieldError id={ERROR_ID} message={error} />
+    <div className="flex flex-col gap-6 lg:h-full lg:flex-row lg:gap-10">
+      <div className="flex flex-col gap-3 lg:min-h-0 lg:max-w-xl lg:flex-1">
+        <FieldError id={ERROR_ID} message={error} />
 
-      <div className="flex flex-col gap-3">
-        <RowLabel label="Día" value={formatMatchDay(localDateTimeValue(current))} />
+        <RowLabel label="Día" value={formatMatchDay(currentValue)} />
 
-        <div className={ROW}>
-          {days.map((day, index) => {
-            const active = isSameDay(day, current);
-            const disabled = isPast(slot(day, 23, LAST_MINUTE));
-
-            return (
-              <button
-                key={day.toISOString()}
-                ref={active ? dayRef : undefined}
-                type="button"
-                disabled={disabled}
-                aria-pressed={active}
-                onClick={() => pickDay(day)}
-                className={cn(OPTION, active ? OPTION_SELECTED : OPTION_IDLE)}
-              >
-                <span className={OPTION_TOP}>{index === 0 ? 'Hoy' : weekdayLabel(day)}</span>
-                <span className={OPTION_VALUE}>{day.getDate()}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Calendar
+          mode="single"
+          required
+          selected={current}
+          onSelect={pickDay}
+          defaultMonth={current}
+          startMonth={today}
+          disabled={{ before: today }}
+          locale={es}
+        />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <RowLabel label="Hora" value={pad(current.getHours())} />
+      <div className="flex flex-col gap-3 lg:w-56">
+        <RowLabel label="Hora" value={formatMatchTime(currentValue)} />
 
-        <div className={ROW}>
-          {HOURS.map((hour) => {
-            const active = hour === current.getHours();
-            const disabled = isPast(slot(current, hour, LAST_MINUTE));
-
-            return (
-              <button
-                key={hour}
-                ref={active ? hourRef : undefined}
-                type="button"
-                disabled={disabled}
-                aria-pressed={active}
-                aria-label={`${pad(hour)} horas`}
-                onClick={() => pickHour(hour)}
-                className={cn(OPTION, active ? OPTION_SELECTED : OPTION_IDLE)}
-              >
-                <span className={OPTION_TOP} aria-hidden="true">
-                  H
-                </span>
-                <span className={OPTION_VALUE}>{pad(hour)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <RowLabel label="Minutos" value={pad(current.getMinutes())} />
-
-        <div className={ROW}>
-          {MINUTES.map((minute) => {
-            const active = minute === current.getMinutes();
-            const disabled = isPast(slot(current, current.getHours(), minute));
-
-            return (
-              <button
-                key={minute}
-                ref={active ? minuteRef : undefined}
-                type="button"
-                disabled={disabled}
-                aria-pressed={active}
-                aria-label={`${minute} minutos`}
-                onClick={() => pickMinute(minute)}
-                className={cn(OPTION, active ? OPTION_SELECTED : OPTION_IDLE)}
-              >
-                <span className={OPTION_TOP} aria-hidden="true">
-                  Min
-                </span>
-                <span className={OPTION_VALUE}>{pad(minute)}</span>
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <TimeSelect
+            label="Hora"
+            value={current.getHours()}
+            options={HOURS}
+            isDisabled={(hour) => isPast(slot(current, hour, LAST_MINUTE))}
+            onChange={pickHour}
+          />
+          <span className="text-callout font-bold text-ink-46" aria-hidden="true">
+            :
+          </span>
+          <TimeSelect
+            label="Minutos"
+            value={current.getMinutes()}
+            options={minutes}
+            isDisabled={(minute) => isPast(slot(current, current.getHours(), minute))}
+            onChange={pickMinute}
+          />
         </div>
       </div>
     </div>
