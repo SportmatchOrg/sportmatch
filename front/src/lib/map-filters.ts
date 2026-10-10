@@ -6,6 +6,7 @@ export type NearbyOrigin = { latitude: number; longitude: number };
 
 export type MapFilters = {
   day: DayFilter | null;
+  sportIds: string[];
   levels: Level[];
   nearby: NearbyOrigin | null;
 };
@@ -19,7 +20,12 @@ export const DAY_FILTER_LABEL: Record<DayFilter, string> = {
   WEEKEND: 'Fin de semana',
 };
 
-export const EMPTY_MAP_FILTERS: MapFilters = { day: null, levels: [], nearby: null };
+export const EMPTY_MAP_FILTERS: MapFilters = {
+  day: null,
+  sportIds: [],
+  levels: [],
+  nearby: null,
+};
 
 export const NEARBY_RADIUS_KM = 5;
 
@@ -84,8 +90,25 @@ function dayRange(day: DayFilter, now: Date): Range {
   }
 }
 
+function toggle<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((current) => current !== item) : [...list, item];
+}
+
+export function toggleLevel(filters: MapFilters, level: Level): MapFilters {
+  return { ...filters, levels: toggle(filters.levels, level) };
+}
+
+export function toggleSport(filters: MapFilters, sportId: string): MapFilters {
+  return { ...filters, sportIds: toggle(filters.sportIds, sportId) };
+}
+
 export function hasActiveFilters(filters: MapFilters): boolean {
-  return filters.day !== null || filters.levels.length > 0 || filters.nearby !== null;
+  return (
+    filters.day !== null ||
+    filters.sportIds.length > 0 ||
+    filters.levels.length > 0 ||
+    filters.nearby !== null
+  );
 }
 
 export function toMatchesQuery(filters: MapFilters, now = new Date()): MatchesQuery {
@@ -96,6 +119,8 @@ export function toMatchesQuery(filters: MapFilters, now = new Date()): MatchesQu
     query.from = from.toISOString();
     query.to = to.toISOString();
   }
+
+  if (filters.sportIds.length > 0) query.sportId = filters.sportIds;
 
   if (filters.levels.length > 0) query.level = filters.levels;
 
