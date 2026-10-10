@@ -39,7 +39,7 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
       <ProfileIdentityRow>
         <ProfileAvatar name={user.name} photoUrl={user.photoUrl} />
 
-        <div className="flex flex-col items-center gap-[2.5px] lg:flex-1 lg:items-start lg:pb-2">
+        <div className="flex flex-col items-center gap-[2.5px] lg:relative lg:flex-1 lg:items-start lg:pb-2">
           <h1 className="text-center text-[26.6px] font-bold leading-[32.48px] tracking-[-0.17px] text-white lg:text-left lg:text-[36.2px] lg:font-extrabold lg:leading-[44px] lg:tracking-[-1.33px]">
             {user.name}
           </h1>

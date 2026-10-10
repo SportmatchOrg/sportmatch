@@ -11,6 +11,7 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
+import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
 import { useMyMatches } from '@/hooks/use-my-matches';
 import { ApiError } from '@/lib/api';
 import { NEW_MATCH_HREF } from '@/lib/nav-items';
@@ -45,9 +46,10 @@ function canceledLast(matches: Match[]): Match[] {
 }
 
 export default function MyMatchesPage() {
-  const { organizing, playing, requested, loading, error, reload } = useMyMatches({
+  const { organizing, playing, requested, loading, error } = useMyMatches({
     pollIntervalMs: POLL_INTERVAL_MS,
   });
+  const invalidateMatches = useInvalidateMatches();
 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [toast, setToast] = useState<PageToast | null>(null);
@@ -73,7 +75,7 @@ export default function MyMatchesPage() {
     try {
       await action(match.id);
       setToast(success);
-      reload();
+      invalidateMatches();
     } catch {
       setToast({ message: failure, tone: 'danger' });
     } finally {
@@ -87,7 +89,7 @@ export default function MyMatchesPage() {
     try {
       await cancelMatch(match.id, reason);
       setToast({ message: `Partido cancelado · ${matchLabel(match)}`, tone: 'danger' });
-      reload();
+      invalidateMatches();
     } catch (cause) {
       const conflict = cause instanceof ApiError && cause.status === CONFLICT;
 
@@ -165,7 +167,6 @@ export default function MyMatchesPage() {
                 capacity={match.capacity}
                 joinedCount={match.joinedCount}
                 isOrganizer
-                onResolved={reload}
               />
             )}
             renderAction={(match) => (

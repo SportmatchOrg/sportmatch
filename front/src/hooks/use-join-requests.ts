@@ -1,72 +1,33 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchJoinRequests, type JoinRequest } from '@/lib/join-requests';
-
-type JoinRequestsState = {
-  joinRequests: JoinRequest[];
-  loading: boolean;
-  error: string | null;
-};
+import { matchKeys } from '@/lib/query-keys';
 
 const ERROR_MESSAGE = 'No pudimos cargar las solicitudes. Probá de nuevo en un momento.';
-const POLL_INTERVAL_MS = 2_000;
+const POLL_INTERVAL_MS = 15_000;
 
-const INITIAL_STATE: JoinRequestsState = {
-  joinRequests: [],
-  loading: true,
-  error: null,
-};
+const NO_JOIN_REQUESTS: JoinRequest[] = [];
 
 export function useJoinRequests(matchId: string, isOrganizer: boolean) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<JoinRequestsState>(INITIAL_STATE);
-  const [reloadToken, setReloadToken] = useState(0);
 
-  const reload = useCallback(() => setReloadToken((token) => token + 1), []);
+  const { data, isPending, isLoadingError, refetch } = useQuery({
+    queryKey: matchKeys.joinRequests(matchId),
+    queryFn: () => fetchJoinRequests(matchId),
+    enabled: isOrganizer && !sessionLoading && !!firebaseUser,
+    refetchInterval: POLL_INTERVAL_MS,
+  });
 
-  useEffect(() => {
-    if (!isOrganizer || sessionLoading || !firebaseUser) return;
-
-    let active = true;
-    let requestInFlight = false;
-
-    async function load(showError: boolean): Promise<void> {
-      if (requestInFlight) return;
-
-      requestInFlight = true;
-
-      try {
-        const joinRequests = await fetchJoinRequests(matchId);
-
-        if (active) setState({ joinRequests, loading: false, error: null });
-      } catch {
-        if (active && showError) {
-          setState({ joinRequests: [], loading: false, error: ERROR_MESSAGE });
-        }
-      } finally {
-        requestInFlight = false;
-      }
-    }
-
-    void load(true);
-
-    const interval = window.setInterval(() => {
-      void load(false);
-    }, POLL_INTERVAL_MS);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [firebaseUser, isOrganizer, matchId, reloadToken, sessionLoading]);
+  const reload = useCallback(() => void refetch(), [refetch]);
 
   return {
-    joinRequests: isOrganizer ? state.joinRequests : [],
-    loading: isOrganizer && (sessionLoading || state.loading),
-    error: isOrganizer ? state.error : null,
+    joinRequests: isOrganizer ? (data ?? NO_JOIN_REQUESTS) : NO_JOIN_REQUESTS,
+    loading: isOrganizer && (sessionLoading || isPending),
+    error: isOrganizer && isLoadingError ? ERROR_MESSAGE : null,
     reload,
   };
 }
