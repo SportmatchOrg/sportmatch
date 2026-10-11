@@ -27,6 +27,10 @@ function formatDay(value: string): string {
 }
 
 const TEMPLATES: Record<NotificationType, MessageTemplate> = {
+  INVITATION_RECEIVED: {
+    withActor: true,
+    text: (sport) => `te invitó a su partido de ${sport}`,
+  },
   JOIN_REQUEST_RECEIVED: {
     withActor: true,
     text: (sport) => `quiere sumarse a tu partido de ${sport}`,

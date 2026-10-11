@@ -1,6 +1,14 @@
 import { apiFetch } from '@/lib/api';
-import type { Match } from '@/types/match';
+import type { Match, PublicUser } from '@/types/match';
 import type { ProfileUpdate, PublicProfile, User } from '@/types/user';
+
+export const USER_SEARCH_MIN_LENGTH = 2;
+export const USER_SEARCH_MAX_LENGTH = 50;
+
+export async function searchUsers(query: string, signal?: AbortSignal): Promise<PublicUser[]> {
+  const params = new URLSearchParams({ q: query });
+  return apiFetch<PublicUser[]>(`/users/search?${params}`, { signal });
+}
 
 export async function fetchPublicProfile(userId: string): Promise<PublicProfile> {
   return apiFetch<PublicProfile>(`/users/${userId}`);
