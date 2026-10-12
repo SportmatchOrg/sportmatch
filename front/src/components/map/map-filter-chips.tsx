@@ -13,11 +13,12 @@ import type { UserLocation } from '@/hooks/use-user-location';
 import {
   DAY_FILTERS,
   DAY_FILTER_LABEL,
+  toggleLevel,
   type DayFilter,
   type MapFilters,
 } from '@/lib/map-filters';
 import { cn } from '@/lib/utils';
-import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
+import { LEVELS, LEVEL_LABEL } from '@/types/match';
 
 const NEARBY_LABEL = 'Cerca';
 
@@ -46,14 +47,6 @@ export function MapFilterChips({ filters, onChange, location, className }: MapFi
 
   function toggleDay(day: DayFilter) {
     onChange({ ...filters, day: filters.day === day ? null : day });
-  }
-
-  function toggleLevel(level: Level) {
-    const levels = filters.levels.includes(level)
-      ? filters.levels.filter((current) => current !== level)
-      : [...filters.levels, level];
-
-    onChange({ ...filters, levels });
   }
 
   return (
@@ -87,7 +80,7 @@ export function MapFilterChips({ filters, onChange, location, className }: MapFi
         <FilterChip
           key={level}
           selected={filters.levels.includes(level)}
-          onClick={() => toggleLevel(level)}
+          onClick={() => onChange(toggleLevel(filters, level))}
         >
           {LEVEL_LABEL[level]}
         </FilterChip>

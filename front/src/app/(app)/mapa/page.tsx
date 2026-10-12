@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BaseMap } from '@/components/map/base-map';
 import { FitBounds } from '@/components/map/fit-bounds';
 import { MapFilterChips } from '@/components/map/map-filter-chips';
+import { MapFiltersSheet } from '@/components/map/map-filters-sheet';
 import { MapHeader } from '@/components/map/map-header';
 import { MapSearchBar } from '@/components/map/map-search-bar';
 import { MatchPin } from '@/components/map/match-pin';
@@ -23,6 +24,7 @@ import { RetryButton } from '@/components/ui/retry-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMatches } from '@/hooks/use-matches';
 import { useUserLocation, type UserLocation } from '@/hooks/use-user-location';
+import { DEFAULT_MAP_CENTER } from '@/lib/map-center';
 import {
   EMPTY_MAP_FILTERS,
   hasActiveFilters,
@@ -31,7 +33,6 @@ import {
 } from '@/lib/map-filters';
 import { SPORT_LABEL, type Match } from '@/types/match';
 
-const DEFAULT_CENTER = { lat: -34.6037, lng: -58.3816 };
 const DEFAULT_ZOOM = 12;
 
 const USER_ZOOM = 15;
@@ -72,9 +73,11 @@ export default function MapPage() {
   const map = useMap();
   const { location } = useUserLocation();
   const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const query = useMemo(() => toMatchesQuery(filters), [filters]);
   const { matches, loading, error, reload } = useMatches(query);
   const centeredOnUser = useRef(false);
+  const searchProps = { onOpenFilters: () => setFiltersOpen(true), origin: location };
 
   const located = useMemo(() => matches.filter(isLocated), [matches]);
   const points = useMemo(() => located.map(position), [located]);
@@ -165,7 +168,7 @@ export default function MapPage() {
           <EmptyState
             icon={FunnelX}
             title="No hay partidos con estos filtros"
-            text="Probá con otro día o nivel."
+            text="Probá con otro día, nivel o deporte."
             action={
               <PillButton variant="glass" size="md" onClick={() => setFilters(EMPTY_MAP_FILTERS)}>
                 Limpiar filtros
@@ -194,13 +197,13 @@ export default function MapPage() {
   return (
     <main className={SCREEN}>
       <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
-        <MapSearchBar />
+        <MapSearchBar {...searchProps} />
         {renderChips('flex-wrap')}
         {renderList()}
       </aside>
 
       <div className="relative min-w-0 flex-1">
-        <BaseMap defaultCenter={DEFAULT_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full">
+        <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full">
           {located.map((match) => (
             <AdvancedMarker
               key={match.id}
@@ -216,7 +219,7 @@ export default function MapPage() {
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
 
-        <MapHeader>{renderChips(MOBILE_CHIPS)}</MapHeader>
+        <MapHeader {...searchProps}>{renderChips(MOBILE_CHIPS)}</MapHeader>
 
         {location && (
           <IconButton
@@ -230,6 +233,14 @@ export default function MapPage() {
 
         {renderOverlay()}
       </div>
+
+      <MapFiltersSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        onChange={setFilters}
+        resultCount={located.length}
+      />
     </main>
   );
 }
