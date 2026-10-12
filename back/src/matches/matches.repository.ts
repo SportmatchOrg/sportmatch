@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../generated/prisma/client';
+import type { JoinRequestOrigin, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { isFull, playerCount } from '../utils/matches/player-count';
 import { CreateMatchDto } from './dto/create-match.dto';
@@ -37,7 +37,7 @@ const matchInclude = (userId: string) =>
     participants: { where: { userId }, select: { id: true } },
     joinRequests: {
       where: { userId },
-      select: { status: true },
+      select: { status: true, origin: true },
     },
     ratings: { where: { raterId: userId }, select: { id: true }, take: 1 },
     noShowReports: {
@@ -138,12 +138,12 @@ export class MatchesRepository {
     });
   }
 
-  findRequestedBy(userId: string) {
+  findWithPendingJoinRequest(userId: string, origin: JoinRequestOrigin) {
     return this.prisma.match.findMany({
       where: {
         date: { gte: new Date() },
         status: 'ACTIVE',
-        joinRequests: { some: { userId, status: 'PENDING' } },
+        joinRequests: { some: { userId, status: 'PENDING', origin } },
       },
       orderBy: { date: 'asc' },
       include: matchInclude(userId),

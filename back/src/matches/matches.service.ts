@@ -128,12 +128,18 @@ export class MatchesService {
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
-    const [organizing, playing, played, requested] = await Promise.all([
-      this.matchesRepository.findOrganizedBy(user.id),
-      this.matchesRepository.findJoinedBy(user.id),
-      this.matchesRepository.findPlayedBy(user.id),
-      this.matchesRepository.findRequestedBy(user.id),
-    ]);
+    const [organizing, playing, played, requested, invited] = await Promise.all(
+      [
+        this.matchesRepository.findOrganizedBy(user.id),
+        this.matchesRepository.findJoinedBy(user.id),
+        this.matchesRepository.findPlayedBy(user.id),
+        this.matchesRepository.findWithPendingJoinRequest(user.id, 'REQUEST'),
+        this.matchesRepository.findWithPendingJoinRequest(
+          user.id,
+          'INVITATION',
+        ),
+      ],
+    );
 
     return {
       organizing: organizing.map((match) =>
@@ -142,6 +148,7 @@ export class MatchesService {
       playing: playing.map((match) => this.toListResponse(match, user.id)),
       played: played.map((match) => this.toListResponse(match, user.id)),
       requested: requested.map((match) => this.toListResponse(match, user.id)),
+      invited: invited.map((match) => this.toListResponse(match, user.id)),
     };
   }
 
@@ -351,6 +358,7 @@ export class MatchesService {
       joinedCount: playerCount(_count.participants),
       isJoined,
       myJoinRequest: joinRequests[0]?.status ?? null,
+      myJoinRequestOrigin: joinRequests[0]?.origin ?? null,
       pendingRequests: rest.organizerId === userId ? _count.joinRequests : null,
       ratingPending: this.toRatingPending({
         date: rest.date,
@@ -377,6 +385,7 @@ export class MatchesService {
       joinedCount: playerCount(_count.participants),
       isJoined,
       myJoinRequest: joinRequests[0]?.status ?? null,
+      myJoinRequestOrigin: joinRequests[0]?.origin ?? null,
       pendingRequests: rest.organizerId === userId ? _count.joinRequests : null,
       ratingPending: this.toRatingPending({
         date: rest.date,
