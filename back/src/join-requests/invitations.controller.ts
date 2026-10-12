@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
+import { RespondInvitationDto } from './dto/respond-invitation.dto';
 import { InvitationsService } from './invitations.service';
 
 @UseGuards(FirebaseAuthGuard)
@@ -29,5 +38,18 @@ export class InvitationsController {
     @Param('matchId') matchId: string,
   ) {
     return this.invitationsService.findByMatch(user.uid, matchId);
+  }
+
+  @Patch('me')
+  respond(
+    @CurrentUser() user: FirebaseUser,
+    @Param('matchId') matchId: string,
+    @Body() respondInvitationDto: RespondInvitationDto,
+  ) {
+    return this.invitationsService.respond(
+      user.uid,
+      matchId,
+      respondInvitationDto,
+    );
   }
 }
