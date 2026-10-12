@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
+import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
 import { ApiError } from '@/lib/api';
 import { cancelJoinRequest, joinRequestErrorMessage, leaveMatch, requestToJoin } from '@/lib/matches';
 import { suspensionMessage } from '@/lib/suspension';
@@ -38,7 +39,6 @@ type MatchActionsProps = {
   isOrganizer: boolean;
   suspendedUntil: string | null;
   requestReady: boolean;
-  onDone: () => void;
 };
 
 type RunOptions = {
@@ -104,8 +104,8 @@ export function MatchActions({
   isOrganizer,
   suspendedUntil,
   requestReady,
-  onDone,
 }: MatchActionsProps) {
+  const invalidateMatches = useInvalidateMatches();
   const suspension = suspensionMessage(suspendedUntil);
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -142,7 +142,7 @@ export function MatchActions({
       await action();
       options.onSuccess?.();
       if (options.successMessage) setToast(options.successMessage);
-      onDone();
+      invalidateMatches();
     } catch (caught) {
       setError(toMessage(caught));
     } finally {

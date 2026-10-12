@@ -19,6 +19,7 @@ import { SPORT_ICON } from "@/components/matches/sport-icon";
 import { OrganizerCard } from "@/components/matches/organizer-card";
 import { MatchActions } from "@/components/matches/match-actions";
 import { MatchPlayers } from "@/components/matches/match-players";
+import { InvitePlayersDialog } from "@/components/matches/invite-players-dialog";
 import { RatingSection } from "@/components/ratings/rating-section";
 import { LoadingScreen } from "@/components/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -86,7 +87,7 @@ export default function MatchDetailPage({
 }: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
   const router = useRouter();
-  const { match, loading, notFound, error, reload } = useMatch(id);
+  const { match, loading, notFound, error } = useMatch(id);
   const { user, loading: userLoading } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [now] = useState(() => Date.now());
@@ -127,6 +128,8 @@ export default function MatchDetailPage({
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const isOrganizer = user?.id === match.organizer.id;
   const played = new Date(match.date).getTime() <= now;
+  const canInvite = isOrganizer && !played && match.status === "ACTIVE"
+    && match.joinedCount < match.capacity;
 
   return (
     <main className={cn("lg:pb-10", played ? "pb-10" : "pb-44")}>
@@ -248,6 +251,8 @@ export default function MatchDetailPage({
               played={played}
             />
 
+            {canInvite && <InvitePlayersDialog match={match} />}
+
             {played ? (
               <div className="flex flex-col gap-4 rounded-md bg-glass p-4 shadow-bevel-lit">
                 <span className="flex items-center gap-3">
@@ -269,7 +274,6 @@ export default function MatchDetailPage({
                   isOrganizer={isOrganizer}
                   suspendedUntil={user?.stats.suspendedUntil ?? null}
                   requestReady={!!user}
-                  onDone={reload}
                 />
               </div>
             )}
@@ -284,7 +288,6 @@ export default function MatchDetailPage({
             isOrganizer={isOrganizer}
             suspendedUntil={user?.stats.suspendedUntil ?? null}
             requestReady={!!user}
-            onDone={reload}
           />
         </div>
       )}
