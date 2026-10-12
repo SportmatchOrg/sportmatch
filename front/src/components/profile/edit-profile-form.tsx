@@ -7,9 +7,12 @@ import { AuthField } from '@/components/auth/auth-field';
 import { PasswordField } from '@/components/auth/password-field';
 import { EditField, editFieldErrorId } from '@/components/profile/edit-field';
 import { EditProfileLayout } from '@/components/profile/edit-profile-layout';
+import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useAuth } from '@/context/auth-context';
+import { useSports } from '@/hooks/use-sports';
 import {
   MIN_PASSWORD_LENGTH,
   changePassword,
@@ -22,11 +25,23 @@ import {
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { updateProfile } from '@/lib/users';
 import { cn } from '@/lib/utils';
-import { CITY_MAX, CITY_MIN, NAME_MAX, NAME_MIN, type User } from '@/types/user';
+import { LEVELS, LEVEL_LABEL, SPORT_LABEL, type Level } from '@/types/match';
+import {
+  CITY_MAX,
+  CITY_MIN,
+  NAME_MAX,
+  NAME_MIN,
+  SPORTS_MAX,
+  type User,
+} from '@/types/user';
 
 const FORM_ID = 'edit-profile-form';
 
 const FIELD = 'lg:py-3';
+
+const CHIPS = 'flex flex-wrap gap-2';
+
+const GROUP_LABEL = 'flex items-center justify-between gap-3 px-1 text-overline text-ink-46 uppercase';
 
 const SAVED = 'Cambios guardados';
 const SAVE_ERROR = 'No pudimos guardar los cambios. Probá de nuevo.';
@@ -56,9 +71,12 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 export function EditProfileForm({ user }: { user: User }) {
   const { user: firebaseUser } = useAuth();
   const canChangePassword = hasPassword(firebaseUser);
+  const { sports, loading: sportsLoading, error: sportsError } = useSports();
 
   const [name, setName] = useState(user.name);
   const [city, setCity] = useState(user.city ?? '');
+  const [sportIds, setSportIds] = useState(() => user.sports.map((sport) => sport.id));
+  const [level, setLevel] = useState<Level | null>(user.level);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -77,6 +95,15 @@ export function EditProfileForm({ user }: { user: User }) {
   const trimmedCity = city.trim();
   const wantsPassword =
     canChangePassword && [currentPassword, newPassword, repeatPassword].some(Boolean);
+  const sportsFull = sportIds.length >= SPORTS_MAX;
+
+  function toggleSport(sportId: string) {
+    setSportIds((current) => {
+      if (current.includes(sportId)) return current.filter((id) => id !== sportId);
+
+      return current.length >= SPORTS_MAX ? current : [...current, sportId];
+    });
+  }
 
   function validate(): Errors {
     const found: Errors = {};
@@ -105,7 +132,12 @@ export function EditProfileForm({ user }: { user: User }) {
     }
 
     try {
-      await updateProfile(user.id, { name: trimmedName, city: trimmedCity || null });
+      await updateProfile(user.id, {
+        name: trimmedName,
+        city: trimmedCity || null,
+        level,
+        sportIds,
+      });
     } catch {
       return null;
     }
@@ -218,6 +250,60 @@ export function EditProfileForm({ user }: { user: User }) {
                 className={FIELD}
               />
             </EditField>
+
+            <div className="flex flex-col gap-2">
+              <p id="sports-label" className={GROUP_LABEL}>
+                Deportes
+                <span className="normal-case">
+                  {sportIds.length} de {SPORTS_MAX}
+                </span>
+              </p>
+
+              {sportsLoading && <p className="pl-1 text-caption text-ink-46">Cargando deportes…</p>}
+
+              {sportsError && (
+                <p role="alert" className="pl-1 text-caption text-danger">
+                  {sportsError}
+                </p>
+              )}
+
+              <div role="group" aria-labelledby="sports-label" className={CHIPS}>
+                {sports.map((sport) => {
+                  const selected = sportIds.includes(sport.id);
+
+                  return (
+                    <FilterChip
+                      key={sport.id}
+                      icon={SPORT_ICON[sport.name]}
+                      selected={selected}
+                      aria-disabled={saving || (sportsFull && !selected)}
+                      onClick={() => !saving && toggleSport(sport.id)}
+                    >
+                      {SPORT_LABEL[sport.name]}
+                    </FilterChip>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p id="level-label" className={GROUP_LABEL}>
+                Nivel
+              </p>
+
+              <div role="group" aria-labelledby="level-label" className={CHIPS}>
+                {LEVELS.map((option) => (
+                  <FilterChip
+                    key={option}
+                    selected={level === option}
+                    aria-disabled={saving}
+                    onClick={() => !saving && setLevel(level === option ? null : option)}
+                  >
+                    {LEVEL_LABEL[option]}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
