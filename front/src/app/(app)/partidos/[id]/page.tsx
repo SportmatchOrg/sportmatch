@@ -87,7 +87,7 @@ export default function MatchDetailPage({
 }: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
   const router = useRouter();
-  const { match, loading, notFound, error, reload } = useMatch(id);
+  const { match, loading, notFound, error } = useMatch(id);
   const { user, loading: userLoading } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [now] = useState(() => Date.now());
@@ -274,7 +274,6 @@ export default function MatchDetailPage({
                   isOrganizer={isOrganizer}
                   suspendedUntil={user?.stats.suspendedUntil ?? null}
                   requestReady={!!user}
-                  onDone={reload}
                 />
               </div>
             )}
@@ -289,7 +288,6 @@ export default function MatchDetailPage({
             isOrganizer={isOrganizer}
             suspendedUntil={user?.stats.suspendedUntil ?? null}
             requestReady={!!user}
-            onDone={reload}
           />
         </div>
       )}
