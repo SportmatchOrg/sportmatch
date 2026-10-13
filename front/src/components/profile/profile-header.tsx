@@ -3,8 +3,10 @@ import Image from 'next/image';
 
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
+import { ProfileSports } from '@/components/profile/profile-sports';
 import { SettingsLink } from '@/components/profile/settings-link';
 import { IMAGES } from '@/lib/images';
+import type { Level, Sport } from '@/types/match';
 
 const DETAIL =
   'flex items-center gap-1.5 text-callout font-normal leading-[21.75px] tracking-[-0.17px] text-white/46 lg:text-[16px] lg:leading-[23.2px]';
@@ -12,7 +14,14 @@ const DETAIL =
 const DETAIL_ICON = 'size-[14px] shrink-0 lg:size-4';
 
 type ProfileHeaderProps = {
-  user: { name: string; photoUrl: string | null; email?: string; city?: string | null };
+  user: {
+    name: string;
+    photoUrl: string | null;
+    email?: string;
+    city?: string | null;
+    level: Level | null;
+    sports: Sport[];
+  };
   isOwnProfile: boolean;
 };
 
@@ -39,7 +48,7 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
       <ProfileIdentityRow>
         <ProfileAvatar name={user.name} photoUrl={user.photoUrl} />
 
-        <div className="flex flex-col items-center gap-[2.5px] lg:flex-1 lg:items-start lg:pb-2">
+        <div className="flex flex-col items-center gap-[2.5px] lg:relative lg:flex-1 lg:items-start lg:pb-2">
           <h1 className="text-center text-[26.6px] font-bold leading-[32.48px] tracking-[-0.17px] text-white lg:text-left lg:text-[36.2px] lg:font-extrabold lg:leading-[44px] lg:tracking-[-1.33px]">
             {user.name}
           </h1>
@@ -61,6 +70,8 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
           <SettingsLink variant="labelled" className="hidden lg:flex lg:shrink-0" />
         )}
       </ProfileIdentityRow>
+
+      <ProfileSports sports={user.sports} level={user.level} />
     </header>
   );
 }
