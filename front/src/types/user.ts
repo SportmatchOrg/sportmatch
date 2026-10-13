@@ -1,3 +1,5 @@
+import type { Level, Sport } from '@/types/match';
+
 export type UserStats = {
   rating: number | null;
   ratingCount: number;
@@ -11,6 +13,8 @@ export type PublicProfile = {
   name: string;
   photoUrl: string | null;
   city: string | null;
+  level: Level | null;
+  sports: Sport[];
   stats: UserStats;
 };
 
@@ -21,15 +25,20 @@ export type User = {
   name: string;
   photoUrl: string | null;
   city: string | null;
+  level: Level | null;
+  sports: Sport[];
   stats: UserStats & { suspendedUntil: string | null };
 };
 
 export type ProfileUpdate = {
   name: string;
   city: string | null;
+  level: Level | null;
+  sportIds: string[];
 };
 
 export const NAME_MIN = 2;
 export const NAME_MAX = 60;
 export const CITY_MIN = 2;
 export const CITY_MAX = 80;
+export const SPORTS_MAX = 5;
