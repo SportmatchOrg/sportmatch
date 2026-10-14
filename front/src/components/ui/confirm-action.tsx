@@ -21,6 +21,7 @@ type ConfirmActionProps = {
   confirmLabel: string;
   pendingLabel: string;
   pending: boolean;
+  disabled?: boolean;
   variant?: 'solid' | 'ghost';
   trigger?: ReactElement;
   onConfirm: () => void;
@@ -33,6 +34,7 @@ export function ConfirmAction({
                                 confirmLabel,
                                 pendingLabel,
                                 pending,
+                                disabled = false,
                                 variant = 'solid',
                                 trigger,
                                 onConfirm,
@@ -48,14 +50,14 @@ export function ConfirmAction({
   return (
     <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal>
       {trigger ? (
-        <DialogTrigger render={trigger} />
+        <DialogTrigger render={trigger} {...(pending || disabled ? { disabled: true } : {})} />
       ) : (
         <DialogTrigger
           render={
             <PillButton
               variant={variant === 'ghost' ? 'dangerGhost' : 'danger'}
               size="md"
-              disabled={pending}
+              disabled={pending || disabled}
               className={cn('w-full', variant === 'ghost' && 'py-2')}
             />
           }
@@ -80,7 +82,7 @@ export function ConfirmAction({
           <PillButton
             variant="danger"
             size="md"
-            disabled={pending}
+            disabled={pending || disabled}
             onClick={onConfirm}
             className="flex-1"
           >

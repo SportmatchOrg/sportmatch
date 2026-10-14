@@ -14,7 +14,7 @@ type UseMyMatchesOptions = {
 
 const ERROR_MESSAGE = 'No pudimos cargar tus partidos. Probá de nuevo en un momento.';
 
-const NO_MATCHES: MyMatches = { organizing: [], playing: [], played: [], requested: [] };
+const NO_MATCHES: MyMatches = { organizing: [], playing: [], played: [], requested: [], invited: [] };
 
 export function useMyMatches({ pollIntervalMs }: UseMyMatchesOptions = {}) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
@@ -34,6 +34,7 @@ export function useMyMatches({ pollIntervalMs }: UseMyMatchesOptions = {}) {
     playing: matches.playing,
     played: matches.played,
     requested: matches.requested,
+    invited: matches.invited,
     loading: sessionLoading || isPending,
     error: isLoadingError ? ERROR_MESSAGE : null,
     reload,

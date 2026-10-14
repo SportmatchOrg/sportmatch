@@ -1,6 +1,9 @@
 import { ApiError, apiFetch } from '@/lib/api';
 import type { JoinRequest } from '@/lib/join-requests';
-import type { JoinRequestStatus } from '@/types/match';
+import { suspensionErrorMessage } from '@/lib/suspension';
+import type { JoinRequestStatus, Match } from '@/types/match';
+
+export type InvitationResponse = Exclude<JoinRequestStatus, 'PENDING'>;
 
 type InvitationRecord = Pick<JoinRequest, 'id' | 'status'> & {
   userId: string;
@@ -23,6 +26,37 @@ export async function invitePlayer(matchId: string, userId: string): Promise<Inv
     method: 'POST',
     body: JSON.stringify({ userId }),
   });
+}
+
+export function hasPendingInvitation(match: Match): boolean {
+  return !match.isJoined && match.myJoinRequest === 'PENDING'
+    && match.myJoinRequestOrigin === 'INVITATION';
+}
+
+export async function respondInvitation(matchId: string, status: InvitationResponse): Promise<void> {
+  await apiFetch(`/matches/${matchId}/invitations/me`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function invitationResponseErrorMessage(error: unknown): string {
+  const suspension = suspensionErrorMessage(error);
+  if (suspension) return suspension;
+  const fallback = 'No pudimos responder la invitación. Probá de nuevo.';
+  if (!(error instanceof ApiError)) return fallback;
+
+  if (error.status === 401) return 'Tu sesión expiró. Volvé a iniciar sesión.';
+  if (error.status === 403) return 'No podés responder esta invitación.';
+  if (error.status === 404) return 'El partido o la invitación ya no están disponibles.';
+  if (error.status !== 409) return fallback;
+
+  const message = error.message.toLowerCase();
+  if (message.includes('full')) return 'El partido ya está lleno';
+  if (message.includes('canceled')) return 'El partido está cancelado';
+  if (message.includes('started')) return 'El partido ya empezó';
+  if (message.includes('already joined')) return 'Ya estás anotado en este partido';
+  return 'La invitación ya no se puede responder. Actualizá el partido.';
 }
 
 export function invitationErrorMessage(error: unknown): string {
