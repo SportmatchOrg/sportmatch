@@ -79,6 +79,8 @@ export function matchPayload(
     level: 'INTERMEDIATE',
     date: futureDate().toISOString(),
     location: 'Cancha E2E',
+    latitude: -34.6037,
+    longitude: -58.3816,
     capacity: 10,
     ...overrides,
   };

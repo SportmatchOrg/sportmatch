@@ -22,7 +22,7 @@ export function useMatches(query?: MatchesQuery) {
   const [reloadToken, setReloadToken] = useState(0);
 
   const reload = useCallback(() => {
-    setState((current) => (current.error ? { ...current, loading: true, error: null } : current));
+    setState((current) => ({ ...current, loading: true, error: null }));
     setReloadToken((token) => token + 1);
   }, []);
 

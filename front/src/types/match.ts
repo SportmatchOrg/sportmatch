@@ -30,6 +30,7 @@ export type PublicUser = {
 };
 
 export type JoinRequestStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type JoinRequestOrigin = 'REQUEST' | 'INVITATION';
 
 export type MatchStatus = 'ACTIVE' | 'CANCELED';
 
@@ -63,6 +64,7 @@ export type Match = {
   joinedCount: number;
   isJoined: boolean;
   myJoinRequest: JoinRequestStatus | null;
+  myJoinRequestOrigin: JoinRequestOrigin | null;
   pendingRequests: number | null;
   ratingPending: boolean | null;
 };
@@ -72,6 +74,7 @@ export type MyMatches = {
   playing: Match[];
   played: Match[];
   requested: Match[];
+  invited: Match[];
 };
 
 export type MatchDetail = Match & {
@@ -81,6 +84,7 @@ export type MatchDetail = Match & {
 export type MatchesQuery = {
   from?: string;
   to?: string;
+  sportId?: string[];
   level?: Level[];
   lat?: number;
   lng?: number;

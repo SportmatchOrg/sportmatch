@@ -8,9 +8,11 @@ import { UserAvatar } from '@/components/user-avatar';
 import { IconButton } from '@/components/ui/icon-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
+import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
 import { useJoinRequests } from '@/hooks/use-join-requests';
 import { ApiError } from '@/lib/api';
 import { resolveJoinRequest, type JoinRequest } from '@/lib/join-requests';
+import { formatPlayers } from '@/lib/match-capacity';
 import { cn } from '@/lib/utils';
 
 const CONFLICT = 409;
@@ -22,7 +24,6 @@ type JoinRequestsPanelProps = {
   capacity: number;
   joinedCount: number;
   isOrganizer: boolean;
-  onResolved: () => void;
 };
 
 function PanelSkeleton() {
@@ -96,9 +97,9 @@ export function JoinRequestsPanel({
   capacity,
   joinedCount,
   isOrganizer,
-  onResolved,
 }: JoinRequestsPanelProps) {
-  const { joinRequests, loading, error, reload } = useJoinRequests(partidoId, isOrganizer);
+  const { joinRequests, loading, error } = useJoinRequests(partidoId, isOrganizer);
+  const invalidateMatches = useInvalidateMatches();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -124,16 +125,14 @@ export function JoinRequestsPanel({
 
     try {
       await resolveJoinRequest(partidoId, request.id, status);
-      reload();
-      onResolved();
     } catch (caught) {
       setToast(
         status === 'ACCEPTED' && caught instanceof ApiError && caught.status === CONFLICT
           ? FULL_MESSAGE
           : RESOLVE_FALLBACK
       );
-      reload();
     } finally {
+      invalidateMatches();
       setResolvingId(null);
     }
   }
@@ -163,7 +162,7 @@ export function JoinRequestsPanel({
           </span>
         </div>
         <p className="text-caption text-ink-46">
-          {joinedCount}/{capacity} jugadores confirmados
+          {formatPlayers(joinedCount, capacity)} jugadores confirmados
         </p>
       </header>
 

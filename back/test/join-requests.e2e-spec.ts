@@ -112,6 +112,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
         include: { _count: { select: { participants: true } } },
       });
       expect(match?._count.participants).toBe(1);
+      expect(match?.filledAt).not.toBeNull();
       resetAuthUser();
     });
 
@@ -144,7 +145,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
     });
 
     it('[AC-5] accepting when capacity is full -> 409, join request remains PENDING, no participant', async () => {
-      // Fill the capacity (2) by creating two participants
+      // Fill the capacity (2): the organizer plus one participant
       const user1 = await ctx.prisma.user.create({
         data: {
           firebaseUid: 'e2e-uid-user1',
@@ -152,21 +153,9 @@ describe('Join Requests (Organizer Endpoints)', () => {
           name: 'User1 E2E',
         },
       });
-      const user2 = await ctx.prisma.user.create({
-        data: {
-          firebaseUid: 'e2e-uid-user2',
-          email: 'user2@e2e.test',
-          name: 'User2 E2E',
-        },
+      await ctx.prisma.participant.create({
+        data: { matchId: matchId, userId: user1.id },
       });
-      // Have them join the match
-      await ctx.prisma.participant.createMany({
-        data: [
-          { matchId: matchId, userId: user1.id },
-          { matchId: matchId, userId: user2.id },
-        ],
-      });
-      // Now capacity is full (2 participants)
       const joinRequest = await ctx.prisma.joinRequest.findFirst({
         where: { matchId: matchId, userId: baseline.otherId },
       });
@@ -187,7 +176,7 @@ describe('Join Requests (Organizer Endpoints)', () => {
       const participantCount = await ctx.prisma.participant.count({
         where: { matchId: matchId },
       });
-      expect(participantCount).toBe(2); // still the two we added
+      expect(participantCount).toBe(1);
       resetAuthUser();
     });
 

@@ -3,16 +3,19 @@
 import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useCallback, useEffect, useRef } from 'react';
 
+import { DEFAULT_MAP_CENTER } from '@/lib/map-center';
+
 export type PlaceSuggestion = { id: string; title: string; subtitle: string };
 export type Place = { label: string; latitude: number; longitude: number };
+export type SearchOrigin = { latitude: number; longitude: number };
 
-const DEFAULT_SEARCH_CENTER = { lat: -34.52, lng: -58.65 };
 const SEARCH_RADIUS_METERS = 50_000;
 export const MIN_PLACE_SEARCH_LENGTH = 3;
 const MAX_SUGGESTIONS = 5;
 const SEARCH_DELAY = 300;
 
-export function useGeocoding(): {
+// `origin` is where the player is: suggestions near it come first. Without it, the default center is used.
+export function useGeocoding(origin?: SearchOrigin | null): {
   ready: boolean;
   searchPlaces(query: string): Promise<PlaceSuggestion[]>;
   getPlace(suggestion: PlaceSuggestion): Promise<Place>;
@@ -23,6 +26,13 @@ export function useGeocoding(): {
   const sessionToken = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const predictions = useRef(new Map<string, google.maps.places.PlacePrediction>());
   const searchRevision = useRef(0);
+  const searchCenter = useRef(DEFAULT_MAP_CENTER);
+
+  useEffect(() => {
+    searchCenter.current = origin
+      ? { lat: origin.latitude, lng: origin.longitude }
+      : DEFAULT_MAP_CENTER;
+  }, [origin]);
 
   useEffect(() => () => {
     searchRevision.current += 1;
@@ -53,7 +63,7 @@ export function useGeocoding(): {
           input,
           includedRegionCodes: ['ar'],
           language: 'es',
-          locationBias: { center: DEFAULT_SEARCH_CENTER, radius: SEARCH_RADIUS_METERS },
+          locationBias: { center: searchCenter.current, radius: SEARCH_RADIUS_METERS },
           sessionToken: token,
         });
 

@@ -3,52 +3,21 @@
 import { ArrowRight, Check, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { ConfirmAction } from '@/components/ui/confirm-action';
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
-import { ApiError } from '@/lib/api';
-import { cancelJoinRequest, joinRequestErrorMessage, leaveMatch, requestToJoin } from '@/lib/matches';
+import { useMatchParticipation } from '@/hooks/use-match-participation';
+import { useRespondInvitation } from '@/hooks/use-respond-invitation';
+import { hasPendingInvitation } from '@/lib/invitations';
 import { suspensionMessage } from '@/lib/suspension';
-import type { JoinRequestStatus, MatchDetail } from '@/types/match';
-
-const NOT_FOUND = 404;
-
-const LEAVE_FALLBACK = 'No pudimos darte de baja. Probá de nuevo.';
-const NOT_JOINED_MESSAGE = 'Ya no estabas anotado en este partido';
-const CANCEL_REQUEST_FALLBACK = 'No pudimos cancelar tu solicitud. Probá de nuevo.';
-const REQUEST_NOT_FOUND_MESSAGE = 'Ya no tenías una solicitud pendiente';
-
-function leaveErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.status === NOT_FOUND) {
-    return NOT_JOINED_MESSAGE;
-  }
-
-  return LEAVE_FALLBACK;
-}
-
-function cancelRequestErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.status === NOT_FOUND) {
-    return REQUEST_NOT_FOUND_MESSAGE;
-  }
-
-  return CANCEL_REQUEST_FALLBACK;
-}
+import type { Match } from '@/types/match';
 
 type MatchActionsProps = {
-  match: MatchDetail;
+  match: Match;
   isOrganizer: boolean;
   suspendedUntil: string | null;
   requestReady: boolean;
-  onDone: () => void;
-};
-
-type RunOptions = {
-  onSuccess?: () => void;
-  successMessage?: string;
-};
-
-type OptimisticRequestStatus = {
-  from: JoinRequestStatus | null;
-  to: JoinRequestStatus | null;
+  disabled?: boolean;
 };
 
 type ConfirmationBlockProps = {
@@ -104,21 +73,18 @@ export function MatchActions({
   isOrganizer,
   suspendedUntil,
   requestReady,
-  onDone,
+  disabled = false,
 }: MatchActionsProps) {
+  const participation = useMatchParticipation(match);
+  const invitation = useRespondInvitation(match.id);
   const suspension = suspensionMessage(suspendedUntil);
-  const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [optimisticRequestStatus, setOptimisticRequestStatus] =
-    useState<OptimisticRequestStatus | null>(null);
 
   const lleno = match.joinedCount >= match.capacity;
-  const requestStatus =
-    optimisticRequestStatus?.from === match.myJoinRequest
-      ? optimisticRequestStatus.to
-      : match.myJoinRequest;
+  const busy = disabled || participation.pending || invitation.pending;
+  const responseError = participation.error ?? invitation.error;
+  const requestStatus = participation.requestStatus;
 
   useEffect(() => {
     if (!toast) return;
@@ -127,29 +93,6 @@ export function MatchActions({
 
     return () => clearTimeout(timer);
   }, [toast]);
-
-  async function run(
-    action: () => Promise<void>,
-    toMessage: (error: unknown) => string,
-    options: RunOptions = {}
-  ) {
-    if (submitting) return;
-
-    setSubmitting(true);
-    setError(null);
-
-    try {
-      await action();
-      options.onSuccess?.();
-      if (options.successMessage) setToast(options.successMessage);
-      onDone();
-    } catch (caught) {
-      setError(toMessage(caught));
-    } finally {
-      setSubmitting(false);
-      setConfirming(false);
-    }
-  }
 
   if (isOrganizer) {
     return (
@@ -167,9 +110,9 @@ export function MatchActions({
         </div>
       )}
 
-      {error && (
+      {responseError && (
         <p role="alert" className="text-center text-caption text-danger">
-          {error}
+          {responseError}
         </p>
       )}
 
@@ -179,14 +122,14 @@ export function MatchActions({
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success text-midnight">
               <Check className="size-4" aria-hidden="true" />
             </span>
-            Estás adentro
+            Estás dentro
           </p>
 
           {!confirming ? (
             <PillButton
               variant="danger"
               size="lg"
-              disabled={submitting}
+              disabled={busy || !participation.canParticipate}
               onClick={() => setConfirming(true)}
               className="w-full"
             >
@@ -198,10 +141,75 @@ export function MatchActions({
               cancelLabel="Mejor no"
               confirmLabel="Salirme"
               pendingLabel="Saliendo…"
-              pending={submitting}
+              pending={busy}
               onCancel={() => setConfirming(false)}
-              onConfirm={() => void run(() => leaveMatch(match.id), leaveErrorMessage)}
+              onConfirm={() => {
+                invitation.reset();
+                void participation.leave().then(() => setConfirming(false));
+              }}
             />
+          )}
+        </>
+      ) : hasPendingInvitation(match) ? (
+        <>
+          <p className="flex items-center gap-3 rounded-full bg-glass px-4 py-3 text-callout font-bold text-white shadow-bevel-lit">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warning-tint text-warning">
+              <Clock className="size-4" aria-hidden="true" />
+            </span>
+            Te invitaron
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <PillButton
+              variant="brand"
+              size="lg"
+              disabled={busy || !invitation.canRespond || !requestReady || !!suspension
+                || lleno || match.status === 'CANCELED'}
+              onClick={() => {
+                participation.reset();
+                void invitation.respond('ACCEPTED');
+              }}
+              className="flex-1"
+            >
+              {invitation.pending ? 'Respondiendo…' : 'Aceptar'}
+            </PillButton>
+
+            <ConfirmAction
+              label="Rechazar invitación"
+              message="No te sumarás a este partido. Podés pedir sumarte más adelante."
+              cancelLabel="Mejor no"
+              confirmLabel="Rechazar"
+              pendingLabel="Rechazando…"
+              pending={invitation.pending}
+              disabled={busy}
+              trigger={
+                <PillButton
+                  variant="glass"
+                  size="lg"
+                  disabled={busy || !invitation.canRespond || match.status === 'CANCELED'}
+                  className="flex-1"
+                >
+                  Rechazar
+                </PillButton>
+              }
+              onConfirm={() => {
+                participation.reset();
+                void invitation.respond('REJECTED');
+              }}
+            />
+          </div>
+
+          {lleno && !responseError && (
+            <p className="text-center text-caption text-danger">El partido ya está lleno</p>
+          )}
+          {match.status === 'CANCELED' && !responseError && (
+            <p className="text-center text-caption text-danger">El partido está cancelado</p>
+          )}
+          {suspension && <p className="text-center text-caption text-danger">{suspension}</p>}
+          {!requestReady && (
+            <p className="text-center text-caption text-ink-46">
+              No pudimos comprobar tu perfil. Volvé a cargar la página.
+            </p>
           )}
         </>
       ) : requestStatus === 'PENDING' ? (
@@ -217,7 +225,7 @@ export function MatchActions({
             <PillButton
               variant="dangerGhost"
               size="md"
-              disabled={submitting}
+              disabled={busy || !participation.canParticipate}
               onClick={() => setConfirming(true)}
               className="w-full"
             >
@@ -229,21 +237,21 @@ export function MatchActions({
               cancelLabel="Mejor no"
               confirmLabel="Cancelar"
               pendingLabel="Cancelando…"
-              pending={submitting}
+              pending={busy}
               onCancel={() => setConfirming(false)}
-              onConfirm={() =>
-                void run(() => cancelJoinRequest(match.id), cancelRequestErrorMessage, {
-                  onSuccess: () =>
-                    setOptimisticRequestStatus({ from: 'PENDING', to: null }),
-                  successMessage: 'Solicitud cancelada',
-                })
-              }
+              onConfirm={() => {
+                invitation.reset();
+                void participation.cancelRequest().then((success) => {
+                  if (success) setToast('Solicitud cancelada');
+                  setConfirming(false);
+                });
+              }}
             />
           )}
         </>
       ) : (
         <>
-          {requestStatus === 'REJECTED' && (
+          {requestStatus === 'REJECTED' && match.myJoinRequestOrigin === 'REQUEST' && (
             <p className="text-center text-caption text-ink-46">
               El organizador rechazó tu solicitud. Podés volver a pedirlo.
             </p>
@@ -252,17 +260,16 @@ export function MatchActions({
           <PillButton
             variant="brand"
             size="lg"
-            disabled={lleno || submitting || !requestReady || !!suspension}
-            onClick={() =>
-              void run(() => requestToJoin(match.id), joinRequestErrorMessage, {
-                onSuccess: () =>
-                  setOptimisticRequestStatus({ from: requestStatus, to: 'PENDING' }),
-              })
-            }
+            disabled={lleno || busy || !participation.canParticipate || !requestReady
+              || !!suspension || match.status === 'CANCELED'}
+            onClick={() => {
+              invitation.reset();
+              void participation.requestJoin();
+            }}
             className="w-full"
           >
-            {submitting ? 'Enviando…' : 'Pedir sumarme'}
-            {!submitting && <ArrowRight className="size-[18px]" aria-hidden="true" />}
+            {participation.pending ? 'Enviando…' : 'Pedir sumarme'}
+            {!participation.pending && <ArrowRight className="size-[18px]" aria-hidden="true" />}
           </PillButton>
 
           {suspension && <p className="text-center text-caption text-danger">{suspension}</p>}
@@ -276,6 +283,9 @@ export function MatchActions({
             <p className="text-center text-caption text-ink-46">
               No quedan lugares en este partido
             </p>
+          )}
+          {match.status === 'CANCELED' && (
+            <p className="text-center text-caption text-ink-46">El partido está cancelado</p>
           )}
         </>
       )}

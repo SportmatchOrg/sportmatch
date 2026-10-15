@@ -1,4 +1,7 @@
-import type { JoinRequestStatus } from '../generated/prisma/client';
+import type {
+  JoinRequestOrigin,
+  JoinRequestStatus,
+} from '../generated/prisma/client';
 import type { PublicUser } from '../users/types';
 
 export type ListedMatch = {
@@ -6,7 +9,7 @@ export type ListedMatch = {
   date: Date;
   _count: { participants: number; joinRequests: number };
   participants: { id: string }[];
-  joinRequests: { status: JoinRequestStatus }[];
+  joinRequests: { status: JoinRequestStatus; origin: JoinRequestOrigin }[];
   ratings: { id: string }[];
   noShowReports: { id: string }[];
 };
@@ -16,7 +19,7 @@ export type DetailedMatch = {
   date: Date;
   _count: { participants: number; joinRequests: number };
   participants: { user: PublicUser; createdAt: Date }[];
-  joinRequests: { status: JoinRequestStatus }[];
+  joinRequests: { status: JoinRequestStatus; origin: JoinRequestOrigin }[];
   ratings: { id: string }[];
   noShowReports: { id: string }[];
 };

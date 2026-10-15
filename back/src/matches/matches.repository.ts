@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '../generated/prisma/client';
+import type { JoinRequestOrigin, Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { isFull, playerCount } from '../utils/matches/player-count';
 import { CreateMatchDto } from './dto/create-match.dto';
 import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -16,7 +17,7 @@ const PUBLIC_SPORT = {
 const PARTICIPANT_COUNT = {
   select: {
     participants: true,
-    joinRequests: { where: { status: 'PENDING' } },
+    joinRequests: { where: { status: 'PENDING', origin: 'REQUEST' } },
   },
 } as const;
 
@@ -36,7 +37,7 @@ const matchInclude = (userId: string) =>
     participants: { where: { userId }, select: { id: true } },
     joinRequests: {
       where: { userId },
-      select: { status: true },
+      select: { status: true, origin: true },
     },
     ratings: { where: { raterId: userId }, select: { id: true }, take: 1 },
     noShowReports: {
@@ -89,6 +90,25 @@ export class MatchesRepository {
     });
   }
 
+  findPublicById(id: string) {
+    return this.prisma.match.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        date: true,
+        location: true,
+        latitude: true,
+        longitude: true,
+        level: true,
+        capacity: true,
+        status: true,
+        sport: PUBLIC_SPORT,
+        organizer: { select: { name: true, photoUrl: true } },
+        _count: { select: { participants: true } },
+      },
+    });
+  }
+
   findDetailById(id: string, userId: string) {
     return this.prisma.match.findUnique({
       where: { id },
@@ -118,12 +138,12 @@ export class MatchesRepository {
     });
   }
 
-  findRequestedBy(userId: string) {
+  findWithPendingJoinRequest(userId: string, origin: JoinRequestOrigin) {
     return this.prisma.match.findMany({
       where: {
         date: { gte: new Date() },
         status: 'ACTIVE',
-        joinRequests: { some: { userId, status: 'PENDING' } },
+        joinRequests: { some: { userId, status: 'PENDING', origin } },
       },
       orderBy: { date: 'asc' },
       include: matchInclude(userId),
@@ -175,7 +195,7 @@ export class MatchesRepository {
         where: { matchId: id },
       });
 
-      if (capacity < participants) {
+      if (capacity < playerCount(participants)) {
         return { match: null, participants };
       }
 
@@ -184,7 +204,8 @@ export class MatchesRepository {
         select: { filledAt: true },
       });
 
-      const fillsMatch = capacity === participants && current.filledAt === null;
+      const fillsMatch =
+        isFull(participants, capacity) && current.filledAt === null;
 
       const match = await tx.match.update({
         where: { id },

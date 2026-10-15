@@ -11,6 +11,7 @@ import { SpotsBadge } from '@/components/matches/spots-badge';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { cn } from '@/lib/utils';
+import { hasPendingInvitation } from '@/lib/invitations';
 import { SPORT_LABEL, type Match } from '@/types/match';
 
 export type MatchCardRole = 'host' | 'player';
@@ -47,7 +48,9 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
   const sport = SPORT_LABEL[match.sport.name];
   const canceled = match.status === 'CANCELED';
   const pendingRequest = !canceled && role === 'player' && match.myJoinRequest === 'PENDING';
-  const roleLabel = canceled ? 'Cancelado' : pendingRequest ? 'Pendiente' : ROLE_LABEL[role];
+  const roleLabel = canceled ? 'Cancelado' : pendingRequest
+    ? hasPendingInvitation(match) ? 'Te invitaron' : 'Pendiente'
+    : ROLE_LABEL[role];
   const roleChip = canceled
     ? CANCELED_CHIP
     : pendingRequest

@@ -4,10 +4,11 @@ import { UsersModule } from '../users/users.module';
 import { MatchesController } from './matches.controller';
 import { MatchesRepository } from './matches.repository';
 import { MatchesService } from './matches.service';
+import { PublicMatchesController } from './public-matches.controller';
 
 @Module({
   imports: [UsersModule, NotificationsModule],
-  controllers: [MatchesController],
+  controllers: [MatchesController, PublicMatchesController],
   providers: [MatchesService, MatchesRepository],
 })
 export class MatchesModule {}

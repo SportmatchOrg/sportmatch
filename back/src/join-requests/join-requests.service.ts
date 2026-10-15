@@ -8,6 +8,7 @@ import {
 import type { MatchStatus } from '../generated/prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { isFull } from '../utils/matches/player-count';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
@@ -46,7 +47,7 @@ export class JoinRequestsService {
       throw new ConflictException('You already joined this match');
     }
 
-    if (match._count.participants >= match.capacity) {
+    if (isFull(match._count.participants, match.capacity)) {
       throw new ConflictException('The match is full');
     }
 
@@ -54,13 +55,20 @@ export class JoinRequestsService {
       await this.joinRequestsRepository.findByMatchAndUser(matchId, user.id);
 
     if (existingRequest?.status === 'PENDING') {
-      throw new ConflictException('You already requested to join this match');
+      throw new ConflictException(
+        existingRequest.origin === 'INVITATION'
+          ? 'You already have a pending invitation to this match'
+          : 'You already requested to join this match',
+      );
     }
 
     const joinRequest = await (
       existingRequest
-        ? this.joinRequestsRepository.resetToPending(existingRequest.id)
-        : this.joinRequestsRepository.create(matchId, user.id)
+        ? this.joinRequestsRepository.resetToPending(
+            existingRequest.id,
+            'REQUEST',
+          )
+        : this.joinRequestsRepository.create(matchId, user.id, 'REQUEST')
     ).catch((error: unknown) => {
       throw toPrismaHttpException(error, {
         P2002: 'You already requested to join this match',
@@ -79,7 +87,7 @@ export class JoinRequestsService {
 
   async cancel(firebaseUid: string, matchId: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const result = await this.joinRequestsRepository.deletePending(
+    const result = await this.joinRequestsRepository.deletePendingRequest(
       matchId,
       user.id,
     );
@@ -92,7 +100,7 @@ export class JoinRequestsService {
   async findByMatch(firebaseUid: string, matchId: string) {
     await this.getOrganizerMatch(firebaseUid, matchId);
 
-    return this.joinRequestsRepository.findByMatch(matchId);
+    return this.joinRequestsRepository.findByMatch(matchId, 'REQUEST');
   }
 
   async update(
@@ -109,10 +117,8 @@ export class JoinRequestsService {
       throw new BadRequestException('A join request cannot return to pending');
     }
 
-    const joinRequest = await this.joinRequestsRepository.findByIdAndMatch(
-      id,
-      matchId,
-    );
+    const joinRequest =
+      await this.joinRequestsRepository.findRequestByIdAndMatch(id, matchId);
 
     if (!joinRequest) {
       throw new NotFoundException(`Join request with id ${id} was not found`);
@@ -138,7 +144,7 @@ export class JoinRequestsService {
         return rejectedRequest;
       }
 
-      if (match._count.participants >= match.capacity) {
+      if (isFull(match._count.participants, match.capacity)) {
         throw new ConflictException('The match is full');
       }
 

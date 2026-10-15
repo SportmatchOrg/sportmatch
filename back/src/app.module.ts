@@ -14,6 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PushSubscriptionsModule } from './push-subscriptions/push-subscriptions.module';
 import { HealthModule } from './health/health.module';
 import { KpisModule } from './kpis/kpis.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { KpisModule } from './kpis/kpis.module';
     PushSubscriptionsModule,
     HealthModule,
     KpisModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

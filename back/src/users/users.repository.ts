@@ -3,7 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
-import type { NoShowReportsFilter } from './types';
+import type { Prisma } from '../generated/prisma/client';
+import type { NoShowReportsFilter, SportSummary } from './types';
 
 const PUBLIC_USER = {
   id: true,
@@ -11,10 +12,27 @@ const PUBLIC_USER = {
   photoUrl: true,
 } as const;
 
+const USER_SPORTS = {
+  sports: {
+    select: { sport: { select: { id: true, name: true } } },
+    orderBy: { sport: { name: 'asc' } },
+  },
+} as const;
+
 const USER_PROFILE = {
   ...PUBLIC_USER,
   city: true,
+  level: true,
+  ...USER_SPORTS,
 } as const;
+
+const withSportList = <T extends { sports: { sport: SportSummary }[] }>({
+  sports,
+  ...user
+}: T) => ({
+  ...user,
+  sports: sports.map(({ sport }) => sport),
+});
 
 const SEARCH_LIMIT = 10;
 
@@ -38,11 +56,22 @@ export class UsersRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.user.findUnique({
+  async findById(id: string) {
+    const user = await this.prisma.user.findUnique({
       where: { id },
       select: USER_PROFILE,
     });
+
+    return user && withSportList(user);
+  }
+
+  async findExistingSportIds(sportIds: string[]) {
+    const sports = await this.prisma.sport.findMany({
+      where: { id: { in: sportIds } },
+      select: { id: true },
+    });
+
+    return sports.map(({ id }) => id);
   }
 
   findByFirebaseUid(firebaseUid: string) {
@@ -130,8 +159,8 @@ export class UsersRepository {
     });
   }
 
-  upsertByFirebaseUid(user: FirebaseUser) {
-    return this.prisma.user.upsert({
+  async upsertByFirebaseUid(user: FirebaseUser) {
+    const saved = await this.prisma.user.upsert({
       where: { firebaseUid: user.uid },
       update: { email: user.email },
       create: {
@@ -140,14 +169,44 @@ export class UsersRepository {
         name: user.name,
         photoUrl: user.photoUrl,
       },
+      include: USER_SPORTS,
     });
+
+    return withSportList(saved);
   }
 
-  update(id: string, data: UpdateUserDto) {
-    return this.prisma.user.update({ where: { id }, data });
+  update(id: string, { sportIds, ...data }: UpdateUserDto) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id }, data });
+
+      if (sportIds) {
+        await this.replaceSports(tx, id, sportIds);
+      }
+
+      return withSportList(
+        await tx.user.findUniqueOrThrow({
+          where: { id },
+          include: USER_SPORTS,
+        }),
+      );
+    });
   }
 
   remove(id: string) {
     return this.prisma.user.delete({ where: { id } });
+  }
+
+  private async replaceSports(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    sportIds: string[],
+  ) {
+    await tx.userSport.deleteMany({
+      where: { userId, sportId: { notIn: sportIds } },
+    });
+    await tx.userSport.createMany({
+      data: sportIds.map((sportId) => ({ userId, sportId })),
+      skipDuplicates: true,
+    });
   }
 }

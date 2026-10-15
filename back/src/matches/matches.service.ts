@@ -11,6 +11,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { distanceKm } from '../utils/geo/distance-km';
 import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
+import { isFull, playerCount } from '../utils/matches/player-count';
 import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { CancelMatchDto } from './dto/cancel-match.dto';
@@ -54,7 +55,7 @@ export class MatchesService {
     const { lat, lng, radiusKm } = query;
 
     const available = matches
-      .filter((match) => match._count.participants < match.capacity)
+      .filter((match) => !isFull(match._count.participants, match.capacity))
       .filter(
         (match) =>
           lat === undefined ||
@@ -112,15 +113,33 @@ export class MatchesService {
     return this.toDetailResponse(match, user.id);
   }
 
+  async findPublic(id: string) {
+    const match = await this.matchesRepository.findPublicById(id);
+
+    if (!match) {
+      throw new NotFoundException(`Match with id ${id} was not found`);
+    }
+
+    const { _count, ...publicMatch } = match;
+
+    return { ...publicMatch, joinedCount: _count.participants };
+  }
+
   async findMine(firebaseUid: string) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
 
-    const [organizing, playing, played, requested] = await Promise.all([
-      this.matchesRepository.findOrganizedBy(user.id),
-      this.matchesRepository.findJoinedBy(user.id),
-      this.matchesRepository.findPlayedBy(user.id),
-      this.matchesRepository.findRequestedBy(user.id),
-    ]);
+    const [organizing, playing, played, requested, invited] = await Promise.all(
+      [
+        this.matchesRepository.findOrganizedBy(user.id),
+        this.matchesRepository.findJoinedBy(user.id),
+        this.matchesRepository.findPlayedBy(user.id),
+        this.matchesRepository.findWithPendingJoinRequest(user.id, 'REQUEST'),
+        this.matchesRepository.findWithPendingJoinRequest(
+          user.id,
+          'INVITATION',
+        ),
+      ],
+    );
 
     return {
       organizing: organizing.map((match) =>
@@ -129,6 +148,7 @@ export class MatchesService {
       playing: playing.map((match) => this.toListResponse(match, user.id)),
       played: played.map((match) => this.toListResponse(match, user.id)),
       requested: requested.map((match) => this.toListResponse(match, user.id)),
+      invited: invited.map((match) => this.toListResponse(match, user.id)),
     };
   }
 
@@ -179,11 +199,13 @@ export class MatchesService {
       this.assertFutureDate(updateMatchDto.date);
     }
 
+    const players = playerCount(match._count.participants);
+
     if (
       updateMatchDto.capacity !== undefined &&
-      updateMatchDto.capacity < match._count.participants
+      updateMatchDto.capacity < players
     ) {
-      throw this.capacityBelowParticipants(match._count.participants);
+      throw this.capacityBelowPlayers(players);
     }
 
     const changed = this.getNotifiableChanges(match, updateMatchDto);
@@ -333,9 +355,10 @@ export class MatchesService {
 
     return {
       ...rest,
-      joinedCount: _count.participants,
+      joinedCount: playerCount(_count.participants),
       isJoined,
       myJoinRequest: joinRequests[0]?.status ?? null,
+      myJoinRequestOrigin: joinRequests[0]?.origin ?? null,
       pendingRequests: rest.organizerId === userId ? _count.joinRequests : null,
       ratingPending: this.toRatingPending({
         date: rest.date,
@@ -359,9 +382,10 @@ export class MatchesService {
 
     return {
       ...rest,
-      joinedCount: _count.participants,
+      joinedCount: playerCount(_count.participants),
       isJoined,
       myJoinRequest: joinRequests[0]?.status ?? null,
+      myJoinRequestOrigin: joinRequests[0]?.origin ?? null,
       pendingRequests: rest.organizerId === userId ? _count.joinRequests : null,
       ratingPending: this.toRatingPending({
         date: rest.date,
@@ -418,15 +442,15 @@ export class MatchesService {
       );
 
     if (!match) {
-      throw this.capacityBelowParticipants(participants);
+      throw this.capacityBelowPlayers(playerCount(participants));
     }
 
     return match;
   }
 
-  private capacityBelowParticipants(participants: number) {
+  private capacityBelowPlayers(players: number) {
     return new BadRequestException(
-      `capacity cannot be lower than the ${participants} participants already joined`,
+      `capacity cannot be lower than the ${players} players already in the match`,
     );
   }
 

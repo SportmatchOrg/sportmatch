@@ -19,12 +19,14 @@ import { SPORT_ICON } from "@/components/matches/sport-icon";
 import { OrganizerCard } from "@/components/matches/organizer-card";
 import { MatchActions } from "@/components/matches/match-actions";
 import { MatchPlayers } from "@/components/matches/match-players";
+import { InvitePlayersDialog } from "@/components/matches/invite-players-dialog";
 import { RatingSection } from "@/components/ratings/rating-section";
 import { LoadingScreen } from "@/components/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useMatch } from "@/hooks/use-match";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { sportPhotoUrl } from "@/lib/sport-photo";
+import { formatPlayers } from "@/lib/match-capacity";
 import { formatMatchDay, formatMatchTime } from "@/lib/match-date";
 import { cn } from "@/lib/utils";
 import {
@@ -85,7 +87,7 @@ export default function MatchDetailPage({
 }: PageProps<"/partidos/[id]">) {
   const { id } = use(params);
   const router = useRouter();
-  const { match, loading, notFound, error, reload } = useMatch(id);
+  const { match, loading, notFound, error } = useMatch(id);
   const { user, loading: userLoading } = useCurrentUser();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [now] = useState(() => Date.now());
@@ -126,6 +128,8 @@ export default function MatchDetailPage({
   const photo = sportPhotoUrl(match.sport.name, match.id);
   const isOrganizer = user?.id === match.organizer.id;
   const played = new Date(match.date).getTime() <= now;
+  const canInvite = isOrganizer && !played && match.status === "ACTIVE"
+    && match.joinedCount < match.capacity;
 
   return (
     <main className={cn("lg:pb-10", played ? "pb-10" : "pb-44")}>
@@ -213,8 +217,8 @@ export default function MatchDetailPage({
                 label="Jugadores"
                 value={
                   played
-                    ? playersLabel(match.joinedCount + 1)
-                    : `${match.joinedCount}/${match.capacity}`
+                    ? playersLabel(match.joinedCount)
+                    : formatPlayers(match.joinedCount, match.capacity)
                 }
               />
               <MetaTile
@@ -247,6 +251,8 @@ export default function MatchDetailPage({
               played={played}
             />
 
+            {canInvite && <InvitePlayersDialog match={match} />}
+
             {played ? (
               <div className="flex flex-col gap-4 rounded-md bg-glass p-4 shadow-bevel-lit">
                 <span className="flex items-center gap-3">
@@ -264,11 +270,11 @@ export default function MatchDetailPage({
             ) : (
               <div className="hidden lg:block">
                 <MatchActions
+                  key={match.id}
                   match={match}
                   isOrganizer={isOrganizer}
                   suspendedUntil={user?.stats.suspendedUntil ?? null}
                   requestReady={!!user}
-                  onDone={reload}
                 />
               </div>
             )}
@@ -279,11 +285,11 @@ export default function MatchDetailPage({
       {!played && (
         <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
           <MatchActions
+            key={match.id}
             match={match}
             isOrganizer={isOrganizer}
             suspendedUntil={user?.stats.suspendedUntil ?? null}
             requestReady={!!user}
-            onDone={reload}
           />
         </div>
       )}

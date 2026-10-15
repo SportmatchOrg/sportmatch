@@ -4,5 +4,10 @@ export type PublicUser = {
   photoUrl: string | null;
 };
 
+export type SportSummary = {
+  id: string;
+  name: string;
+};
+
 export type NoShowReportsFilter =
   { matchIds: string[] } | { reportedUserIds: string[] };
