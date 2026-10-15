@@ -11,6 +11,7 @@ import type {
 
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
+const NOT_FOUND = 404;
 const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
 
 export function joinRequestErrorMessage(error: unknown): string {
@@ -19,7 +20,10 @@ export function joinRequestErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return JOIN_REQUEST_FALLBACK;
 
   if (error.status === CONFLICT) {
-    return error.message.toLowerCase().includes('full')
+    const message = error.message.toLowerCase();
+    if (message.includes('canceled')) return 'El partido está cancelado';
+    if (message.includes('pending invitation')) return 'Tenés una invitación pendiente para este partido';
+    return message.includes('full')
       ? 'El partido se llenó'
       : 'Ya pediste sumarte';
   }
@@ -27,6 +31,24 @@ export function joinRequestErrorMessage(error: unknown): string {
   if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
 
   return JOIN_REQUEST_FALLBACK;
+}
+
+export function leaveErrorMessage(error: unknown): string {
+  return error instanceof ApiError && error.status === NOT_FOUND
+    ? 'Ya no estabas anotado en este partido'
+    : 'No pudimos darte de baja. Probá de nuevo.';
+}
+
+export function cancelRequestErrorMessage(error: unknown): string {
+  return error instanceof ApiError && error.status === NOT_FOUND
+    ? 'Ya no tenías una solicitud pendiente'
+    : 'No pudimos cancelar tu solicitud. Probá de nuevo.';
+}
+
+export function cancelMatchErrorMessage(error: unknown): string {
+  return error instanceof ApiError && error.status === CONFLICT
+    ? 'Este partido ya estaba cancelado.'
+    : 'No pudimos cancelar el partido. Probá de nuevo.';
 }
 
 function toSearchParams(query: MatchesQuery): URLSearchParams {

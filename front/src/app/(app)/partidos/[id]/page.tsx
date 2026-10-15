@@ -270,6 +270,7 @@ export default function MatchDetailPage({
             ) : (
               <div className="hidden lg:block">
                 <MatchActions
+                  key={match.id}
                   match={match}
                   isOrganizer={isOrganizer}
                   suspendedUntil={user?.stats.suspendedUntil ?? null}
@@ -284,6 +285,7 @@ export default function MatchDetailPage({
       {!played && (
         <div className="fixed inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-8 pb-28 lg:hidden">
           <MatchActions
+            key={match.id}
             match={match}
             isOrganizer={isOrganizer}
             suspendedUntil={user?.stats.suspendedUntil ?? null}

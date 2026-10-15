@@ -29,10 +29,11 @@ const PLACEHOLDER = 'Elegí una razón';
 
 type CancelMatchDialogProps = {
   pending: boolean;
+  disabled?: boolean;
   onConfirm: (reason: CancelReason) => Promise<void>;
 };
 
-export function CancelMatchDialog({ pending, onConfirm }: CancelMatchDialogProps) {
+export function CancelMatchDialog({ pending, disabled = false, onConfirm }: CancelMatchDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<CancelReason | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export function CancelMatchDialog({ pending, onConfirm }: CancelMatchDialogProps
   }
 
   async function handleConfirm() {
-    if (!reason) return;
+    if (!reason || pending || disabled) return;
 
     setError(null);
 
@@ -63,7 +64,7 @@ export function CancelMatchDialog({ pending, onConfirm }: CancelMatchDialogProps
     <Dialog open={open} onOpenChange={handleOpenChange} disablePointerDismissal>
       <DialogTrigger
         render={
-          <PillButton variant="dangerGhost" size="md" disabled={pending} className="w-full py-2" />
+          <PillButton variant="dangerGhost" size="md" disabled={pending || disabled} className="w-full py-2" />
         }
       >
         <X className="size-4" aria-hidden="true" />
@@ -84,7 +85,7 @@ export function CancelMatchDialog({ pending, onConfirm }: CancelMatchDialogProps
           <DropdownMenu>
             <DropdownMenuTrigger
               className={TRIGGER}
-              disabled={pending}
+              disabled={pending || disabled}
               aria-label={reason ? `Razón: ${reason}` : PLACEHOLDER}
             >
               <span className={reason ? 'truncate' : 'truncate text-ink-46'}>
@@ -123,7 +124,7 @@ export function CancelMatchDialog({ pending, onConfirm }: CancelMatchDialogProps
           <PillButton
             variant="danger"
             size="md"
-            disabled={pending || !reason}
+            disabled={pending || disabled || !reason}
             onClick={() => void handleConfirm()}
             className="flex-1"
           >

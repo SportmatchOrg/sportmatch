@@ -2,38 +2,26 @@
 
 import { CalendarDays, Compass, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { CancelMatchDialog } from '@/components/matches/cancel-match-dialog';
 import { JoinRequestsPanel } from '@/components/matches/join-requests-panel';
 import { MyMatchesSection } from '@/components/matches/my-matches-section';
+import { MatchActions } from '@/components/matches/match-actions';
 import { LoadingScreen } from '@/components/loading-screen';
 import { ConfirmAction } from '@/components/ui/confirm-action';
 import { EmptyState } from '@/components/ui/empty-state';
-import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
-import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
+import { TOAST_DURATION, Toast } from '@/components/ui/toast';
+import { useMyMatchesActions } from '@/hooks/use-my-matches-actions';
 import { useMyMatches } from '@/hooks/use-my-matches';
-import { ApiError } from '@/lib/api';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { NEW_MATCH_HREF } from '@/lib/nav-items';
-import { cancelJoinRequest, cancelMatch, leaveMatch } from '@/lib/matches';
-import { SPORT_LABEL, type CancelReason, type Match } from '@/types/match';
-
-const CANCEL_ERROR = 'No pudimos cancelar el partido. Probá de nuevo.';
-
-const ALREADY_CANCELED_ERROR = 'Este partido ya estaba cancelado.';
-
-const CONFLICT = 409;
-
-const LEAVE_ERROR = 'No pudimos darte de baja. Probá de nuevo.';
-
-const CANCEL_REQUEST_ERROR = 'No pudimos cancelar la solicitud. Probá de nuevo.';
+import { SPORT_LABEL, type Match } from '@/types/match';
 
 const POLL_INTERVAL_MS = 2_000;
 
 const EMPTY_ACTION =
   'flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-callout font-bold text-brand-ink shadow-glow transition hover:bg-brand-bright';
-
-type PageToast = { message: string; tone: ToastTone };
 
 function matchLabel(match: Match): string {
   return `${SPORT_LABEL[match.sport.name]} · ${match.location}`;
@@ -46,60 +34,22 @@ function canceledLast(matches: Match[]): Match[] {
 }
 
 export default function MyMatchesPage() {
-  const { organizing, playing, requested, loading, error } = useMyMatches({
+  const { organizing, playing, requested, invited, loading, error } = useMyMatches({
     pollIntervalMs: POLL_INTERVAL_MS,
   });
-  const invalidateMatches = useInvalidateMatches();
-
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<PageToast | null>(null);
+  const { user, loading: userLoading } = useCurrentUser();
+  const { pendingId, busy, toast, clearToast, leave, cancelRequest, cancelHostedMatch } =
+    useMyMatchesActions();
 
   useEffect(() => {
     if (!toast) return;
 
-    const timer = setTimeout(() => setToast(null), TOAST_DURATION);
+    const timer = setTimeout(clearToast, TOAST_DURATION);
 
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, clearToast]);
 
-  async function run(
-    match: Match,
-    action: (partidoId: string) => Promise<void>,
-    success: PageToast,
-    failure: string
-  ) {
-    if (pendingId) return;
-
-    setPendingId(match.id);
-
-    try {
-      await action(match.id);
-      setToast(success);
-      invalidateMatches();
-    } catch {
-      setToast({ message: failure, tone: 'danger' });
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  async function cancel(match: Match, reason: CancelReason) {
-    setPendingId(match.id);
-
-    try {
-      await cancelMatch(match.id, reason);
-      setToast({ message: `Partido cancelado · ${matchLabel(match)}`, tone: 'danger' });
-      invalidateMatches();
-    } catch (cause) {
-      const conflict = cause instanceof ApiError && cause.status === CONFLICT;
-
-      throw new Error(conflict ? ALREADY_CANCELED_ERROR : CANCEL_ERROR);
-    } finally {
-      setPendingId(null);
-    }
-  }
-
-  if (loading) {
+  if (loading || (invited.length > 0 && userLoading)) {
     return <LoadingScreen />;
   }
 
@@ -112,7 +62,8 @@ export default function MyMatchesPage() {
     );
   }
 
-  const sinPartidos = organizing.length === 0 && playing.length === 0 && requested.length === 0;
+  const sinPartidos = organizing.length === 0 && playing.length === 0
+    && requested.length === 0 && invited.length === 0;
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 px-5 py-8 lg:px-8">
@@ -123,6 +74,7 @@ export default function MyMatchesPage() {
         {!sinPartidos && (
           <p className="text-callout text-ink-46 lg:hidden">
             {organizing.length} organizando · {playing.length} anotado · {requested.length} esperando
+            {invited.length > 0 && ` · ${invited.length} invitaciones`}
           </p>
         )}
       </header>
@@ -143,6 +95,27 @@ export default function MyMatchesPage() {
         </div>
       ) : (
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
+          {invited.length > 0 && (
+            <div className="lg:col-span-2">
+              <MyMatchesSection
+                title="Invitaciones"
+                subtitle="Te invitaron a estos partidos"
+                matches={invited}
+                role="player"
+                empty={null}
+                renderAction={(match) => (
+                  <MatchActions
+                    match={match}
+                    isOrganizer={false}
+                    suspendedUntil={user?.stats.suspendedUntil ?? null}
+                    requestReady={!!user}
+                    disabled={busy}
+                  />
+                )}
+              />
+            </div>
+          )}
+
           <MyMatchesSection
             title="Organizás"
             subtitle="Aprobá quién se suma a los partidos que creaste"
@@ -180,7 +153,8 @@ export default function MyMatchesPage() {
 
                 <CancelMatchDialog
                   pending={pendingId === match.id}
-                  onConfirm={(reason) => cancel(match, reason)}
+                  disabled={busy}
+                  onConfirm={(reason) => cancelHostedMatch(match.id, reason, matchLabel(match))}
                 />
               </div>
             )}
@@ -212,14 +186,8 @@ export default function MyMatchesPage() {
                 confirmLabel="Salirme"
                 pendingLabel="Saliendo…"
                 pending={pendingId === match.id}
-                onConfirm={() =>
-                  void run(
-                    match,
-                    leaveMatch,
-                    { message: `Te bajaste · ${matchLabel(match)}`, tone: 'info' },
-                    LEAVE_ERROR
-                  )
-                }
+                disabled={busy}
+                onConfirm={() => void leave(match.id, matchLabel(match))}
               />
             )}
           />
@@ -240,17 +208,8 @@ export default function MyMatchesPage() {
                     confirmLabel="Cancelar solicitud"
                     pendingLabel="Cancelando…"
                     pending={pendingId === match.id}
-                    onConfirm={() =>
-                      void run(
-                        match,
-                        cancelJoinRequest,
-                        {
-                          message: `Cancelaste tu solicitud · ${matchLabel(match)}`,
-                          tone: 'info',
-                        },
-                        CANCEL_REQUEST_ERROR
-                      )
-                    }
+                    disabled={busy}
+                    onConfirm={() => void cancelRequest(match.id, matchLabel(match))}
                   />
                 )}
               />
