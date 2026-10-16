@@ -81,7 +81,7 @@ export class ReportsRepository {
   findById(id: string) {
     return this.prisma.report.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, reportedUserId: true },
     });
   }
 

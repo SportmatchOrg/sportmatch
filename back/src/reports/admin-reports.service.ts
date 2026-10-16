@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,24 +22,22 @@ export class AdminReportsService {
 
   async resolve(firebaseUid: string, id: string, { status }: ResolveReportDto) {
     const admin = await this.usersService.findByFirebaseUid(firebaseUid);
-    const resolved = await this.reportsRepository.resolveOpen(
-      id,
-      status,
-      admin.id,
-    );
+    const report = await this.reportsRepository.findById(id);
 
-    if (!resolved) {
-      await this.assertExists(id);
+    if (!report) {
+      throw new NotFoundException(`Report with id ${id} was not found`);
+    }
 
+    if (report.reportedUserId === admin.id) {
+      throw new ForbiddenException(
+        'You cannot resolve a report made against yourself',
+      );
+    }
+
+    if (!(await this.reportsRepository.resolveOpen(id, status, admin.id))) {
       throw new ConflictException('Only open reports can be resolved');
     }
 
     return this.reportsRepository.findWithDetailsById(id);
-  }
-
-  private async assertExists(id: string) {
-    if (!(await this.reportsRepository.findById(id))) {
-      throw new NotFoundException(`Report with id ${id} was not found`);
-    }
   }
 }
