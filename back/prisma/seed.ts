@@ -33,6 +33,10 @@ const SEED_GUIDE = [
     user: 'SEED_DEMO_EMAIL',
     scenario: 'Tiene los 8 tipos de notificación en /notificaciones',
   },
+  {
+    user: 'SEED_ADMIN_EMAIL',
+    scenario: 'Queda con role ADMIN y accede a los endpoints de moderación',
+  },
 ];
 
 const hoursBefore = (date: Date, hours: number): Date =>
@@ -40,6 +44,25 @@ const hoursBefore = (date: Date, hours: number): Date =>
 
 const hoursAfter = (date: Date, hours: number): Date =>
   hoursBefore(date, -hours);
+
+async function promoteSeedAdmin() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+
+  if (!adminEmail) {
+    return;
+  }
+
+  const { count } = await prisma.user.updateMany({
+    where: { email: adminEmail },
+    data: { role: 'ADMIN' },
+  });
+
+  if (count === 0) {
+    console.warn(
+      'SEED_ADMIN_EMAIL has no user yet: sign in once and run the seed again',
+    );
+  }
+}
 
 async function main() {
   const sports = await Promise.all(
@@ -77,6 +100,8 @@ async function main() {
     seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
     seedUser('seed-uid-6', 'tomas@sportmatch.dev', 'Tomás Herrera'),
   ]);
+
+  await promoteSeedAdmin();
 
   await prisma.match.deleteMany();
 
