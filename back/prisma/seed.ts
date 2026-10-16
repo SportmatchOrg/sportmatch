@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { promoteToAdmin } from './admin/promote-admin';
 import { hoursAgo } from '../src/utils/time/hours-ago';
 import { inDays } from '../src/utils/time/in-days';
 import { MS_PER_HOUR } from '../src/utils/time/milliseconds';
@@ -52,12 +53,7 @@ async function promoteSeedAdmin() {
     return;
   }
 
-  const { count } = await prisma.user.updateMany({
-    where: { email: adminEmail },
-    data: { role: 'ADMIN' },
-  });
-
-  if (count === 0) {
+  if (!(await promoteToAdmin(prisma, adminEmail))) {
     console.warn(
       'SEED_ADMIN_EMAIL has no user yet: sign in once and run the seed again',
     );
