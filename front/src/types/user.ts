@@ -21,6 +21,7 @@ export type PublicProfile = {
 export type User = {
   id: string;
   firebaseUid: string;
+  onboardedAt: string | null;
   email: string;
   name: string;
   photoUrl: string | null;
