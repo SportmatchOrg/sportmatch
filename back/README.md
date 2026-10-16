@@ -31,7 +31,18 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 
 | Variable | Required | What it is for |
 | --- | --- | --- |
+| `SEED_ADMIN_EMAIL` | No | Email of the user that `npm run db:seed` turns into `ADMIN`. The user must have signed in at least once. Local only: the seed deletes every match. |
 | `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
+
+## Administrators
+
+The `ADMIN` role cannot be granted through the API. To promote an existing user in any environment (including production) without running the seed:
+
+```bash
+$ npm run admin:promote -- <email>
+```
+
+It uses the `DATABASE_URL` of the environment and only updates that user's role. The user must have signed in at least once.
 
 ## Project setup
 

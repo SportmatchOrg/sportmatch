@@ -23,6 +23,7 @@
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
     "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "admin:promote": "tsx prisma/promote-admin.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

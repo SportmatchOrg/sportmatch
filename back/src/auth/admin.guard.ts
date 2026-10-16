@@ -1,0 +1,35 @@
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { UserRole } from '../generated/prisma/client';
+import { UsersService } from '../users/users.service';
+import type { AuthenticatedRequest } from './types';
+
+@Injectable()
+export class AdminGuard implements CanActivate {
+  constructor(private readonly usersService: UsersService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const { user: firebaseUser } = context
+      .switchToHttp()
+      .getRequest<Partial<AuthenticatedRequest>>();
+
+    if (!firebaseUser) {
+      throw new UnauthorizedException('Missing authenticated user');
+    }
+
+    const user = await this.usersService.findByFirebaseUid(firebaseUser.uid);
+
+    if (user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException(
+        'Only administrators can access this resource',
+      );
+    }
+
+    return true;
+  }
+}
