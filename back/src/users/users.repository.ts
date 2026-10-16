@@ -74,6 +74,15 @@ export class UsersRepository {
     return sports.map(({ id }) => id);
   }
 
+  async findSportIdsByUserId(userId: string) {
+    const sports = await this.prisma.userSport.findMany({
+      where: { userId },
+      select: { sportId: true },
+    });
+
+    return sports.map(({ sportId }) => sportId);
+  }
+
   findByFirebaseUid(firebaseUid: string) {
     return this.prisma.user.findUnique({ where: { firebaseUid } });
   }
