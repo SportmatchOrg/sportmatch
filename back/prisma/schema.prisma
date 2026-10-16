@@ -16,6 +16,13 @@ enum Level {
   @@map("level")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+
+  @@map("user_role")
+}
+
 enum MatchStatus {
   ACTIVE
   CANCELED
@@ -31,6 +38,7 @@ model User {
   photoUrl    String?
   city        String?
   level       Level?
+  role        UserRole @default(USER)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
