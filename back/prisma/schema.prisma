@@ -39,6 +39,7 @@ model User {
   city        String?
   level       Level?
   role        UserRole @default(USER)
+  onboardedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

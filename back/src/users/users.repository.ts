@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
@@ -182,6 +183,31 @@ export class UsersRepository {
     });
 
     return withSportList(saved);
+  }
+
+  completeOnboarding(
+    id: string,
+    { sportIds, level, city }: CompleteOnboardingDto,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.user.updateMany({
+        where: { id, onboardedAt: null },
+        data: { level, city, onboardedAt: new Date() },
+      });
+
+      if (count === 0) {
+        return null;
+      }
+
+      await this.replaceSports(tx, id, sportIds);
+
+      return withSportList(
+        await tx.user.findUniqueOrThrow({
+          where: { id },
+          include: USER_SPORTS,
+        }),
+      );
+    });
   }
 
   update(id: string, { sportIds, ...data }: UpdateUserDto) {

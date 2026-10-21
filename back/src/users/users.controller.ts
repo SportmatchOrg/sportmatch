@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -49,6 +50,15 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Patch(':id/onboarding')
+  @UseGuards(OwnAccountGuard)
+  completeOnboarding(
+    @Param('id') id: string,
+    @Body() completeOnboardingDto: CompleteOnboardingDto,
+  ) {
+    return this.usersService.completeOnboarding(id, completeOnboardingDto);
   }
 
   @Patch(':id')

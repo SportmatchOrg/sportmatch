@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
@@ -140,6 +142,23 @@ export class UsersService {
     };
   }
 
+  async completeOnboarding(id: string, dto: CompleteOnboardingDto) {
+    await this.assertSportsExist(dto.sportIds, NotFoundException);
+
+    try {
+      const user = await this.usersRepository.completeOnboarding(id, dto);
+
+      if (!user) {
+        await this.assertExists(id);
+        throw new ConflictException('Onboarding already completed');
+      }
+
+      return user;
+    } catch (error) {
+      throw this.toHttpException(error, id);
+    }
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
     if (updateUserDto.sportIds) {
       await this.assertSportsExist(updateUserDto.sportIds);
@@ -214,14 +233,17 @@ export class UsersService {
     );
   }
 
-  private async assertSportsExist(sportIds: string[]) {
+  private async assertSportsExist(
+    sportIds: string[],
+    MissingSportsException = BadRequestException,
+  ) {
     const existing = new Set(
       await this.usersRepository.findExistingSportIds(sportIds),
     );
     const missing = sportIds.filter((sportId) => !existing.has(sportId));
 
     if (missing.length > 0) {
-      throw new BadRequestException(
+      throw new MissingSportsException(
         `The following sports do not exist: ${missing.join(', ')}`,
       );
     }
