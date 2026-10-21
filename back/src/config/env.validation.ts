@@ -51,6 +51,10 @@ class EnvironmentVariables {
   SEED_DEMO_EMAIL?: string;
 
   @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsEmail()
+  SEED_ADMIN_EMAIL?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsString()
   KPI_API_KEY?: string;
 }
