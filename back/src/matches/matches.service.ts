@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Level, MatchStatus } from '../generated/prisma/client';
+import type { Level, MatchStatus, User } from '../generated/prisma/client';
 import type { CreateNotificationInput } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
@@ -24,6 +24,7 @@ import type { DetailedMatch, ListedMatch } from './types';
 const DEFAULT_RADIUS_KM = 5;
 
 type CompatibilityCandidate = {
+  sportId: string;
   level: Level;
   organizerId: string;
   date: Date;
@@ -66,28 +67,36 @@ export class MatchesService {
               (radiusKm ?? DEFAULT_RADIUS_KM)),
       );
 
-    const sorted = await this.sortByCompatibility(available, user.id);
+    const sorted = await this.sortByCompatibility(available, user);
 
     return sorted.map((match) => this.toListResponse(match, user.id));
   }
 
   private async sortByCompatibility<T extends CompatibilityCandidate>(
     matches: T[],
-    playerId: string,
+    player: Pick<User, 'id' | 'level'>,
   ): Promise<T[]> {
+    if (matches.length === 0) {
+      return [];
+    }
+
     const organizerIds = [
       ...new Set(matches.map(({ organizerId }) => organizerId)),
     ];
-    const [preferredLevel, scores] = await Promise.all([
-      this.findPreferredLevel(playerId),
+    const [preferredSportIds, preferredLevel, scores] = await Promise.all([
+      this.usersService.getSportIds(player.id),
+      this.findPreferredLevel(player),
       this.usersService.getScores(organizerIds),
     ]);
+    const preferredSports = new Set(preferredSportIds);
 
     const scoreOf = (organizerId: string): number =>
       scores.get(organizerId)?.rating ?? 0;
 
     return [...matches].sort(
       (a, b) =>
+        Number(preferredSports.has(b.sportId)) -
+          Number(preferredSports.has(a.sportId)) ||
         Number(b.level === preferredLevel) -
           Number(a.level === preferredLevel) ||
         scoreOf(b.organizerId) - scoreOf(a.organizerId) ||
@@ -95,9 +104,15 @@ export class MatchesService {
     );
   }
 
-  private async findPreferredLevel(playerId: string): Promise<Level | null> {
+  private async findPreferredLevel(
+    player: Pick<User, 'id' | 'level'>,
+  ): Promise<Level | null> {
+    if (player.level !== null) {
+      return player.level;
+    }
+
     const [mostPlayed] =
-      await this.matchesRepository.findPlayedLevelsByFrequency(playerId);
+      await this.matchesRepository.findPlayedLevelsByFrequency(player.id);
 
     return mostPlayed?.level ?? null;
   }

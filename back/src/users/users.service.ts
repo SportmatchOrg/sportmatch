@@ -83,6 +83,10 @@ export class UsersService {
     await this.getById(id);
   }
 
+  getSportIds(userId: string) {
+    return this.usersRepository.findSportIdsByUserId(userId);
+  }
+
   async findByFirebaseUid(firebaseUid: string) {
     const user = await this.usersRepository.findByFirebaseUid(firebaseUid);
 
