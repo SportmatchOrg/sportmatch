@@ -1,7 +1,7 @@
 'use client';
 
 import { signOut } from 'firebase/auth';
-import { LogOut, Pencil, Share2 } from 'lucide-react';
+import { LogOut, Pencil, Share2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -14,9 +14,10 @@ import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { UserAvatar } from '@/components/user-avatar';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { auth } from '@/lib/firebase';
-import { EDIT_PROFILE_HREF } from '@/lib/nav-items';
+import { ADMIN_REPORTS_HREF, EDIT_PROFILE_HREF } from '@/lib/nav-items';
 import { shareLink } from '@/lib/share';
 import { cn } from '@/lib/utils';
+import { isAdmin } from '@/types/user';
 
 const LOGIN_ROUTE = '/login';
 
@@ -123,6 +124,14 @@ export default function SettingsPage() {
             hint="Enviá tu link de SportMatch"
             onClick={() => void shareProfile(user.id, user.name)}
           />
+          {isAdmin(user) && (
+            <SettingsRowLink
+              href={ADMIN_REPORTS_HREF}
+              icon={ShieldCheck}
+              label="Moderación"
+              hint="Revisá los reportes de jugadores"
+            />
+          )}
         </div>
       </>
     );
