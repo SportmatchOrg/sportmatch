@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validateEnv } from './config/env.validation';
@@ -15,6 +16,7 @@ import { PushSubscriptionsModule } from './push-subscriptions/push-subscriptions
 import { HealthModule } from './health/health.module';
 import { KpisModule } from './kpis/kpis.module';
 import { ReportsModule } from './reports/reports.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     FirebaseModule,
     UsersModule,
@@ -34,6 +37,7 @@ import { ReportsModule } from './reports/reports.module';
     HealthModule,
     KpisModule,
     ReportsModule,
+    RemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
