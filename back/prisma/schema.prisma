@@ -103,6 +103,7 @@ model Match {
   cancelReason  String?
   canceledAt    DateTime?
   filledAt      DateTime?
+  reminderSentAt DateTime?
   organizerId   String
   organizer     User           @relation(fields: [organizerId], references: [id])
   createdAt     DateTime       @default(now())
@@ -246,6 +247,7 @@ enum NotificationType {
   INVITATION_RECEIVED
   INVITATION_ACCEPTED
   INVITATION_REJECTED
+  MATCH_REMINDER
 
   @@map("notification_type")
 }

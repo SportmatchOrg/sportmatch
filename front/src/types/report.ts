@@ -1,10 +1,33 @@
 import type { PublicUser, Sport } from '@/types/match';
 
+export type ReportReason = 'AGGRESSIVE_BEHAVIOR' | 'OFFENSIVE_LANGUAGE' | 'FAKE_PROFILE' | 'OTHER';
+
+export const REPORT_REASONS: ReportReason[] = [
+  'AGGRESSIVE_BEHAVIOR',
+  'OFFENSIVE_LANGUAGE',
+  'FAKE_PROFILE',
+  'OTHER',
+];
+
+export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
+  AGGRESSIVE_BEHAVIOR: 'Comportamiento agresivo',
+  OFFENSIVE_LANGUAGE: 'Lenguaje ofensivo',
+  FAKE_PROFILE: 'Perfil falso',
+  OTHER: 'Otro',
+};
+
+export const REPORT_COMMENT_MAX = 500;
+
+export type NewReport = {
+  reportedUserId: string;
+  reason: ReportReason;
+  comment?: string;
+  matchId?: string;
+};
+
 export type ReportStatus = 'OPEN' | 'REVIEWED' | 'DISMISSED';
 
 export type ReportResolution = Exclude<ReportStatus, 'OPEN'>;
-
-export type ReportReason = 'AGGRESSIVE_BEHAVIOR' | 'OFFENSIVE_LANGUAGE' | 'FAKE_PROFILE' | 'OTHER';
 
 export const REPORT_STATUSES: ReportStatus[] = ['OPEN', 'REVIEWED', 'DISMISSED'];
 
@@ -17,13 +40,6 @@ export const REPORT_STATUS_LABEL: Record<ReportStatus, string> = {
 export const REPORT_RESOLVED_BY_LABEL: Record<ReportResolution, string> = {
   REVIEWED: 'Revisado por',
   DISMISSED: 'Descartado por',
-};
-
-export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
-  AGGRESSIVE_BEHAVIOR: 'Comportamiento agresivo',
-  OFFENSIVE_LANGUAGE: 'Lenguaje ofensivo',
-  FAKE_PROFILE: 'Perfil falso',
-  OTHER: 'Otro motivo',
 };
 
 export type ReportedUser = PublicUser & { reportCount: number };
