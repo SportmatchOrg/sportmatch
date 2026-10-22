@@ -12,8 +12,14 @@ const VARIANTS = {
   labelled: 'h-[46px] gap-2 rounded-full px-[22px] text-callout',
 } as const;
 
+export type ProfileActionVariant = keyof typeof VARIANTS;
+
+export function profileActionClassName(variant: ProfileActionVariant, className?: string): string {
+  return cn(BASE, VARIANTS[variant], className);
+}
+
 type SettingsLinkProps = {
-  variant?: keyof typeof VARIANTS;
+  variant?: ProfileActionVariant;
   className?: string;
 };
 
@@ -22,7 +28,7 @@ export function SettingsLink({ variant = 'icon', className }: SettingsLinkProps)
     <Link
       href={SETTINGS_HREF}
       aria-label={variant === 'icon' ? 'Ajustes' : undefined}
-      className={cn(BASE, VARIANTS[variant], className)}
+      className={profileActionClassName(variant, className)}
     >
       <Settings className="size-[22px] shrink-0" aria-hidden="true" />
       {variant === 'labelled' && 'Ajustes'}
