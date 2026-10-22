@@ -81,6 +81,20 @@ export type MatchDetail = Match & {
   participants: PublicUser[];
 };
 
+export type PublicMatch = {
+  id: string;
+  date: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  level: Level;
+  capacity: number;
+  status: MatchStatus;
+  sport: Sport;
+  organizer: { name: string; photoUrl: string | null };
+  joinedCount: number;
+};
+
 export type MatchesQuery = {
   from?: string;
   to?: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import { TabBar } from '@/components/tab-bar';
@@ -11,13 +11,14 @@ import { LoadingScreen } from '@/components/loading-screen';
 import { MapsProvider } from '@/components/map/maps-provider';
 import { QueryProvider } from '@/components/query-provider';
 import { SplashScreen } from '@/components/splash-screen';
+import { isPublicMatchPath, LOGIN_HREF } from '@/lib/auth-redirect';
 import { clearSplashPending, isSplashPending, SPLASH_SOUND_SRC } from '@/lib/splash';
-
-const LOGIN_ROUTE = '/login';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const publicPage = isPublicMatchPath(pathname);
   const [splashVisible, setSplashVisible] = useState(isSplashPending);
 
   useEffect(() => {
@@ -25,12 +26,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace(LOGIN_ROUTE);
+    if (!loading && !user && !publicPage) {
+      router.replace(LOGIN_HREF);
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, publicPage]);
 
   const hideSplash = useCallback(() => setSplashVisible(false), []);
+
+  if (!loading && !user && publicPage) {
+    return (
+      <QueryProvider>
+        <div className="min-h-dvh bg-base text-white">{children}</div>
+      </QueryProvider>
+    );
+  }
 
   if (loading || !user) {
     return <LoadingScreen />;

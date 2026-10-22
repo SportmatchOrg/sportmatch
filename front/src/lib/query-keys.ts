@@ -3,6 +3,7 @@ export const matchKeys = {
   mine: () => [...matchKeys.all, 'mine'] as const,
   myActions: () => [...matchKeys.all, 'my-actions'] as const,
   detail: (matchId: string) => [...matchKeys.all, 'detail', matchId] as const,
+  publicDetail: (matchId: string) => [...matchKeys.all, 'public', matchId] as const,
   joinRequests: (matchId: string) => [...matchKeys.all, 'join-requests', matchId] as const,
   invitationResponse: (matchId: string) => [...matchKeys.all, 'invitation-response', matchId] as const,
   participation: (matchId: string) => [...matchKeys.all, 'participation', matchId] as const,

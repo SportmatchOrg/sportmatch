@@ -13,12 +13,13 @@ import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { SIGNUP_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
 
 const MIN_PASSWORD_LENGTH = 6;
 
 export default function LoginPage() {
-  const { checkingSession } = useRedirectIfAuthenticated();
+  const { checkingSession, next } = useRedirectIfAuthenticated();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -95,7 +96,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-neutral-400">
         ¿No tenés cuenta?{' '}
-        <Link href="/signup" className="font-semibold text-sky-400 hover:underline">
+        <Link href={withNext(SIGNUP_HREF, next)} className="font-semibold text-sky-400 hover:underline">
           Registrate
         </Link>
       </p>

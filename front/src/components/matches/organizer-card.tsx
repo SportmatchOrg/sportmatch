@@ -1,9 +1,10 @@
 import Link from 'next/link';
 
 import { UserAvatar } from '@/components/user-avatar';
-import type { PublicUser } from '@/types/match';
 
-export function OrganizerCard({ organizer }: { organizer: PublicUser }) {
+type Organizer = { id?: string; name: string; photoUrl: string | null };
+
+export function OrganizerCard({ organizer }: { organizer: Organizer }) {
   return (
     <div className="flex items-center gap-4 rounded-md bg-glass p-4 shadow-bevel-lit">
       <UserAvatar
@@ -19,12 +20,14 @@ export function OrganizerCard({ organizer }: { organizer: PublicUser }) {
         <span className="truncate text-headline font-bold text-white">{organizer.name}</span>
       </span>
 
-      <Link
-        href={`/usuarios/${organizer.id}`}
-        className="shrink-0 rounded-full bg-glass-strong px-5 py-3 text-callout font-semibold text-white shadow-bevel-lit transition hover:bg-glass focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-      >
-        Ver perfil
-      </Link>
+      {organizer.id && (
+        <Link
+          href={`/usuarios/${organizer.id}`}
+          className="shrink-0 rounded-full bg-glass-strong px-5 py-3 text-callout font-semibold text-white shadow-bevel-lit transition hover:bg-glass focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        >
+          Ver perfil
+        </Link>
+      )}
     </div>
   );
 }
