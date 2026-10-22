@@ -5,6 +5,7 @@ import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
 import { ProfileSports } from '@/components/profile/profile-sports';
 import { SettingsLink } from '@/components/profile/settings-link';
+import { ReportUserButton } from '@/components/reports/report-user-button';
 import { IMAGES } from '@/lib/images';
 import type { Level, Sport } from '@/types/match';
 
@@ -15,6 +16,7 @@ const DETAIL_ICON = 'size-[14px] shrink-0 lg:size-4';
 
 type ProfileHeaderProps = {
   user: {
+    id?: string;
     name: string;
     photoUrl: string | null;
     email?: string;
@@ -26,6 +28,8 @@ type ProfileHeaderProps = {
 };
 
 export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
+  const reportable = !isOwnProfile && user.id ? { id: user.id, name: user.name } : null;
+
   return (
     <header>
       <div className="relative h-[196px] w-full overflow-hidden bg-raised lg:h-[206px]">
@@ -41,6 +45,11 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         {isOwnProfile && (
           <div className="absolute top-5 right-5 lg:hidden">
             <SettingsLink />
+          </div>
+        )}
+        {reportable && (
+          <div className="absolute top-5 right-5 lg:hidden">
+            <ReportUserButton user={reportable} />
           </div>
         )}
       </div>
@@ -68,6 +77,13 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
 
         {isOwnProfile && (
           <SettingsLink variant="labelled" className="hidden lg:flex lg:shrink-0" />
+        )}
+        {reportable && (
+          <ReportUserButton
+            user={reportable}
+            variant="labelled"
+            className="hidden lg:flex lg:shrink-0"
+          />
         )}
       </ProfileIdentityRow>
 
