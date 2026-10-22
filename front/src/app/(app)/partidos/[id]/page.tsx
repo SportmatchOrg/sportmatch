@@ -249,6 +249,11 @@ export default function MatchDetailPage({
               joinedCount={match.joinedCount}
               capacity={match.capacity}
               played={played}
+              report={
+                played && user && (isOrganizer || match.isJoined)
+                  ? { matchId: match.id, currentUserId: user.id }
+                  : undefined
+              }
             />
 
             {canInvite && <InvitePlayersDialog match={match} />}
