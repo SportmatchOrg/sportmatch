@@ -91,12 +91,16 @@ await storage.remove(url);
 - `path` is an internal prefix such as `profiles`, `matches` or `checks/spo-287`;
   use only letters, digits, `_`, `-` and `/` between nonempty segments. It is not
   an original filename. The service generates `<path>/<UUID>.<extension>`, sets
-  the blob's `Content-Type` and returns its public URL.
+  the blob's `Content-Type` and returns only the public origin and path. Any SAS
+  query string, URL credentials or fragment from the configured endpoint are
+  excluded from the returned URL; the SDK client keeps its authorization.
 - `remove(url)` accepts only canonical HTTPS URLs for the configured account
   and exact container, without credentials, query strings, fragments, encoded
   paths or dot segments. It operates on that container's client, never on a
   client created from user input. A missing blob is harmless (`deleteIfExists`).
-  Future callers must still check ownership before deleting a user's image.
+  Consumer services are responsible for authenticating and authorizing deletion
+  (including image ownership) before calling `remove`; validating the URL does
+  not grant permission to delete the image.
 - Azure operation failures return `ServiceUnavailableException` (503) with a
   generic message, without exposing credentials or SDK internals.
 - The backend fails at startup if either required storage variable is missing;

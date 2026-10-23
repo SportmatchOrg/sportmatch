@@ -80,7 +80,8 @@ export class StorageService {
       await blob.uploadData(buffer, {
         blobHTTPHeaders: { blobContentType: contentType },
       });
-      return blob.url;
+      const { origin, pathname } = new URL(blob.url);
+      return `${origin}${pathname}`;
     } catch {
       throw new ServiceUnavailableException('Image storage is unavailable');
     }
