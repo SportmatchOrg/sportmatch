@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { iconButtonClassName } from '@/components/ui/icon-button';
+import { useDragToDismiss } from '@/hooks/use-drag-to-dismiss';
 import { cn } from '@/lib/utils';
 
 const SCRIM =
@@ -22,21 +23,30 @@ type BottomSheetProps = {
 };
 
 export function BottomSheet({ open, onClose, title, children, className }: BottomSheetProps) {
+  const { ref, dragHandlers } = useDragToDismiss(onClose);
+
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
         <Dialog.Backdrop className={SCRIM} />
-        <Dialog.Popup aria-modal="true" className={cn(SHEET, className)}>
-          <span
-            className="h-[5px] w-10 shrink-0 self-center rounded-full bg-ink-32"
-            aria-hidden="true"
-          />
+        <Dialog.Popup
+          ref={ref}
+          aria-modal="true"
+          className={cn(SHEET, className)}
+          {...dragHandlers}
+        >
+          <div className="flex touch-none flex-col gap-5">
+            <span
+              className="h-[5px] w-10 shrink-0 self-center rounded-full bg-ink-32"
+              aria-hidden="true"
+            />
 
-          <div className="flex items-center justify-between gap-4">
-            <Dialog.Title className="text-headline font-bold">{title}</Dialog.Title>
-            <Dialog.Close aria-label="Cerrar" className={iconButtonClassName('soft', 'sm')}>
-              <X className="size-5" aria-hidden="true" />
-            </Dialog.Close>
+            <div className="flex items-center justify-between gap-4">
+              <Dialog.Title className="text-headline font-bold">{title}</Dialog.Title>
+              <Dialog.Close aria-label="Cerrar" className={iconButtonClassName('soft', 'sm')}>
+                <X className="size-5" aria-hidden="true" />
+              </Dialog.Close>
+            </div>
           </div>
 
           {children}
