@@ -33,6 +33,15 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | --- | --- | --- |
 | `SEED_ADMIN_EMAIL` | No | Email of the user that `npm run db:seed` turns into `ADMIN`. The user must have signed in at least once. Local only: the seed deletes every match. |
 | `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
+| `SWAGGER_ENABLED` | No | `true` mounts the API docs at `/docs`. Leave it `false` or unset in production: then `/docs` answers 404. |
+
+## API documentation
+
+With `SWAGGER_ENABLED=true`, the interactive docs are at [http://localhost:3001/docs](http://localhost:3001/docs) and the OpenAPI JSON at [http://localhost:3001/docs-json](http://localhost:3001/docs-json).
+
+They are generated from the code: the Swagger CLI plugin (`nest-cli.json`) reads the DTOs and their `class-validator` rules, so new endpoints and fields show up without extra decorators. Each controller only needs `@ApiTags` and, when it is protected, `@ApiBearerAuth`. For DTOs that extend another one, import `PartialType`, `OmitType` and `PickType` from `@nestjs/swagger`, not from `@nestjs/mapped-types`, or the inherited fields are missing from the docs.
+
+To try a protected endpoint, click **Authorize** and paste a Firebase ID token in `bearer`. `POST /kpis/snapshots` uses the `kpi-key` scheme instead, with the value of `KPI_API_KEY`.
 
 ## Administrators
 
