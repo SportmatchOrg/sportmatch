@@ -38,6 +38,12 @@ export type ProfileUpdate = {
   sportIds: string[];
 };
 
+export type OnboardingData = {
+  sportIds: string[];
+  level: Level;
+  city: string;
+};
+
 export const NAME_MIN = 2;
 export const NAME_MAX = 60;
 export const CITY_MIN = 2;
