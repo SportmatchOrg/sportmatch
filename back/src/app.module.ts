@@ -17,6 +17,7 @@ import { HealthModule } from './health/health.module';
 import { KpisModule } from './kpis/kpis.module';
 import { ReportsModule } from './reports/reports.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { UserBlocksModule } from './user-blocks/user-blocks.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { RemindersModule } from './reminders/reminders.module';
     KpisModule,
     ReportsModule,
     RemindersModule,
+    UserBlocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
