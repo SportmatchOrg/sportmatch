@@ -2,31 +2,35 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  useEffect,
   useRef,
   useState,
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
+  type TransitionEvent,
 } from 'react';
 
-import { DIRECTION_LOCK_PX, rubberBand } from '@/lib/gesture';
+import { DIRECTION_LOCK_PX, prefersReducedMotion, rubberBand } from '@/lib/gesture';
 import { cn } from '@/lib/utils';
 
 const COMMIT_RATIO = 0.35;
 const BLOCKED_DIRECTION_DAMPING = 0.55;
-const EXIT_MS = 240;
-const COLLAPSE_MS = 200;
 const HAPTIC_MS = 8;
 
 const SURFACE_TRANSITION = {
-  idle: 'transform 320ms var(--ease-spring)',
-  exiting: `transform ${EXIT_MS}ms var(--ease-out)`,
+  idle: 'transform var(--dur-base) var(--ease-spring)',
+  exiting: 'transform var(--dur-base) var(--ease-out)',
 } as const;
 
 const TONE = {
-  success: { idle: 'bg-success-tint text-success', armed: 'bg-success text-midnight' },
-  neutral: { idle: 'bg-glass-strong text-ink-64', armed: 'bg-ink-32 text-white' },
+  success: {
+    idle: 'bg-success-tint text-success',
+    armed: 'bg-success text-midnight',
+  },
+  neutral: {
+    idle: 'bg-glass-strong text-ink-64',
+    armed: 'bg-ink-32 text-white',
+  },
 } as const;
 
 export type SwipeActionTone = keyof typeof TONE;
@@ -60,15 +64,10 @@ type Gesture = {
 export function SwipeRow({ children, startAction, endAction, className }: SwipeRowProps) {
   const gesture = useRef<Gesture | null>(null);
   const suppressClick = useRef(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const committedAction = useRef<SwipeAction | null>(null);
   const [offset, setOffset] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [rowWidth, setRowWidth] = useState(0);
-
-  useEffect(() => {
-    const pending = timers.current;
-    return () => pending.forEach(clearTimeout);
-  }, []);
 
   function actionAt(value: number): SwipeAction | undefined {
     if (value > 0) return startAction;
@@ -102,15 +101,30 @@ export function SwipeRow({ children, startAction, endAction, className }: SwipeR
 
   function commit(target: SwipeAction, direction: number, rowWidth: number) {
     gesture.current = null;
+
+    if (prefersReducedMotion()) {
+      target.onCommit();
+      return;
+    }
+
+    committedAction.current = target;
     setPhase('exiting');
     setOffset(direction * rowWidth);
+  }
 
-    timers.current.push(
-      setTimeout(() => {
-        setPhase('collapsing');
-        timers.current.push(setTimeout(target.onCommit, COLLAPSE_MS));
-      }, EXIT_MS)
-    );
+  function handleSurfaceTransitionEnd(event: TransitionEvent<HTMLDivElement>) {
+    if (phase !== 'exiting' || event.target !== event.currentTarget) return;
+    if (event.propertyName !== 'transform') return;
+
+    setPhase('collapsing');
+  }
+
+  function handleCollapseTransitionEnd(event: TransitionEvent<HTMLDivElement>) {
+    if (phase !== 'collapsing' || event.target !== event.currentTarget) return;
+    if (event.propertyName !== 'opacity') return;
+
+    committedAction.current?.onCommit();
+    committedAction.current = null;
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -191,59 +205,61 @@ export function SwipeRow({ children, startAction, endAction, className }: SwipeR
 
   return (
     <div
+      onTransitionEnd={handleCollapseTransitionEnd}
       className={cn(
-        'grid transition-[grid-template-rows,opacity] duration-200 ease-[var(--ease-out)] motion-reduce:transition-none',
+        'grid transition-[grid-template-rows,opacity] duration-[var(--dur-base)] ease-[var(--ease-out)] motion-reduce:transition-none',
         phase === 'collapsing' ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
       )}
     >
       <div className="min-h-0 overflow-hidden">
         <div className={className}>
-        <div className="relative">
-          {action && Icon && (
+          <div className="relative">
+            {action && Icon && (
+              <div
+                aria-hidden="true"
+                className={cn(
+                  'absolute inset-0 flex items-center rounded-md px-5 transition-colors duration-[var(--dur-fast)]',
+                  offset > 0 ? 'justify-start' : 'justify-end',
+                  armed ? TONE[action.tone].armed : TONE[action.tone].idle
+                )}
+              >
+                <span className="flex items-center gap-2 text-callout font-bold">
+                  <Icon
+                    className={cn(
+                      'size-5 transition-transform duration-[var(--dur-fast)]',
+                      armed && 'scale-125'
+                    )}
+                  />
+                  {action.label}
+                </span>
+              </div>
+            )}
+
             <div
-              aria-hidden="true"
-              className={cn(
-                'absolute inset-0 flex items-center rounded-md px-5 transition-colors duration-[var(--dur-fast)]',
-                offset > 0 ? 'justify-start' : 'justify-end',
-                armed ? TONE[action.tone].armed : TONE[action.tone].idle
-              )}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={reset}
+              onClickCapture={handleClickCapture}
+              onTransitionEnd={handleSurfaceTransitionEnd}
+              style={{
+                transform: `translateX(${offset}px)`,
+                transition:
+                  phase === 'dragging'
+                    ? 'none'
+                    : phase === 'idle'
+                      ? SURFACE_TRANSITION.idle
+                      : SURFACE_TRANSITION.exiting,
+              }}
+              className="relative touch-pan-y select-none motion-reduce:!transition-none"
             >
-              <span className="flex items-center gap-2 text-callout font-bold">
-                <Icon
-                  className={cn(
-                    'size-5 transition-transform duration-[var(--dur-fast)]',
-                    armed && 'scale-125'
-                  )}
-                />
-                {action.label}
-              </span>
+              {children}
             </div>
-          )}
 
-          <div
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={reset}
-            onClickCapture={handleClickCapture}
-            style={{
-              transform: `translateX(${offset}px)`,
-              transition:
-                phase === 'dragging'
-                  ? 'none'
-                  : phase === 'idle'
-                    ? SURFACE_TRANSITION.idle
-                    : SURFACE_TRANSITION.exiting,
-            }}
-            className="relative touch-pan-y select-none motion-reduce:!transition-none"
-          >
-            {children}
+            <span className="sr-only" aria-live="polite">
+              {armed && action ? `Soltá para ${action.label.toLowerCase()}` : ''}
+            </span>
           </div>
-
-          <span className="sr-only" aria-live="polite">
-            {armed && action ? `Soltá para ${action.label.toLowerCase()}` : ''}
-          </span>
-        </div>
         </div>
       </div>
     </div>
