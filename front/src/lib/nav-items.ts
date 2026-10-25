@@ -13,6 +13,7 @@ export const PROFILE_HREF = '/perfil';
 export const NOTIFICATIONS_HREF = '/notificaciones';
 export const SETTINGS_HREF = '/perfil/ajustes';
 export const EDIT_PROFILE_HREF = '/perfil/editar';
+export const ADMIN_REPORTS_HREF = '/admin/reportes';
 
 export const NAV_ITEMS: NavItem[] = [
   { href: HOME_HREF, label: 'Mapa', icon: Map, enabled: true },
