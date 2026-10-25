@@ -7,12 +7,11 @@ import { AuthField } from '@/components/auth/auth-field';
 import { PasswordField } from '@/components/auth/password-field';
 import { EditField, editFieldErrorId } from '@/components/profile/edit-field';
 import { EditProfileLayout } from '@/components/profile/edit-profile-layout';
-import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { SportsPicker } from '@/components/profile/sports-picker';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { PillButton } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useAuth } from '@/context/auth-context';
-import { useSports } from '@/hooks/use-sports';
 import {
   MIN_PASSWORD_LENGTH,
   changePassword,
@@ -25,13 +24,12 @@ import {
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { updateProfile } from '@/lib/users';
 import { cn } from '@/lib/utils';
-import { LEVELS, LEVEL_LABEL, SPORT_LABEL, type Level } from '@/types/match';
+import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
 import {
   CITY_MAX,
   CITY_MIN,
   NAME_MAX,
   NAME_MIN,
-  SPORTS_MAX,
   type User,
 } from '@/types/user';
 
@@ -71,7 +69,6 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 export function EditProfileForm({ user }: { user: User }) {
   const { user: firebaseUser } = useAuth();
   const canChangePassword = hasPassword(firebaseUser);
-  const { sports, loading: sportsLoading, error: sportsError } = useSports();
 
   const [name, setName] = useState(user.name);
   const [city, setCity] = useState(user.city ?? '');
@@ -95,15 +92,6 @@ export function EditProfileForm({ user }: { user: User }) {
   const trimmedCity = city.trim();
   const wantsPassword =
     canChangePassword && [currentPassword, newPassword, repeatPassword].some(Boolean);
-  const sportsFull = sportIds.length >= SPORTS_MAX;
-
-  function toggleSport(sportId: string) {
-    setSportIds((current) => {
-      if (current.includes(sportId)) return current.filter((id) => id !== sportId);
-
-      return current.length >= SPORTS_MAX ? current : [...current, sportId];
-    });
-  }
 
   function validate(): Errors {
     const found: Errors = {};
@@ -251,40 +239,7 @@ export function EditProfileForm({ user }: { user: User }) {
               />
             </EditField>
 
-            <div className="flex flex-col gap-2">
-              <p id="sports-label" className={GROUP_LABEL}>
-                Deportes
-                <span className="normal-case">
-                  {sportIds.length} de {SPORTS_MAX}
-                </span>
-              </p>
-
-              {sportsLoading && <p className="pl-1 text-caption text-ink-46">Cargando deportes…</p>}
-
-              {sportsError && (
-                <p role="alert" className="pl-1 text-caption text-danger">
-                  {sportsError}
-                </p>
-              )}
-
-              <div role="group" aria-labelledby="sports-label" className={CHIPS}>
-                {sports.map((sport) => {
-                  const selected = sportIds.includes(sport.id);
-
-                  return (
-                    <FilterChip
-                      key={sport.id}
-                      icon={SPORT_ICON[sport.name]}
-                      selected={selected}
-                      aria-disabled={saving || (sportsFull && !selected)}
-                      onClick={() => !saving && toggleSport(sport.id)}
-                    >
-                      {SPORT_LABEL[sport.name]}
-                    </FilterChip>
-                  );
-                })}
-              </div>
-            </div>
+            <SportsPicker value={sportIds} onChange={setSportIds} disabled={saving} />
 
             <div className="flex flex-col gap-2">
               <p id="level-label" className={GROUP_LABEL}>

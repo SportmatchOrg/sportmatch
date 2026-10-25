@@ -41,6 +41,12 @@ export type ProfileUpdate = {
   sportIds: string[];
 };
 
+export type OnboardingData = {
+  sportIds: string[];
+  level: Level;
+  city: string;
+};
+
 export function isAdmin(user: Pick<User, 'role'>): boolean {
   return user.role === 'ADMIN';
 }
