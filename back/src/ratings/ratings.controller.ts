@@ -1,10 +1,13 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { CreateRatingsDto } from './dto/create-ratings.dto';
 import { RatingsService } from './ratings.service';
 
+@ApiTags('Calificaciones')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('matches/:matchId/ratings')
 export class RatingsController {

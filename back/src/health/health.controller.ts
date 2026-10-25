@@ -1,9 +1,11 @@
 import { Controller, Get, Logger, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 
 const DB_TIMEOUT_MS = 2000;
 
+@ApiTags('Estado')
 @Controller('health')
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);

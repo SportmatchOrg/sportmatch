@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
@@ -15,6 +16,8 @@ import { AdminReportsService } from './admin-reports.service';
 import { ListReportsQueryDto } from './dto/list-reports-query.dto';
 import { ResolveReportDto } from './dto/resolve-report.dto';
 
+@ApiTags('Administración')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard, AdminGuard)
 @Controller('admin/reports')
 export class AdminReportsController {
