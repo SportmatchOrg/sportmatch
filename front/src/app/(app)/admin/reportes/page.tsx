@@ -46,8 +46,10 @@ const EMPTY_STATE: Record<ReportStatus, { title: string; text: string }> = {
   },
 };
 
-const SWIPE_HINT =
+const MOBILE_HINT =
   'Deslizá a la derecha para marcar revisado o a la izquierda para descartar. Tocá un reporte para ver el detalle.';
+
+const DESKTOP_HINT = 'Hacé clic en un reporte para ver el detalle y resolverlo.';
 
 const ACCESS_ERROR = 'No pudimos comprobar tus permisos. Probá de nuevo en un momento.';
 
@@ -98,7 +100,12 @@ export default function AdminReportsPage() {
 
     return (
       <div className="flex flex-col gap-3">
-        {status === 'OPEN' && <p className="text-caption text-ink-46">{SWIPE_HINT}</p>}
+        {status === 'OPEN' && (
+          <p className="text-caption text-ink-46">
+            <span className="lg:hidden">{MOBILE_HINT}</span>
+            <span className="hidden lg:inline">{DESKTOP_HINT}</span>
+          </p>
+        )}
 
         <ul className="flex flex-col">
           {reports.map((report) => (
@@ -133,6 +140,7 @@ export default function AdminReportsPage() {
           options={STATUS_OPTIONS}
           value={status}
           onChange={setStatus}
+          className="lg:w-auto lg:self-center"
         />
         {renderReports()}
       </>

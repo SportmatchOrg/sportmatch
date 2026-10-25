@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 const STRETCH_DELAY_MS = 70;
 
 const TRACK =
-  'relative flex w-full rounded-full bg-glass-strong p-1 shadow-bevel lg:w-auto lg:self-start';
+  'relative flex w-full rounded-full bg-glass-strong p-1 shadow-bevel';
 
 const THUMB =
   'pointer-events-none absolute inset-y-1 rounded-full bg-white shadow-bevel transition-[left,right] duration-[var(--dur-base)] ease-[var(--ease-out)] motion-reduce:transition-none';
