@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +20,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { FirebaseUser } from '../auth/types';
 import { OwnAccountGuard } from '../auth/own-account.guard';
 
+@ApiTags('Usuarios')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('users')
 export class UsersController {

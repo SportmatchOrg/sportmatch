@@ -121,12 +121,8 @@ export class UsersService {
     }
   }
 
-  async ensureExists(user: FirebaseUser) {
-    const saved = await this.usersRepository.ensureExists(user);
-
-    await this.recordActivity(saved.id);
-
-    return saved;
+  ensureExists(user: FirebaseUser) {
+    return this.usersRepository.ensureExists(user);
   }
 
   async upsertFromFirebase(user: FirebaseUser) {
@@ -249,7 +245,7 @@ export class UsersService {
     }
   }
 
-  private async recordActivity(userId: string) {
+  async recordActivity(userId: string) {
     try {
       await this.usersRepository.recordActivityDay(
         userId,
