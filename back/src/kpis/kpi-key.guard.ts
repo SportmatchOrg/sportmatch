@@ -9,7 +9,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 
-const KEY_HEADER = 'x-kpi-key';
+export const KPI_KEY_HEADER = 'x-kpi-key';
+
+export const KPI_KEY_SECURITY = 'kpi-key';
 
 const isSameKey = (provided: string, expected: string): boolean => {
   const providedBytes = Buffer.from(provided);
@@ -33,7 +35,7 @@ export class KpiKeyGuard implements CanActivate {
     }
 
     const provided = context.switchToHttp().getRequest<Request>().headers[
-      KEY_HEADER
+      KPI_KEY_HEADER
     ];
 
     if (typeof provided !== 'string' || !isSameKey(provided, expected)) {

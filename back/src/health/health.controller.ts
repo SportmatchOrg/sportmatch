@@ -1,7 +1,9 @@
 import { Controller, Get, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { HealthService } from './health.service';
 
+@ApiTags('Estado')
 @Controller('health')
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
