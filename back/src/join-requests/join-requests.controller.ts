@@ -10,12 +10,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsService } from './join-requests.service';
 
+@ApiTags('Solicitudes')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('matches/:matchId/join-requests')
 export class JoinRequestsController {

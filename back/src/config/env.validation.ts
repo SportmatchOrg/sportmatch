@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import {
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -57,6 +58,10 @@ class EnvironmentVariables {
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsString()
   KPI_API_KEY?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsIn(['true', 'false'])
+  SWAGGER_ENABLED?: string;
 }
 
 export function validateEnv(

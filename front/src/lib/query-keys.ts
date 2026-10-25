@@ -1,3 +1,5 @@
+import type { ReportStatus } from '@/types/report';
+
 export const matchKeys = {
   all: ['matches'] as const,
   mine: () => [...matchKeys.all, 'mine'] as const,
@@ -11,4 +13,9 @@ export const matchKeys = {
 
 export const notificationKeys = {
   unreadCount: ['notifications', 'unread-count'] as const,
+};
+
+export const adminReportKeys = {
+  all: ['admin-reports'] as const,
+  list: (status: ReportStatus) => [...adminReportKeys.all, 'list', status] as const,
 };
