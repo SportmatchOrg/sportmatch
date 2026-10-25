@@ -26,3 +26,7 @@ export function formatMatchTime(value: string): string {
 
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
+
+export function formatMatchDateTime(value: string): string {
+  return `${formatMatchDay(value)} · ${formatMatchTime(value)}`;
+}
