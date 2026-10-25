@@ -3,6 +3,7 @@
 import { ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
+import { BlockAccountDialog } from '@/components/admin/block-account-dialog';
 import { ReportDetailSheet } from '@/components/admin/report-detail-sheet';
 import { ReportListSkeleton } from '@/components/admin/report-list-skeleton';
 import { ReportRow } from '@/components/admin/report-row';
@@ -15,7 +16,11 @@ import { useAdminAccess } from '@/hooks/use-admin-access';
 import { useAdminReports } from '@/hooks/use-admin-reports';
 import { useResolveReport } from '@/hooks/use-resolve-report';
 import { useTimedToast } from '@/hooks/use-timed-toast';
-import { RESOLUTION_SUCCESS_MESSAGE, resolveReportErrorMessage } from '@/lib/admin-reports';
+import {
+  BLOCK_SUCCESS_MESSAGE,
+  RESOLUTION_SUCCESS_MESSAGE,
+  resolveReportErrorMessage,
+} from '@/lib/admin-reports';
 import {
   REPORT_STATUSES,
   REPORT_STATUS_LABEL,
@@ -57,6 +62,7 @@ export default function AdminReportsPage() {
   const { user, allowed, loading: accessLoading, error: accessError } = useAdminAccess();
   const [status, setStatus] = useState<ReportStatus>('OPEN');
   const [selected, setSelected] = useState<AdminReport | null>(null);
+  const [blocking, setBlocking] = useState<AdminReport | null>(null);
   const { reports, loading, error, reload } = useAdminReports(status, allowed);
   const { resolve } = useResolveReport();
   const { toast, showToast } = useTimedToast();
@@ -72,6 +78,16 @@ export default function AdminReportsPage() {
         onError: (caught) => showToast(resolveReportErrorMessage(caught), 'danger'),
       }
     );
+  }
+
+  function handleBlock(report: AdminReport) {
+    setSelected(null);
+    setBlocking(report);
+  }
+
+  function handleBlocked() {
+    setBlocking(null);
+    showToast(BLOCK_SUCCESS_MESSAGE, 'success');
   }
 
   function renderReports() {
@@ -158,7 +174,16 @@ export default function AdminReportsPage() {
         isOwnReport={selected !== null && isOwnReport(selected)}
         onClose={() => setSelected(null)}
         onResolve={handleResolve}
+        onBlock={handleBlock}
       />
+
+      {blocking && (
+        <BlockAccountDialog
+          report={blocking}
+          onClose={() => setBlocking(null)}
+          onBlocked={handleBlocked}
+        />
+      )}
 
       {toast && (
         <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 lg:bottom-8">

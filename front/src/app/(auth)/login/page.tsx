@@ -1,7 +1,7 @@
 'use client';
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Mail } from 'lucide-react';
+import { Ban, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
@@ -11,6 +11,7 @@ import { FormError } from '@/components/auth/form-error';
 import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
+import { useAccountBlockedNotice } from '@/hooks/use-account-blocked-notice';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { SIGNUP_HREF, withNext } from '@/lib/auth-redirect';
@@ -18,8 +19,12 @@ import { auth } from '@/lib/firebase';
 
 const MIN_PASSWORD_LENGTH = 6;
 
+const BLOCKED_NOTICE =
+  'flex items-center gap-3 rounded-md bg-danger-tint p-4 text-callout font-semibold text-danger';
+
 export default function LoginPage() {
   const { checkingSession, next } = useRedirectIfAuthenticated();
+  const blockedNotice = useAccountBlockedNotice();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +58,13 @@ export default function LoginPage() {
           Iniciá sesión para encontrar tu próximo partido
         </p>
       </header>
+
+      {blockedNotice && (
+        <p role="alert" className={BLOCKED_NOTICE}>
+          <Ban className="size-5 shrink-0" aria-hidden="true" />
+          {blockedNotice}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthField
