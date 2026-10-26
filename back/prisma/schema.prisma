@@ -61,6 +61,7 @@ model User {
   pushSubscriptions      PushSubscription[]
   activityDays           UserActivityDay[]
   sports                 UserSport[]
+  aiUsages               AiUsage[]
 
   @@map("users")
 }
@@ -341,4 +342,30 @@ model KpiResult {
   @@unique([runId, kpiId])
   @@index([kpiId, createdAt])
   @@map("kpi_results")
+}
+
+enum AiUsageKind {
+  MATCH_DRAFT
+  IMAGE
+
+  @@map("ai_usage_kind")
+}
+
+enum AiProvider {
+  GEMINI
+  OPENROUTER
+
+  @@map("ai_provider")
+}
+
+model AiUsage {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      AiUsageKind
+  provider  AiProvider?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, kind, createdAt])
+  @@map("ai_usages")
 }
