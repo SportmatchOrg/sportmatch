@@ -363,7 +363,7 @@ model AiUsage {
   userId    String
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AiUsageKind
-  provider  AiProvider
+  provider  AiProvider?
   createdAt DateTime    @default(now())
 
   @@index([userId, kind, createdAt])

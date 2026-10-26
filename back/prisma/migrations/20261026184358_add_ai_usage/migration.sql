@@ -9,7 +9,7 @@ CREATE TABLE "ai_usages" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "kind" "ai_usage_kind" NOT NULL,
-    "provider" "ai_provider" NOT NULL,
+    "provider" "ai_provider",
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ai_usages_pkey" PRIMARY KEY ("id")

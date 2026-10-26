@@ -72,23 +72,41 @@ export class AiService {
     throw new ServiceUnavailableException(UNAVAILABLE_MESSAGE);
   }
 
-  async assertQuota(userId: string, kind: AiUsageKind) {
-    const startOfToday = startOfArgentinaDay(toArgentinaDate(new Date()));
-    const used = await this.aiRepository.countUsagesSince(
+  async withQuota<T>(
+    userId: string,
+    kind: AiUsageKind,
+    run: () => Promise<AiCompletion<T>>,
+  ): Promise<AiCompletion<T>> {
+    const usageId = await this.reserveQuota(userId, kind);
+
+    try {
+      const completion = await run();
+
+      await this.aiRepository.confirmUsage(usageId, completion.provider);
+
+      return completion;
+    } catch (error) {
+      await this.aiRepository.releaseUsage(usageId);
+
+      throw error;
+    }
+  }
+
+  private async reserveQuota(userId: string, kind: AiUsageKind) {
+    const usageId = await this.aiRepository.reserveUsage(
       userId,
       kind,
-      startOfToday,
+      startOfArgentinaDay(toArgentinaDate(new Date())),
+      this.dailyLimits[kind],
     );
 
-    if (used >= this.dailyLimits[kind]) {
+    if (!usageId) {
       throw new HttpException(
         DAILY_LIMIT_MESSAGE,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
-  }
 
-  async recordUsage(userId: string, kind: AiUsageKind, provider: AiProvider) {
-    await this.aiRepository.recordUsage(userId, kind, provider);
+    return usageId;
   }
 }

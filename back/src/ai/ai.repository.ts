@@ -6,16 +6,41 @@ import { PrismaService } from '../prisma/prisma.service';
 export class AiRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  countUsagesSince(userId: string, kind: AiUsageKind, since: Date) {
-    return this.prisma.aiUsage.count({
-      where: { userId, kind, createdAt: { gte: since } },
+  reserveUsage(
+    userId: string,
+    kind: AiUsageKind,
+    since: Date,
+    limit: number,
+  ): Promise<string | null> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+
+      const used = await tx.aiUsage.count({
+        where: { userId, kind, createdAt: { gte: since } },
+      });
+
+      if (used >= limit) {
+        return null;
+      }
+
+      const { id } = await tx.aiUsage.create({
+        data: { userId, kind },
+        select: { id: true },
+      });
+
+      return id;
     });
   }
 
-  recordUsage(userId: string, kind: AiUsageKind, provider: AiProvider) {
-    return this.prisma.aiUsage.create({
-      data: { userId, kind, provider },
+  confirmUsage(id: string, provider: AiProvider) {
+    return this.prisma.aiUsage.update({
+      where: { id },
+      data: { provider },
       select: { id: true },
     });
+  }
+
+  releaseUsage(id: string) {
+    return this.prisma.aiUsage.deleteMany({ where: { id } });
   }
 }
