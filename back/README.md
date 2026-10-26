@@ -36,6 +36,12 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | `AZURE_STORAGE_CONNECTION_STRING` | Yes | Azure Blob Storage connection string for this environment. Backend only; never expose it through `NEXT_PUBLIC_` variables. |
 | `AZURE_STORAGE_CONTAINER` | Yes | Image container name: `images`. |
 | `SWAGGER_ENABLED` | No | `true` mounts the API docs at `/docs`. Leave it `false` or unset in production: then `/docs` answers 404. |
+| `GEMINI_API_KEY` | No | Key of the main AI text provider (Gemini, Google AI Studio free tier). Without it, text requests go straight to OpenRouter. Never expose it to the front. |
+| `OPENROUTER_API_KEY` | No | Key of the fallback AI text provider (OpenRouter). Without both keys the API still boots and the `/ai/*` endpoints answer 503. |
+| `AI_TEXT_MODEL` | No | Gemini model. Defaults to `gemini-3.5-flash-lite`. |
+| `AI_FALLBACK_MODEL` | No | OpenRouter models, comma separated, in priority order. OpenRouter tries the next one when one fails. Only `:free` models, since a paid one gets charged: the API refuses to boot if any model does not end in `:free`. |
+| `AI_MATCH_DRAFT_DAILY_LIMIT` | No | Match drafts each user can generate per day (Argentina time). Defaults to 20. Past it, 429. |
+| `AI_IMAGE_DAILY_LIMIT` | No | AI images each user can generate per day (Argentina time). Defaults to 5. Past it, 429. |
 
 ## Image storage (Azure Blob Storage)
 

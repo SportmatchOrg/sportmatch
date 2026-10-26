@@ -2,15 +2,19 @@ import { plainToInstance } from 'class-transformer';
 import {
   IsEmail,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
   Matches,
+  Min,
   ValidateIf,
   validateSync,
 } from 'class-validator';
+
+const FREE_MODEL_LIST = /^\s*[^,\s]+:free(\s*,\s*[^,\s]+:free)*\s*,?\s*$/;
 
 class EnvironmentVariables {
   @IsOptional()
@@ -70,6 +74,33 @@ class EnvironmentVariables {
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsIn(['true', 'false'])
   SWAGGER_ENABLED?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  GEMINI_API_KEY?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  OPENROUTER_API_KEY?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  AI_TEXT_MODEL?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  @Matches(FREE_MODEL_LIST)
+  AI_FALLBACK_MODEL?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AI_MATCH_DRAFT_DAILY_LIMIT?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AI_IMAGE_DAILY_LIMIT?: number;
 }
 
 export function validateEnv(
