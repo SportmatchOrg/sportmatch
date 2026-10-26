@@ -1,7 +1,6 @@
 'use client';
 
 import { LoaderCircle, MapPin, User as UserIcon } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import { AuthField } from '@/components/auth/auth-field';
@@ -14,9 +13,9 @@ import { FilterChip } from '@/components/ui/filter-chip';
 import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useAuth } from '@/context/auth-context';
+import { useSyncProfileCache } from '@/hooks/use-sync-profile-cache';
 import { useUploadProfilePhoto } from '@/hooks/use-upload-profile-photo';
 import { PHOTO_HINT, PHOTO_TYPES } from '@/lib/photo-upload';
-import { matchKeys, userKeys } from '@/lib/query-keys';
 import {
   MIN_PASSWORD_LENGTH,
   changePassword,
@@ -35,7 +34,6 @@ import {
   CITY_MIN,
   NAME_MAX,
   NAME_MIN,
-  type PublicProfile,
   type User,
 } from '@/types/user';
 
@@ -74,7 +72,7 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 
 export function EditProfileForm({ user }: { user: User }) {
   const { user: firebaseUser } = useAuth();
-  const queryClient = useQueryClient();
+  const syncProfileCache = useSyncProfileCache();
   const photo = useUploadProfilePhoto(user.id);
   const photoInput = useRef<HTMLInputElement>(null);
   const photoHintId = useId();
@@ -150,20 +148,12 @@ export function EditProfileForm({ user }: { user: User }) {
       return null;
     }
 
-    const currentKey = userKeys.current(user.firebaseUid);
-    const publicKey = userKeys.publicProfile(user.id);
-    await Promise.all([
-      queryClient.cancelQueries({ queryKey: currentKey, exact: true }),
-      queryClient.cancelQueries({ queryKey: publicKey, exact: true }),
-    ]);
-    const fields = { name: saved.name, city: saved.city, level: saved.level, sports: saved.sports };
-    queryClient.setQueryData<User>(currentKey, (current) => current ? { ...current, ...fields } : undefined);
-    queryClient.setQueryData<PublicProfile>(publicKey, (current) => current ? { ...current, ...fields } : undefined);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: currentKey, exact: true }),
-      queryClient.invalidateQueries({ queryKey: publicKey, exact: true }),
-      queryClient.invalidateQueries({ queryKey: matchKeys.all }),
-    ]);
+    await syncProfileCache(user.id, user.firebaseUid, {
+      name: saved.name,
+      city: saved.city,
+      level: saved.level,
+      sports: saved.sports,
+    });
 
     if (firebaseUser) {
       try {
