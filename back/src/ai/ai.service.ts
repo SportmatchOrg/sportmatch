@@ -2,15 +2,21 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AiUsageKind } from '../generated/prisma/client';
+import type OpenAI from 'openai';
+import { AiProvider, AiUsageKind } from '../generated/prisma/client';
 import {
   startOfArgentinaDay,
   toArgentinaDate,
 } from '../utils/time/argentina-date';
-import { AiTextClient } from './ai-text.client';
+import {
+  AiModelSelection,
+  AiTextProviders,
+  describeProviderError,
+} from './ai-text-providers';
 import { AiRepository } from './ai.repository';
 
 const UNAVAILABLE_MESSAGE = 'El asistente no está disponible';
@@ -22,13 +28,24 @@ const DEFAULT_DAILY_LIMITS: Record<AiUsageKind, number> = {
   IMAGE: 5,
 };
 
+export type AiCompletionRequest<T> = (
+  client: OpenAI,
+  selection: AiModelSelection,
+) => Promise<T>;
+
+export type AiCompletion<T> = {
+  result: T;
+  provider: AiProvider;
+};
+
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   private readonly dailyLimits: Record<AiUsageKind, number>;
 
   constructor(
     private readonly aiRepository: AiRepository,
-    private readonly aiTextClient: AiTextClient,
+    private readonly aiTextProviders: AiTextProviders,
     config: ConfigService,
   ) {
     this.dailyLimits = {
@@ -41,14 +58,18 @@ export class AiService {
     };
   }
 
-  getTextClient() {
-    const { sdk, model } = this.aiTextClient;
-
-    if (!sdk) {
-      throw new ServiceUnavailableException(UNAVAILABLE_MESSAGE);
+  async complete<T>(request: AiCompletionRequest<T>): Promise<AiCompletion<T>> {
+    for (const { name, client, selection } of this.aiTextProviders.available) {
+      try {
+        return { result: await request(client, selection), provider: name };
+      } catch (error) {
+        this.logger.warn(
+          `AI provider ${name} failed (${describeProviderError(error)})`,
+        );
+      }
     }
 
-    return { sdk, model };
+    throw new ServiceUnavailableException(UNAVAILABLE_MESSAGE);
   }
 
   async assertQuota(userId: string, kind: AiUsageKind) {
@@ -67,7 +88,7 @@ export class AiService {
     }
   }
 
-  async recordUsage(userId: string, kind: AiUsageKind) {
-    await this.aiRepository.recordUsage(userId, kind);
+  async recordUsage(userId: string, kind: AiUsageKind, provider: AiProvider) {
+    await this.aiRepository.recordUsage(userId, kind, provider);
   }
 }

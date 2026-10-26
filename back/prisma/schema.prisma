@@ -351,11 +351,19 @@ enum AiUsageKind {
   @@map("ai_usage_kind")
 }
 
+enum AiProvider {
+  GEMINI
+  OPENROUTER
+
+  @@map("ai_provider")
+}
+
 model AiUsage {
   id        String      @id @default(cuid())
   userId    String
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AiUsageKind
+  provider  AiProvider
   createdAt DateTime    @default(now())
 
   @@index([userId, kind, createdAt])

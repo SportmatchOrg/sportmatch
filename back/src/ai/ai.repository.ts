@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AiUsageKind } from '../generated/prisma/client';
+import type { AiProvider, AiUsageKind } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,9 +12,9 @@ export class AiRepository {
     });
   }
 
-  recordUsage(userId: string, kind: AiUsageKind) {
+  recordUsage(userId: string, kind: AiUsageKind, provider: AiProvider) {
     return this.prisma.aiUsage.create({
-      data: { userId, kind },
+      data: { userId, kind, provider },
       select: { id: true },
     });
   }
