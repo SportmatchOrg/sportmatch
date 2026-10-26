@@ -34,6 +34,10 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | `SEED_ADMIN_EMAIL` | No | Email of the user that `npm run db:seed` turns into `ADMIN`. The user must have signed in at least once. Local only: the seed deletes every match. |
 | `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
 | `SWAGGER_ENABLED` | No | `true` mounts the API docs at `/docs`. Leave it `false` or unset in production: then `/docs` answers 404. |
+| `ANTHROPIC_API_KEY` | No | Key for the AI assistant (`/ai/*`). Without it the API still boots and those endpoints answer 503. Never expose it to the front. |
+| `AI_TEXT_MODEL` | No | Claude model for text features. Defaults to `claude-opus-5-5`; switch to a cheaper one (for example `claude-haiku-5-5`) here, without code changes. |
+| `AI_MATCH_DRAFT_DAILY_LIMIT` | No | Match drafts each user can generate per day (Argentina time). Defaults to 20. Past it, 429. |
+| `AI_IMAGE_DAILY_LIMIT` | No | AI images each user can generate per day (Argentina time). Defaults to 5. Past it, 429. |
 
 ## API documentation
 

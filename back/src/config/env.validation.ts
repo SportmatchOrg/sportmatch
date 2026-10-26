@@ -2,12 +2,14 @@ import { plainToInstance } from 'class-transformer';
 import {
   IsEmail,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
   Matches,
+  Min,
   ValidateIf,
   validateSync,
 } from 'class-validator';
@@ -62,6 +64,24 @@ class EnvironmentVariables {
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsIn(['true', 'false'])
   SWAGGER_ENABLED?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  ANTHROPIC_API_KEY?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  AI_TEXT_MODEL?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AI_MATCH_DRAFT_DAILY_LIMIT?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  AI_IMAGE_DAILY_LIMIT?: number;
 }
 
 export function validateEnv(
