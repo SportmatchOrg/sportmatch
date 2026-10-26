@@ -28,6 +28,7 @@ type ReportDetailSheetProps = {
   isOwnReport: boolean;
   onClose: () => void;
   onResolve: (report: AdminReport, status: ReportResolution) => void;
+  onBlock: (report: AdminReport) => void;
 };
 
 function PlayerLink({ player, caption }: { player: PublicUser; caption: string }) {
@@ -69,7 +70,8 @@ function ReportMatchLink({ match }: { match: NonNullable<AdminReport['match']> }
 function ReportActions({
   report,
   onResolve,
-}: Pick<ReportDetailSheetProps, 'onResolve'> & { report: AdminReport }) {
+  onBlock,
+}: Pick<ReportDetailSheetProps, 'onResolve' | 'onBlock'> & { report: AdminReport }) {
   return (
     <div className="flex flex-col gap-2">
       {RESOLUTIONS.map((resolution) => {
@@ -88,7 +90,7 @@ function ReportActions({
         );
       })}
 
-      <PillButton variant="dangerGhost" size="md" disabled title="Disponible pronto">
+      <PillButton variant="dangerGhost" size="md" onClick={() => onBlock(report)}>
         <Ban className="size-4" aria-hidden="true" />
         Bloquear cuenta
       </PillButton>
@@ -100,6 +102,7 @@ function ReportFooter({
   report,
   isOwnReport,
   onResolve,
+  onBlock,
 }: Omit<ReportDetailSheetProps, 'onClose' | 'report'> & { report: AdminReport }) {
   const resolvedBy = formatResolvedBy(report);
 
@@ -107,7 +110,7 @@ function ReportFooter({
 
   if (isOwnReport) return <p className="text-caption text-ink-46">{OWN_REPORT_NOTICE}</p>;
 
-  return <ReportActions report={report} onResolve={onResolve} />;
+  return <ReportActions report={report} onResolve={onResolve} onBlock={onBlock} />;
 }
 
 export function ReportDetailSheet({
@@ -115,6 +118,7 @@ export function ReportDetailSheet({
   isOwnReport,
   onClose,
   onResolve,
+  onBlock,
 }: ReportDetailSheetProps) {
   return (
     <BottomSheet
@@ -145,7 +149,12 @@ export function ReportDetailSheet({
 
           {report.match && <ReportMatchLink match={report.match} />}
 
-          <ReportFooter report={report} isOwnReport={isOwnReport} onResolve={onResolve} />
+          <ReportFooter
+            report={report}
+            isOwnReport={isOwnReport}
+            onResolve={onResolve}
+            onBlock={onBlock}
+          />
         </div>
       )}
     </BottomSheet>

@@ -1,5 +1,6 @@
 import { signOut } from 'firebase/auth';
 
+import { accountBlockedMessage, saveAccountBlockedNotice } from './account-block';
 import { requireEnv } from './env';
 import { auth } from './firebase';
 
@@ -7,6 +8,8 @@ const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_UR
 
 const NO_CONTENT = 204;
 const UNAUTHORIZED = 401;
+const FORBIDDEN = 403;
+const ACCOUNT_BLOCKED = 'ACCOUNT_BLOCKED';
 const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Volvé a iniciar sesión.';
 
 export class ApiError extends Error {
@@ -19,9 +22,34 @@ export class ApiError extends Error {
   }
 }
 
-async function expireSession(): Promise<never> {
+type AccountBlock = { until: string | null };
+
+type AccountBlockedBody = { code?: unknown; until?: unknown } | null;
+
+async function endSession(message: string, status: number): Promise<never> {
   await signOut(auth).catch(() => undefined);
-  throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+  throw new ApiError(message, status);
+}
+
+function expireSession(): Promise<never> {
+  return endSession(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+}
+
+function blockSession({ until }: AccountBlock): Promise<never> {
+  const message = accountBlockedMessage(until);
+
+  saveAccountBlockedNotice(message);
+  return endSession(message, FORBIDDEN);
+}
+
+async function readAccountBlock(response: Response): Promise<AccountBlock | null> {
+  const body = (await response.json().catch(() => null)) as AccountBlockedBody;
+
+  if (body?.code !== ACCOUNT_BLOCKED) {
+    return null;
+  }
+
+  return { until: typeof body.until === 'string' ? body.until : null };
 }
 
 async function readErrorMessage(response: Response, path: string): Promise<string> {
@@ -63,6 +91,14 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (response.status === UNAUTHORIZED) {
     // Token vencido, revocado o borrado: la sesión local ya no sirve (BUG-8).
     return expireSession();
+  }
+
+  if (response.status === FORBIDDEN) {
+    const block = await readAccountBlock(response.clone());
+
+    if (block) {
+      return blockSession(block);
+    }
   }
 
   if (!response.ok) {
