@@ -18,6 +18,7 @@ import { KpisModule } from './kpis/kpis.module';
 import { ReportsModule } from './reports/reports.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { UserBlocksModule } from './user-blocks/user-blocks.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UserBlocksModule } from './user-blocks/user-blocks.module';
     ReportsModule,
     RemindersModule,
     UserBlocksModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
