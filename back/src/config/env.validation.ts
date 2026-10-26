@@ -67,11 +67,19 @@ class EnvironmentVariables {
 
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsString()
-  ANTHROPIC_API_KEY?: string;
+  GEMINI_API_KEY?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  OPENROUTER_API_KEY?: string;
 
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsString()
   AI_TEXT_MODEL?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  AI_FALLBACK_MODEL?: string;
 
   @IsOptional()
   @IsInt()
