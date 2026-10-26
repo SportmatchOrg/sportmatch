@@ -1,3 +1,4 @@
+import type { BlockDuration } from '@/lib/account-block';
 import { ApiError, apiFetch } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/relative-time';
 import {
@@ -20,6 +21,22 @@ const RESOLVE_ERROR_MESSAGE: Partial<Record<number, string>> = {
 
 const RESOLVE_FALLBACK = 'No pudimos resolver el reporte. Probá de nuevo.';
 
+export const BLOCK_SUCCESS_MESSAGE = 'Cuenta bloqueada';
+
+const BLOCK_ERROR_MESSAGE: Partial<Record<number, string>> = {
+  400: 'No se puede bloquear a un administrador.',
+  404: RESOLVE_ERROR_MESSAGE[404],
+  409: RESOLVE_ERROR_MESSAGE[409],
+};
+
+const BLOCK_FALLBACK = 'No pudimos bloquear la cuenta. Probá de nuevo.';
+
+type BlockAccountInput = {
+  userId: string;
+  duration: BlockDuration;
+  reportId: string;
+};
+
 export async function fetchAdminReports(status: ReportStatus): Promise<AdminReport[]> {
   const params = new URLSearchParams({ status });
   return apiFetch<AdminReport[]>(`/admin/reports?${params}`);
@@ -35,10 +52,29 @@ export async function resolveReport(
   });
 }
 
-export function resolveReportErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return RESOLVE_FALLBACK;
+export async function blockAccount({ userId, duration, reportId }: BlockAccountInput): Promise<void> {
+  await apiFetch(`/admin/users/${userId}/block`, {
+    method: 'POST',
+    body: JSON.stringify({ duration, reportId }),
+  });
+}
 
-  return RESOLVE_ERROR_MESSAGE[error.status] ?? RESOLVE_FALLBACK;
+function errorMessage(
+  error: unknown,
+  messages: Partial<Record<number, string>>,
+  fallback: string
+): string {
+  if (!(error instanceof ApiError)) return fallback;
+
+  return messages[error.status] ?? fallback;
+}
+
+export function resolveReportErrorMessage(error: unknown): string {
+  return errorMessage(error, RESOLVE_ERROR_MESSAGE, RESOLVE_FALLBACK);
+}
+
+export function blockAccountErrorMessage(error: unknown): string {
+  return errorMessage(error, BLOCK_ERROR_MESSAGE, BLOCK_FALLBACK);
 }
 
 export function formatReceivedReports(count: number): string {
