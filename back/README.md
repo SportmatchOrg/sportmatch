@@ -35,6 +35,7 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
 | `AZURE_STORAGE_CONNECTION_STRING` | Yes | Azure Blob Storage connection string for this environment. Backend only; never expose it through `NEXT_PUBLIC_` variables. |
 | `AZURE_STORAGE_CONTAINER` | Yes | Image container name: `images`. |
+| `SWAGGER_ENABLED` | No | `true` mounts the API docs at `/docs`. Leave it `false` or unset in production: then `/docs` answers 404. |
 
 ## Image storage (Azure Blob Storage)
 
@@ -149,6 +150,14 @@ environment variables as inputs, so setting them in this repository's wrapper
 alone will not configure the runner. Verify its disposable backend boots with
 these values, anonymous requests remain 401 and authenticated requests work.
 The runner does not need real storage access for this ticket's service-only API.
+
+## API documentation
+
+With `SWAGGER_ENABLED=true`, the interactive docs are at [http://localhost:3001/docs](http://localhost:3001/docs) and the OpenAPI JSON at [http://localhost:3001/docs-json](http://localhost:3001/docs-json).
+
+They are generated from the code: the Swagger CLI plugin (`nest-cli.json`) reads the DTOs and their `class-validator` rules, so new endpoints and fields show up without extra decorators. Each controller only needs `@ApiTags` and, when it is protected, `@ApiBearerAuth`. For DTOs that extend another one, import `PartialType`, `OmitType` and `PickType` from `@nestjs/swagger`, not from `@nestjs/mapped-types`, or the inherited fields are missing from the docs.
+
+To try a protected endpoint, click **Authorize** and paste a Firebase ID token in `bearer`. `POST /kpis/snapshots` uses the `kpi-key` scheme instead, with the value of `KPI_API_KEY`.
 
 ## Administrators
 

@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api';
 import type { Match, PublicUser } from '@/types/match';
-import type { ProfileUpdate, PublicProfile, User } from '@/types/user';
+import type { OnboardingData, ProfileUpdate, PublicProfile, User } from '@/types/user';
 
 export const USER_SEARCH_MIN_LENGTH = 2;
 export const USER_SEARCH_MAX_LENGTH = 50;
@@ -22,5 +22,12 @@ export async function updateProfile(userId: string, update: ProfileUpdate): Prom
   return apiFetch<User>(`/users/${userId}`, {
     method: 'PATCH',
     body: JSON.stringify(update),
+  });
+}
+
+export async function completeOnboarding(userId: string, data: OnboardingData): Promise<User> {
+  return apiFetch<User>(`/users/${userId}/onboarding`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
   });
 }

@@ -9,6 +9,8 @@ import type { App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FIREBASE_ADMIN } from '../firebase/firebase.module';
 import { UsersService } from '../users/users.service';
+import { isBlocked } from '../utils/blocks/account-block';
+import { AccountBlockedException } from './account-blocked.exception';
 import { AuthenticatedRequest, FirebaseIdToken, FirebaseUser } from './types';
 
 @Injectable()
@@ -27,8 +29,13 @@ export class FirebaseAuthGuard implements CanActivate {
     }
 
     const user = this.toFirebaseUser(await this.decodeToken(token));
+    const account = await this.usersService.ensureExists(user);
 
-    await this.usersService.ensureExists(user);
+    if (isBlocked(account)) {
+      throw new AccountBlockedException(account.blockedUntil);
+    }
+
+    await this.usersService.recordActivity(account.id);
 
     request.user = user;
 
