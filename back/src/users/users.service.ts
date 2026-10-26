@@ -21,6 +21,7 @@ import type { NoShowReportsFilter } from './types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { toArgentinaDate } from '../utils/time/argentina-date';
 import { weekStreak } from '../utils/time/week-streak';
+import { PHOTO_UPLOAD_ERROR, StorageService } from '../storage/storage.service';
 
 const NO_SHOW_SCORE = 1;
 const LATE_WITHDRAWAL_SCORE = 2;
@@ -69,7 +70,10 @@ const toScore = (
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly storage: StorageService,
+  ) {}
 
   findAll() {
     return this.usersRepository.findAll();
@@ -164,6 +168,49 @@ export class UsersService {
       return await this.usersRepository.update(id, updateUserDto);
     } catch (error) {
       throw this.toHttpException(error, id);
+    }
+  }
+
+  async uploadPhoto(id: string, photo: Express.Multer.File | undefined) {
+    if (!photo) throw new BadRequestException(PHOTO_UPLOAD_ERROR);
+
+    const user = await this.getById(id);
+    const path = `profiles/${id}`;
+    const photoUrl = await this.storage.upload(
+      photo.buffer,
+      photo.mimetype,
+      path,
+    );
+
+    try {
+      const { count } = await this.usersRepository.replacePhotoUrl(
+        id,
+        user.photoUrl,
+        photoUrl,
+      );
+      if (count === 0) {
+        await this.assertExists(id);
+        throw new ConflictException(
+          'La foto cambió durante la subida. Volvé a intentarlo.',
+        );
+      }
+    } catch (error) {
+      await this.tryRemovePhoto(photoUrl, 'new');
+      throw this.toHttpException(error, id);
+    }
+
+    if (user.photoUrl && this.storage.isStoredInPath(user.photoUrl, path)) {
+      await this.tryRemovePhoto(user.photoUrl, 'previous');
+    }
+
+    return { photoUrl };
+  }
+
+  private async tryRemovePhoto(url: string, kind: 'new' | 'previous') {
+    try {
+      await this.storage.remove(url);
+    } catch {
+      this.logger.warn(`Could not clean up ${kind} profile image`);
     }
   }
 

@@ -45,14 +45,19 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
 
   const token = await user.getIdToken();
+  const headers = new Headers(init.headers);
+  if (init.body instanceof FormData) {
+    headers.delete('Content-Type');
+  } else if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
-    },
+    headers,
   });
 
   if (response.status === UNAUTHORIZED) {

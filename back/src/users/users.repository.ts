@@ -227,6 +227,17 @@ export class UsersRepository {
     });
   }
 
+  replacePhotoUrl(
+    id: string,
+    previousPhotoUrl: string | null,
+    photoUrl: string,
+  ) {
+    return this.prisma.user.updateMany({
+      where: { id, photoUrl: previousPhotoUrl },
+      data: { photoUrl },
+    });
+  }
+
   remove(id: string) {
     return this.prisma.user.delete({ where: { id } });
   }

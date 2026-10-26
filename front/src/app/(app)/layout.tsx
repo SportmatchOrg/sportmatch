@@ -19,6 +19,18 @@ import { clearSplashPending, isSplashPending, SPLASH_SOUND_SRC } from '@/lib/spl
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+
+  return (
+    <QueryProvider key={user?.uid ?? 'anonymous'}>
+      <AppContent>{children}</AppContent>
+    </QueryProvider>
+  );
+}
+
+function AppContent({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const publicPage = isPublicMatchPath(pathname);
@@ -47,9 +59,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   if (!loading && !user && publicPage) {
     return (
-      <QueryProvider>
-        <div className="min-h-dvh bg-base text-white">{children}</div>
-      </QueryProvider>
+      <div className="min-h-dvh bg-base text-white">{children}</div>
     );
   }
 
@@ -59,18 +69,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <MapsProvider>
-      <QueryProvider>
-        <UnreadCountProvider>
-          <div className="min-h-dvh bg-base pb-28 text-white lg:pb-0 lg:pt-20">
-            <TopNavBar />
-            {children}
-            <TabBar />
-            {splashVisible ? (
-              <SplashScreen onDone={hideSplash} soundSrc={SPLASH_SOUND_SRC} />
-            ) : null}
-          </div>
-        </UnreadCountProvider>
-      </QueryProvider>
+      <UnreadCountProvider>
+        <div className="min-h-dvh bg-base pb-28 text-white lg:pb-0 lg:pt-20">
+          <TopNavBar />
+          {children}
+          <TabBar />
+          {splashVisible ? (
+            <SplashScreen onDone={hideSplash} soundSrc={SPLASH_SOUND_SRC} />
+          ) : null}
+        </div>
+      </UnreadCountProvider>
     </MapsProvider>
   );
 }
