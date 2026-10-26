@@ -14,6 +14,8 @@ import {
   validateSync,
 } from 'class-validator';
 
+const FREE_MODEL_LIST = /^\s*[^,\s]+:free(\s*,\s*[^,\s]+:free)*\s*,?\s*$/;
+
 class EnvironmentVariables {
   @IsOptional()
   @IsNumber()
@@ -79,6 +81,7 @@ class EnvironmentVariables {
 
   @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsString()
+  @Matches(FREE_MODEL_LIST)
   AI_FALLBACK_MODEL?: string;
 
   @IsOptional()
