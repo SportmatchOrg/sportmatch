@@ -30,6 +30,14 @@ class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  AZURE_STORAGE_CONNECTION_STRING: string;
+
+  @IsString()
+  @IsNotEmpty()
+  AZURE_STORAGE_CONTAINER: string;
+
+  @IsString()
+  @IsNotEmpty()
   FIREBASE_PROJECT_ID: string;
 
   @IsEmail()
@@ -105,7 +113,12 @@ export function validateEnv(
   const errors = validateSync(variables, { skipMissingProperties: false });
 
   if (errors.length > 0) {
-    const details = errors.map((error) => `  - ${error.toString()}`).join('\n');
+    const details = errors
+      .map(
+        (error) =>
+          `  - ${error.property}: ${Object.values(error.constraints ?? {}).join(', ')}`,
+      )
+      .join('\n');
     throw new Error(`Invalid environment configuration:\n${details}`);
   }
 

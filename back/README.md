@@ -33,6 +33,8 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | --- | --- | --- |
 | `SEED_ADMIN_EMAIL` | No | Email of the user that `npm run db:seed` turns into `ADMIN`. The user must have signed in at least once. Local only: the seed deletes every match. |
 | `KPI_API_KEY` | No | Key that `POST /kpis/snapshots` expects in the `X-Kpi-Key` header. Without it the API still boots and that endpoint answers 503. Use a different value in each environment. |
+| `AZURE_STORAGE_CONNECTION_STRING` | Yes | Azure Blob Storage connection string for this environment. Backend only; never expose it through `NEXT_PUBLIC_` variables. |
+| `AZURE_STORAGE_CONTAINER` | Yes | Image container name: `images`. |
 | `SWAGGER_ENABLED` | No | `true` mounts the API docs at `/docs`. Leave it `false` or unset in production: then `/docs` answers 404. |
 | `GEMINI_API_KEY` | No | Key of the main AI text provider (Gemini, Google AI Studio free tier). Without it, text requests go straight to OpenRouter. Never expose it to the front. |
 | `OPENROUTER_API_KEY` | No | Key of the fallback AI text provider (OpenRouter). Without both keys the API still boots and the `/ai/*` endpoints answer 503. |
@@ -40,6 +42,120 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | `AI_FALLBACK_MODEL` | No | OpenRouter models, comma separated, in priority order. OpenRouter tries the next one when one fails. Only `:free` models, since a paid one gets charged: the API refuses to boot if any model does not end in `:free`. |
 | `AI_MATCH_DRAFT_DAILY_LIMIT` | No | Match drafts each user can generate per day (Argentina time). Defaults to 20. Past it, 429. |
 | `AI_IMAGE_DAILY_LIMIT` | No | AI images each user can generate per day (Argentina time). Defaults to 5. Past it, 429. |
+
+## Image storage (Azure Blob Storage)
+
+Use a separate Storage Account for dev and prod, each with an `images` container.
+The accounts may share a resource group. The backend uses `@azure/storage-blob`,
+the official Azure SDK, to avoid implementing REST request signing manually
+(QA-03).
+
+### Azure setup
+
+1. Create a Standard StorageV2 account in the backend's region, with LRS and the
+   Hot access tier. Enable secure transfer (HTTPS), account key access and public
+   network access for the public image URLs.
+2. In the **Storage Account → Settings → Configuration**, set **Allow Blob
+   anonymous access** to **Enabled** and save. This account-level setting is
+   required even if the container is configured for public reads.
+3. In **Data storage → Containers**, create `images`. Set its anonymous access
+   level to **Blob (anonymous read access for blobs only)**, **not Container**.
+   This allows reading a known image URL without exposing anonymous blob listing.
+4. Upload a disposable image. Open its plain HTTPS URL in a private browser
+   window, without signing in or adding a SAS query string. It must return the
+   image. Also open
+   `https://<account>.blob.core.windows.net/images?restype=container&comp=list`:
+   anonymous listing must be denied (401/403/404), not return the image list. Confirm
+   the saved settings in both the account and container if either check fails.
+5. Copy the connection string from **Security + networking → Access keys**. In
+   the backend App Service's **Environment variables → App settings**, configure
+   `AZURE_STORAGE_CONNECTION_STRING` and `AZURE_STORAGE_CONTAINER=images`, then
+   save/apply. Use each account's own connection string in its environment.
+6. Repeat for prod with a different Storage Account. For local development, use
+   the **dev** account's connection string in `back/.env`. Never commit actual
+   keys or connection strings, or use prod credentials for local checks.
+
+Public blobs are readable by anyone with their URL; upload and deletion require
+the backend credentials. Enabling anonymous access at account level alone does
+not make a private container public. See Microsoft's
+[account and container access documentation](https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure).
+
+### Service contract
+
+`StorageModule` exports the global `StorageService`, following the existing
+infrastructure-module pattern. It has no controller or repository; the profile
+and match photo tickets will add their own authenticated upload endpoints.
+
+```typescript
+const url = await storage.upload(buffer, 'image/png', 'profiles');
+await storage.remove(url);
+```
+
+- `upload(buffer, contentType, path)` accepts JPEG, PNG or WebP, verifies the MIME
+  type and basic file signature, and accepts up to `5 * 1024 * 1024` bytes.
+  Empty files, unsupported/mismatched types and invalid path prefixes throw
+  `BadRequestException` (400). Signature checking is not a full image decoder.
+- `path` is an internal prefix such as `profiles`, `matches` or `checks/spo-287`;
+  use only letters, digits, `_`, `-` and `/` between nonempty segments. It is not
+  an original filename. The service generates `<path>/<UUID>.<extension>`, sets
+  the blob's `Content-Type` and returns only the public origin and path. Any SAS
+  query string, URL credentials or fragment from the configured endpoint are
+  excluded from the returned URL; the SDK client keeps its authorization.
+- `remove(url)` accepts only canonical HTTPS URLs for the configured account
+  and exact container, without credentials, query strings, fragments, encoded
+  paths or dot segments. It operates on that container's client, never on a
+  client created from user input. A missing blob is harmless (`deleteIfExists`).
+  Consumer services are responsible for authenticating and authorizing deletion
+  (including image ownership) before calling `remove`; validating the URL does
+  not grant permission to delete the image.
+- Azure operation failures return `ServiceUnavailableException` (503) with a
+  generic message, without exposing credentials or SDK internals.
+- The backend fails at startup if either required storage variable is missing;
+  there is no test-mode bypass or fallback to another account. Constructing the
+  client does not contact Azure or create containers at startup.
+
+### Manual verification
+
+Use a temporary script calling the real service against the **dev** container:
+upload one valid image, confirm an anonymous GET returns it with the correct
+`Content-Type`, confirm anonymous listing is denied, call `remove(url)`, then
+confirm that URL no longer returns the blob. Check the container's access policy
+with the SDK's `getAccessPolicy()`: `blobPublicAccess` must be `blob`, never
+`container`. Successful anonymous image access also confirms that account-level
+anonymous access is enabled.
+
+Before any network request, unsupported MIME types, text disguised as an image,
+empty files and files over the limit must throw 400. Check `remove()` rejects
+other accounts/containers, container-only URLs, HTTP, userinfo, SAS/query strings,
+fragments, traversal, encoded separators and duplicate path separators. Start the
+backend once with each required variable removed and check that its name appears
+in the configuration error. Use a temporary `next/image` rendering check with the
+returned URL, then remove any temporary routes and blobs. Run `npm run verify`
+from the repository root; do not add `.spec.ts` files for this ticket.
+
+### Security Agent compatibility
+
+The shared Security Agent in `SportmatchOrg/agents-copilot` imports the real
+`AppModule` and therefore also needs both storage variables. Its isolated runner
+must set synthetic values **before** importing `AppModule`, like its existing
+Firebase and VAPID setup. Do not supply dev/prod secrets or weaken `validateEnv`.
+
+The minimal adjustment in that repository's
+`.github/scripts/security-agent/boot-server.js` is:
+
+```javascript
+// Synthetic configuration: constructing the client does not contact Azure.
+process.env.AZURE_STORAGE_CONNECTION_STRING ??=
+  'DefaultEndpointsProtocol=https;AccountName=sportmatchsecurity;AccountKey=c3BvcnRtYXRjaC1zZWN1cml0eS10ZXN0LW9ubHk=;EndpointSuffix=core.windows.net';
+process.env.AZURE_STORAGE_CONTAINER ??= 'images';
+```
+
+Without this runner configuration, the agent must fail with the names of the
+missing variables. The current reusable workflow does not accept application
+environment variables as inputs, so setting them in this repository's wrapper
+alone will not configure the runner. Verify its disposable backend boots with
+these values, anonymous requests remain 401 and authenticated requests work.
+The runner does not need real storage access for this ticket's service-only API.
 
 ## API documentation
 

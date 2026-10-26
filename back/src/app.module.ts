@@ -17,6 +17,7 @@ import { HealthModule } from './health/health.module';
 import { KpisModule } from './kpis/kpis.module';
 import { ReportsModule } from './reports/reports.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { StorageModule } from './storage/storage.module';
 import { UserBlocksModule } from './user-blocks/user-blocks.module';
 import { AiModule } from './ai/ai.module';
 
@@ -28,6 +29,7 @@ import { AiModule } from './ai/ai.module';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    StorageModule,
     FirebaseModule,
     UsersModule,
     MatchesModule,

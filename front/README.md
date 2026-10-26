@@ -28,6 +28,27 @@ cp .env.example .env
 
 Todas son obligatorias. Si falta alguna, la aplicación falla al iniciar con un mensaje que indica cuál (ver `src/lib/env.ts`).
 
+### Imágenes en Azure Blob Storage
+
+Configurar `NEXT_PUBLIC_AZURE_STORAGE_HOST` con el **dominio exacto** de la cuenta
+del ambiente, por ejemplo `<cuenta>.blob.core.windows.net`, sin `https://`, rutas
+ni credenciales. Es un dominio público; la cadena de conexión pertenece
+exclusivamente al backend.
+
+`next.config.ts` permite imágenes HTTPS de ese host únicamente bajo `/images/**`,
+sin puertos personalizados ni parámetros de consulta. Se mantiene el host de
+Google para los avatares existentes. Si la variable está vacía, no se habilita
+ningún host de Azure; una configuración no vacía con formato inválido impide
+iniciar/compilar con un mensaje que identifica la variable.
+
+En local, usar el dominio de **dev** en `front/.env`. En Vercel, configurar el
+dominio de dev para **Preview** y el de prod para **Production**. Generar un nuevo
+despliegue después de cambiar la variable y reiniciar Next.js en local.
+
+Para verificarlo, renderizar temporalmente una URL pública del contenedor con
+`next/image` (con `width` y `height`, o `fill`) y comprobar que carga mediante el
+optimizador sin error de host. Este ticket no agrega una interfaz de subida.
+
 ### Configuración de Google Maps
 
 1. En el proyecto de Google Cloud con facturación habilitada, activar **Maps JavaScript API**, **Places API (New)** y **Geocoding API**. La última permite convertir la posición del pin en una dirección.
