@@ -102,6 +102,7 @@ model Match {
   longitude     Float?
   capacity      Int
   description   String?
+  photoUrl      String?
   status        MatchStatus    @default(ACTIVE)
   cancelReason  String?
   canceledAt    DateTime?

@@ -19,7 +19,7 @@ export async function generateMetadata({
 
   const title = matchShareTitle(match);
   const description = matchShareDescription(match);
-  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const photo = match.photoUrl ?? sportPhotoUrl(match.sport.name, match.id);
 
   return {
     title,

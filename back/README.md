@@ -131,6 +131,27 @@ Google photos and other users' images are preserved. Cleanup failures are logged
 without undoing a successful replacement. The ordinary profile PATCH does not
 accept `photoUrl`; use the photo endpoint to change it.
 
+### Match photo uploads
+
+`POST /matches/:id/photo` accepts the same multipart `photo` field and image
+validation as profile photos. Firebase authentication is required. Only the
+organizer can upload (403); a missing match returns 404 and a canceled match
+returns 409. Invalid, empty, missing or oversized files return 400.
+
+The nullable `Match.photoUrl` is returned in lists and authenticated/public
+details. It is never accepted by the regular create/update DTOs. Images use
+`matches/<matchId>/<UUID>.<extension>`. Replacements conditionally match the ID,
+organizer, previous URL and `ACTIVE` status. Conflicting uploads return 409;
+deletion or cancellation during upload returns 404 or 409 and cleans the new
+blob. Previous-image deletion requires the exact account, container and match
+prefix. Cleanup failures follow the same rules as profile photos.
+
+In the wizard, the optional photo is validated before saving, previewed locally,
+and uploaded after the match has an ID. If uploading fails, the saved match is
+retained and a persistent notice links to its detail and edit pages; publishing
+cannot be retried from that completed flow. Matches without a photo keep the
+sport image. Editing without selecting a new file preserves the existing photo.
+
 ### Manual verification
 
 Use a temporary script calling the real service against the **dev** container:

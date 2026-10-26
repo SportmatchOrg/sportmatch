@@ -97,6 +97,7 @@ export class MatchesRepository {
         id: true,
         date: true,
         location: true,
+        photoUrl: true,
         latitude: true,
         longitude: true,
         level: true,
@@ -179,6 +180,23 @@ export class MatchesRepository {
       where: { id },
       data,
       include: matchInclude(userId),
+    });
+  }
+
+  replacePhotoUrl(
+    id: string,
+    organizerId: string,
+    previousPhotoUrl: string | null,
+    photoUrl: string,
+  ) {
+    return this.prisma.match.updateMany({
+      where: {
+        id,
+        organizerId,
+        photoUrl: previousPhotoUrl,
+        status: 'ACTIVE',
+      },
+      data: { photoUrl },
     });
   }
 

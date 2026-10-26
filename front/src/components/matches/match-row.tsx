@@ -34,7 +34,7 @@ export function MatchRow({ match, layout = 'responsive' }: MatchRowProps) {
 
   const tile = layout === 'responsive';
   const Icon = SPORT_ICON[match.sport.name];
-  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const photo = match.photoUrl ?? sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const played = new Date(match.date) < new Date();
   const sport = SPORT_LABEL[match.sport.name];

@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import type { Level, MatchStatus, User } from '../generated/prisma/client';
@@ -20,6 +21,7 @@ import type { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesRepository } from './matches.repository';
 import type { DetailedMatch, ListedMatch } from './types';
+import { PHOTO_UPLOAD_ERROR, StorageService } from '../storage/storage.service';
 
 const DEFAULT_RADIUS_KM = 5;
 
@@ -32,10 +34,13 @@ type CompatibilityCandidate = {
 
 @Injectable()
 export class MatchesService {
+  private readonly logger = new Logger(MatchesService.name);
+
   constructor(
     private readonly matchesRepository: MatchesRepository,
     private readonly usersService: UsersService,
     private readonly notificationsService: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   async findUpcoming(firebaseUid: string, query: FindMatchesQueryDto) {
@@ -242,6 +247,57 @@ export class MatchesService {
       return this.toListResponse(updated, user.id);
     } catch (error) {
       throw this.toHttpException(error, id);
+    }
+  }
+
+  async uploadPhoto(
+    firebaseUid: string,
+    id: string,
+    photo: Express.Multer.File | undefined,
+  ) {
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const match = await this.assertIsOrganizer(user.id, id);
+    this.assertNotCanceled(match.status);
+    if (!photo) throw new BadRequestException(PHOTO_UPLOAD_ERROR);
+
+    const path = `matches/${id}`;
+    const photoUrl = await this.storage.upload(
+      photo.buffer,
+      photo.mimetype,
+      path,
+    );
+
+    try {
+      const { count } = await this.matchesRepository.replacePhotoUrl(
+        id,
+        user.id,
+        match.photoUrl,
+        photoUrl,
+      );
+      if (count === 0) {
+        const current = await this.assertIsOrganizer(user.id, id);
+        this.assertNotCanceled(current.status);
+        throw new ConflictException(
+          'La foto cambió durante la subida. Volvé a intentarlo.',
+        );
+      }
+    } catch (error) {
+      await this.tryRemovePhoto(photoUrl, 'new');
+      throw this.toHttpException(error, id);
+    }
+
+    if (match.photoUrl && this.storage.isStoredInPath(match.photoUrl, path)) {
+      await this.tryRemovePhoto(match.photoUrl, 'previous');
+    }
+
+    return { photoUrl };
+  }
+
+  private async tryRemovePhoto(url: string, kind: 'new' | 'previous') {
+    try {
+      await this.storage.remove(url);
+    } catch {
+      this.logger.warn(`Could not clean up ${kind} match image`);
     }
   }
 

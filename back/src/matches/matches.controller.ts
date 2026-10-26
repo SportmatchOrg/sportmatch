@@ -9,9 +9,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
@@ -20,6 +22,7 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesService } from './matches.service';
+import { PhotoUploadInterceptor } from '../storage/photo-upload.interceptor';
 
 @ApiTags('Partidos')
 @ApiBearerAuth()
@@ -84,6 +87,24 @@ export class MatchesController {
     @Body() updateMatchDto: UpdateMatchDto,
   ) {
     return this.matchesService.update(user.uid, id, updateMatchDto);
+  }
+
+  @Post(':id/photo')
+  @UseInterceptors(PhotoUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['photo'],
+      properties: { photo: { type: 'string', format: 'binary' } },
+    },
+  })
+  uploadPhoto(
+    @CurrentUser() user: FirebaseUser,
+    @Param('id') id: string,
+    @UploadedFile() photo: Express.Multer.File | undefined,
+  ) {
+    return this.matchesService.uploadPhoto(user.uid, id, photo);
   }
 
   @Delete(':id')

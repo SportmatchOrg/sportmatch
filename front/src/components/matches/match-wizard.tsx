@@ -1,10 +1,12 @@
 'use client';
 
 import { Autocomplete } from '@base-ui/react/autocomplete';
-import { MapPin as MapPinIcon } from 'lucide-react';
+import { ImageOff, MapPin as MapPinIcon } from 'lucide-react';
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
 import { MapPin } from '@/components/map/map-pin';
@@ -19,7 +21,13 @@ import { TextField } from '@/components/matches/text-field';
 import { TextareaField } from '@/components/matches/textarea-field';
 import { WizardShell } from '@/components/matches/wizard-shell';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
+import { uploadMatchPhoto } from '@/lib/matches';
+import { PHOTO_HINT, PHOTO_TYPES, photoError } from '@/lib/photo-upload';
+import { sportPhotoUrl } from '@/lib/sport-photo';
 import {
   MIN_PLACE_SEARCH_LENGTH,
   useGeocoding,
@@ -41,6 +49,7 @@ import {
   LOCATION_MAX,
   type Sport,
   type Level,
+  type Match,
 } from '@/types/match';
 
 type WizardToast = { message: string; tone: ToastTone };
@@ -71,7 +80,8 @@ function distanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: 
 type MatchWizardProps = {
   mode: 'create' | 'edit';
   initialForm: MatchForm;
-  submit: (form: MatchForm) => Promise<unknown>;
+  initialPhotoUrl?: string | null;
+  submit: (form: MatchForm) => Promise<Match>;
   toastMessage: (form: MatchForm, sport?: Sport) => string;
   errorMessage: (error: unknown) => string;
   doneHref: string;
@@ -96,6 +106,7 @@ export function MatchWizard(props: MatchWizardProps) {
 function MatchWizardForm({
   mode,
   initialForm,
+  initialPhotoUrl = null,
   submit,
   toastMessage,
   errorMessage,
@@ -103,6 +114,7 @@ function MatchWizardForm({
   user,
 }: MatchWizardProps & { user: User | null }) {
   const router = useRouter();
+  const invalidateMatches = useInvalidateMatches();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
   const { location } = useUserLocation();
   const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding(location);
@@ -111,6 +123,15 @@ function MatchWizardForm({
   const [errors, setErrors] = useState<MatchFormErrors>({});
   const [toast, setToast] = useState<WizardToast | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoValidationError, setPhotoValidationError] = useState<string | null>(null);
+  const [savedWithError, setSavedWithError] = useState<string | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoHintId = useId();
+  const photoErrorId = useId();
+  const saving = useRef(false);
+  const savedMatchId = useRef<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState<PlaceSearch>({
     status: 'idle',
     suggestions: [],
@@ -128,11 +149,15 @@ function MatchWizardForm({
   );
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || savedWithError) return;
 
     const timer = setTimeout(() => setToast(null), TOAST_DURATION);
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, savedWithError]);
+
+  useEffect(() => () => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+  }, [photoPreview]);
 
   useEffect(() => {
     return () => {
@@ -172,7 +197,25 @@ function MatchWizardForm({
   }, [step, placeSearch.open, placeSearch.status, placesReady, form.location, form.latitude, form.longitude, searchPlaces]);
 
   const sport = sports.find((candidate) => candidate.id === form.sportId);
+  const selectedPhoto = photoPreview ?? initialPhotoUrl;
+  const preview = selectedPhoto ?? (sport ? sportPhotoUrl(sport.name, form.location) : null);
   const showingSuggestions = placeSearch.open && placeSearch.status === 'ready';
+
+  function changePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    const error = photoError(file);
+    setPhotoValidationError(error);
+    setPhoto(error ? null : file);
+    setPhotoPreview(error ? null : URL.createObjectURL(file));
+  }
+
+  function discardPhotoSelection() {
+    setPhoto(null);
+    setPhotoPreview(null);
+    setPhotoValidationError(null);
+  }
 
   function setField<K extends keyof MatchForm>(key: K, value: MatchForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -261,6 +304,13 @@ function MatchWizardForm({
   }
 
   async function save() {
+    if (saving.current || savedMatchId.current) return;
+    const invalidPhoto = photoValidationError ?? (photo ? photoError(photo) : null);
+    if (invalidPhoto) {
+      setPhotoValidationError(invalidPhoto);
+      setStep(3);
+      return;
+    }
     const found = validateMatchForm(form);
 
     if (Object.keys(found).length > 0) {
@@ -269,20 +319,40 @@ function MatchWizardForm({
       return;
     }
 
+    saving.current = true;
     setSubmitting(true);
 
     try {
-      await submit(form);
+      const saved = await submit(form);
+      savedMatchId.current = saved.id;
+      if (photo) {
+        try {
+          await uploadMatchPhoto(saved.id, photo);
+        } catch {
+          setSavedWithError(saved.id);
+          setToast({ message: 'No pudimos subir la foto', tone: 'danger' });
+          await invalidateMatches();
+          return;
+        }
+      }
+      await invalidateMatches();
       setToast({ message: toastMessage(form, sport), tone: 'success' });
       redirectTimer.current = setTimeout(() => router.replace(doneHref), TOAST_DURATION);
     } catch (caught) {
+      if (savedMatchId.current) {
+        setSavedWithError(savedMatchId.current);
+        setToast({ message: 'El partido se guardó, pero no pudimos actualizar la vista.', tone: 'danger' });
+        return;
+      }
       setToast({ message: suspensionErrorMessage(caught) ?? errorMessage(caught), tone: 'danger' });
       setSubmitting(false);
+      saving.current = false;
     }
   }
 
   function handleContinue() {
-    if (submitting || addressStatus === 'loading') return;
+    if (submitting || saving.current || savedMatchId.current || addressStatus === 'loading') return;
+    if (step === 3 && photoValidationError) return;
 
     const found = stepErrors(validateMatchForm(form), step);
     setErrors(found);
@@ -306,6 +376,25 @@ function MatchWizardForm({
 
   function handleExit() {
     if (!submitting) router.back();
+  }
+
+  if (savedWithError) {
+    return (
+      <main className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-base px-5 lg:static lg:min-h-[calc(100dvh-5rem)]">
+        <EmptyState
+          icon={ImageOff}
+          title="El partido quedó guardado"
+          text="Podés abrirlo o volver a editarlo para subir la foto. No hace falta crear otro partido."
+          action={
+            <div className="flex flex-col gap-3">
+              <Link href={`/partidos/${savedWithError}`} className={pillButtonClassName()}>Ver partido</Link>
+              <Link href={`/partidos/${savedWithError}/editar`} className={pillButtonClassName({ variant: 'glass' })}>Editar partido</Link>
+            </div>
+          }
+        />
+        {toast && <Toast message={toast.message} tone={toast.tone} />}
+      </main>
+    );
   }
 
   return (
@@ -442,6 +531,24 @@ function MatchWizardForm({
               error={errors.level}
             />
 
+            <section aria-label="Foto del partido" className="flex flex-col gap-3">
+              <p className="text-callout font-semibold text-white">Foto del partido <span className="font-normal text-ink-46">· opcional</span></p>
+              {preview && (
+                <div className="relative h-44 overflow-hidden rounded-md bg-sunken">
+                  <Image key={preview} src={preview} alt="Vista previa de la foto del partido" fill sizes="(min-width: 1024px) 600px, 100vw" unoptimized={preview.startsWith('blob:')} className="object-cover" />
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <PillButton variant="glass" size="md" disabled={submitting} onClick={() => photoInput.current?.click()} aria-describedby={photoValidationError ? `${photoHintId} ${photoErrorId}` : photoHintId}>
+                  {selectedPhoto ? 'Cambiar foto' : 'Elegir foto'}
+                </PillButton>
+                {(photo || photoValidationError) && <PillButton variant="glass" size="md" disabled={submitting} onClick={discardPhotoSelection}>Descartar selección</PillButton>}
+              </div>
+              <input ref={photoInput} type="file" accept={PHOTO_TYPES.join(',')} disabled={submitting} onChange={changePhoto} aria-label="Elegir foto del partido" className="sr-only" tabIndex={-1} />
+              <p id={photoHintId} className="text-caption text-ink-64">{PHOTO_HINT}</p>
+              {photoValidationError && <p id={photoErrorId} role="alert" className="text-caption text-danger">{photoValidationError}</p>}
+            </section>
+
             <TextField
               id="titulo"
               label="Título"
@@ -465,7 +572,7 @@ function MatchWizardForm({
           </div>
         )}
 
-        {step === LAST_STEP && <MatchSummary form={form} sport={sport} organizer={user} />}
+        {step === LAST_STEP && <MatchSummary form={form} sport={sport} organizer={user} photoUrl={selectedPhoto} />}
       </WizardShell>
 
       {toast && (

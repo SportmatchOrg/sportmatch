@@ -31,6 +31,7 @@ export const HERO_BUTTON =
 
 type MatchSummary = {
   id: string;
+  photoUrl: string | null;
   sport: Sport;
   level: Level;
   location: string;
@@ -51,7 +52,7 @@ function MatchHero({ match, onBack, action }: MatchHeroProps) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
   const Icon = SPORT_ICON[match.sport.name];
-  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const photo = match.photoUrl ?? sportPhotoUrl(match.sport.name, match.id);
 
   return (
     <div className="relative h-[42vh] min-h-[280px] w-full overflow-hidden bg-sunken lg:h-[460px] lg:rounded-lg">
