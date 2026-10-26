@@ -1,17 +1,21 @@
 'use client';
 
-import { MapPin, User as UserIcon } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { LoaderCircle, MapPin, User as UserIcon } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import { AuthField } from '@/components/auth/auth-field';
 import { PasswordField } from '@/components/auth/password-field';
 import { EditField, editFieldErrorId } from '@/components/profile/edit-field';
 import { EditProfileLayout } from '@/components/profile/edit-profile-layout';
 import { SportsPicker } from '@/components/profile/sports-picker';
+import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { PillButton } from '@/components/ui/pill-button';
+import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useAuth } from '@/context/auth-context';
+import { useSyncProfileCache } from '@/hooks/use-sync-profile-cache';
+import { useUploadProfilePhoto } from '@/hooks/use-upload-profile-photo';
+import { PHOTO_HINT, PHOTO_TYPES } from '@/lib/photo-upload';
 import {
   MIN_PASSWORD_LENGTH,
   changePassword,
@@ -68,6 +72,11 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 
 export function EditProfileForm({ user }: { user: User }) {
   const { user: firebaseUser } = useAuth();
+  const syncProfileCache = useSyncProfileCache();
+  const photo = useUploadProfilePhoto(user.id);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoHintId = useId();
+  const photoErrorId = useId();
   const canChangePassword = hasPassword(firebaseUser);
 
   const [name, setName] = useState(user.name);
@@ -80,6 +89,14 @@ export function EditProfileForm({ user }: { user: User }) {
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file && await photo.upload(file)) {
+      setToast({ message: 'Foto actualizada', tone: 'success' });
+    }
+  }
 
   useEffect(() => {
     if (!toast) return;
@@ -108,7 +125,7 @@ export function EditProfileForm({ user }: { user: User }) {
     return found;
   }
 
-  async function save(): Promise<Errors | null> {
+  async function save(): Promise<Errors | string | null> {
     if (wantsPassword && firebaseUser) {
       try {
         await confirmPassword(firebaseUser, currentPassword);
@@ -119,8 +136,9 @@ export function EditProfileForm({ user }: { user: User }) {
       }
     }
 
+    let saved: User;
     try {
-      await updateProfile(user.id, {
+      saved = await updateProfile(user.id, {
         name: trimmedName,
         city: trimmedCity || null,
         level,
@@ -130,12 +148,26 @@ export function EditProfileForm({ user }: { user: User }) {
       return null;
     }
 
-    if (firebaseUser) await syncDisplayName(firebaseUser, trimmedName);
+    await syncProfileCache(user.id, user.firebaseUid, {
+      name: saved.name,
+      city: saved.city,
+      level: saved.level,
+      sports: saved.sports,
+    });
+
+    if (firebaseUser) {
+      try {
+        await syncDisplayName(firebaseUser, trimmedName);
+      } catch {
+        return 'Tu perfil se guardó, pero no pudimos sincronizar el nombre con Firebase. Probá de nuevo.';
+      }
+    }
 
     if (wantsPassword && firebaseUser) {
       try {
         await changePassword(firebaseUser, newPassword);
       } catch (caught) {
+        setToast({ message: 'Tu perfil se guardó, pero no pudimos cambiar la contraseña.', tone: 'danger' });
         return {
           newPassword: isWeakPassword(caught) ? WEAK_PASSWORD : getAuthErrorMessage(caught),
         };
@@ -147,29 +179,35 @@ export function EditProfileForm({ user }: { user: User }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving || photo.pending) return;
 
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
     setSaving(true);
-    const result = await save();
-    setSaving(false);
+    try {
+      const result = await save();
 
-    if (result === null) {
-      setToast({ message: SAVE_ERROR, tone: 'danger' });
-      return;
+      if (result === null || typeof result === 'string') {
+        setToast({ message: result ?? SAVE_ERROR, tone: 'danger' });
+        return;
+      }
+
+      setErrors(result);
+      if (Object.keys(result).length > 0) return;
+
+      setName(trimmedName);
+      setCity(trimmedCity);
+      setCurrentPassword('');
+      setNewPassword('');
+      setRepeatPassword('');
+      setToast({ message: SAVED, tone: 'success' });
+    } catch {
+      setToast({ message: 'No pudimos completar todas las operaciones. Revisá tu perfil antes de volver a intentar.', tone: 'danger' });
+    } finally {
+      setSaving(false);
     }
-
-    setErrors(result);
-    if (Object.keys(result).length > 0) return;
-
-    setName(trimmedName);
-    setCity(trimmedCity);
-    setCurrentPassword('');
-    setNewPassword('');
-    setRepeatPassword('');
-    setToast({ message: SAVED, tone: 'success' });
   }
 
   const describedBy = (field: FieldName) => (errors[field] ? editFieldErrorId(field) : undefined);
@@ -182,13 +220,48 @@ export function EditProfileForm({ user }: { user: User }) {
           type="submit"
           form={FORM_ID}
           size="md"
-          disabled={saving}
+          disabled={saving || photo.pending}
           className="hidden lg:flex"
         >
           {saveLabel}
         </PillButton>
       }
     >
+      <section aria-label="Foto de perfil" className="flex flex-col items-center gap-3 lg:items-start">
+        <button
+          type="button"
+          disabled={saving || photo.pending}
+          onClick={() => photoInput.current?.click()}
+          aria-label="Cambiar foto"
+          aria-busy={photo.pending}
+          aria-describedby={photo.error ? `${photoHintId} ${photoErrorId}` : photoHintId}
+          className="flex flex-col items-center gap-4 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed"
+        >
+          <span className="relative rounded-full">
+            <ProfileAvatar name={user.name} photoUrl={user.photoUrl} />
+            {photo.pending && (
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-base/70">
+                <LoaderCircle className="size-7 animate-spin text-white" aria-hidden="true" />
+              </span>
+            )}
+          </span>
+          <span className={pillButtonClassName({ variant: 'glass', size: 'md' })}>
+            {photo.pending ? 'Subiendo foto…' : 'Cambiar foto'}
+          </span>
+        </button>
+        <input
+          ref={photoInput}
+          type="file"
+          accept={PHOTO_TYPES.join(',')}
+          disabled={saving || photo.pending}
+          onChange={(event) => void handlePhotoChange(event)}
+          aria-label="Elegir foto de perfil"
+          tabIndex={-1}
+          className="sr-only"
+        />
+        <p id={photoHintId} className="text-caption text-ink-64">{PHOTO_HINT}</p>
+        {photo.error && <p id={photoErrorId} role="alert" className="text-caption text-danger">{photo.error}</p>}
+      </section>
       <form
         id={FORM_ID}
         onSubmit={handleSubmit}
@@ -316,7 +389,7 @@ export function EditProfileForm({ user }: { user: User }) {
           </section>
         )}
 
-        <PillButton type="submit" disabled={saving} className="lg:hidden">
+        <PillButton type="submit" disabled={saving || photo.pending} className="lg:hidden">
           {saveLabel}
         </PillButton>
       </form>

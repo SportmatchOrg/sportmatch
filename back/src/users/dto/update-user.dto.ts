@@ -14,7 +14,7 @@ import { CreateUserDto } from './create-user.dto';
 const MAX_USER_SPORTS = 5;
 
 export class UpdateUserDto extends PartialType(
-  OmitType(CreateUserDto, ['firebaseUid', 'email'] as const),
+  OmitType(CreateUserDto, ['firebaseUid', 'email', 'photoUrl'] as const),
 ) {
   @IsOptional()
   @IsString()

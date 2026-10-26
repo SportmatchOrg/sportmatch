@@ -32,7 +32,7 @@ export async function changePassword(user: User, password: string): Promise<void
 }
 
 export async function syncDisplayName(user: User, name: string): Promise<void> {
-  await updateProfile(user, { displayName: name }).catch(() => undefined);
+  await updateProfile(user, { displayName: name });
 }
 
 export function isWrongPassword(error: unknown): boolean {

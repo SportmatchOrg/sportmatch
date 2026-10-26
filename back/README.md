@@ -83,8 +83,8 @@ not make a private container public. See Microsoft's
 ### Service contract
 
 `StorageModule` exports the global `StorageService`, following the existing
-infrastructure-module pattern. It has no controller or repository; the profile
-and match photo tickets will add their own authenticated upload endpoints.
+infrastructure-module pattern. It has no controller or repository. The users
+resource exposes profile photo uploads; match photo uploads are a separate ticket.
 
 ```typescript
 const url = await storage.upload(buffer, 'image/png', 'profiles');
@@ -113,6 +113,23 @@ await storage.remove(url);
 - The backend fails at startup if either required storage variable is missing;
   there is no test-mode bypass or fallback to another account. Constructing the
   client does not contact Azure or create containers at startup.
+
+### Profile photo uploads
+
+`POST /users/:id/photo` accepts a multipart file named `photo`, with Firebase
+authentication and `OwnAccountGuard`. It returns `{ photoUrl }`. Missing files,
+unsupported image content and files larger than 5 MB return 400 with
+`La foto tiene que ser JPG, PNG o WebP de hasta 5 MB`, including multipart size
+limit failures. Exactly 5 MB is accepted. Swagger documents the binary field.
+
+Images are stored under `profiles/<userId>/`. Replacing a photo uses a conditional
+database update: concurrent requests based on the same previous URL cannot both
+replace it (409 for the losing request). Failed persistence triggers best-effort
+cleanup of the new blob without masking the original error. After success, only
+the previous image in this account, container and exact user's prefix is removed;
+Google photos and other users' images are preserved. Cleanup failures are logged
+without undoing a successful replacement. The ordinary profile PATCH does not
+accept `photoUrl`; use the photo endpoint to change it.
 
 ### Manual verification
 

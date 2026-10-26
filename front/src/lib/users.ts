@@ -10,12 +10,18 @@ export async function searchUsers(query: string, signal?: AbortSignal): Promise<
   return apiFetch<PublicUser[]>(`/users/search?${params}`, { signal });
 }
 
-export async function fetchPublicProfile(userId: string): Promise<PublicProfile> {
-  return apiFetch<PublicProfile>(`/users/${userId}`);
+export async function fetchPublicProfile(userId: string, signal?: AbortSignal): Promise<PublicProfile> {
+  return apiFetch<PublicProfile>(`/users/${userId}`, { signal });
 }
 
-export async function fetchPlayedBy(userId: string): Promise<Match[]> {
-  return apiFetch<Match[]>(`/matches/played-by/${userId}`);
+export async function fetchPlayedBy(userId: string, signal?: AbortSignal): Promise<Match[]> {
+  return apiFetch<Match[]>(`/matches/played-by/${userId}`, { signal });
+}
+
+export async function uploadProfilePhoto(userId: string, file: File): Promise<{ photoUrl: string }> {
+  const body = new FormData();
+  body.append('photo', file);
+  return apiFetch(`/users/${userId}/photo`, { method: 'POST', body });
 }
 
 export async function updateProfile(userId: string, update: ProfileUpdate): Promise<User> {

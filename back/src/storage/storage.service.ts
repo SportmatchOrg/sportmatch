@@ -7,7 +7,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+export const PHOTO_UPLOAD_ERROR =
+  'La foto tiene que ser JPG, PNG o WebP de hasta 5 MB';
 const PATH_PATTERN = /^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/;
 
 const IMAGE_FORMATS = {
@@ -60,13 +62,11 @@ export class StorageService {
       ? IMAGE_FORMATS[contentType as keyof typeof IMAGE_FORMATS]
       : undefined;
 
-    if (!buffer.length || buffer.length > MAX_IMAGE_BYTES) {
-      throw new BadRequestException(
-        'Image must contain between 1 byte and 5 MB',
-      );
+    if (!buffer.length || buffer.length > PHOTO_MAX_BYTES) {
+      throw new BadRequestException(PHOTO_UPLOAD_ERROR);
     }
     if (!format || !format.matches(buffer)) {
-      throw new BadRequestException('Image must be a JPEG, PNG or WebP');
+      throw new BadRequestException(PHOTO_UPLOAD_ERROR);
     }
     if (!PATH_PATTERN.test(path)) {
       throw new BadRequestException('Invalid image path');
@@ -94,6 +94,15 @@ export class StorageService {
       await this.container.getBlockBlobClient(blobName).deleteIfExists();
     } catch {
       throw new ServiceUnavailableException('Image storage is unavailable');
+    }
+  }
+
+  isStoredInPath(url: string, path: string): boolean {
+    if (!PATH_PATTERN.test(path)) return false;
+    try {
+      return this.blobNameFromUrl(url).startsWith(`${path}/`);
+    } catch {
+      return false;
     }
   }
 

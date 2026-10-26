@@ -7,9 +7,12 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { PhotoUploadInterceptor } from '../storage/photo-upload.interceptor';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -68,6 +71,24 @@ export class UsersController {
   @UseGuards(OwnAccountGuard)
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
+  }
+
+  @Post(':id/photo')
+  @UseGuards(OwnAccountGuard)
+  @UseInterceptors(PhotoUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['photo'],
+      properties: { photo: { type: 'string', format: 'binary' } },
+    },
+  })
+  uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() photo: Express.Multer.File | undefined,
+  ) {
+    return this.usersService.uploadPhoto(id, photo);
   }
 
   @Delete(':id')
