@@ -14,6 +14,13 @@ import {
   Min,
 } from 'class-validator';
 import { Level } from '../../generated/prisma/client';
+import {
+  CAPACITY_MAX,
+  CAPACITY_MIN,
+  DESCRIPTION_MAX,
+  LOCATION_MAX,
+  LOCATION_MIN,
+} from '../../utils/matches/match-limits';
 
 export class CreateMatchDto {
   @IsString()
@@ -28,7 +35,7 @@ export class CreateMatchDto {
   date: Date;
 
   @IsString()
-  @Length(3, 120)
+  @Length(LOCATION_MIN, LOCATION_MAX)
   location: string;
 
   @IsNumber()
@@ -40,12 +47,12 @@ export class CreateMatchDto {
   longitude: number;
 
   @IsInt()
-  @Min(2)
-  @Max(30)
+  @Min(CAPACITY_MIN)
+  @Max(CAPACITY_MAX)
   capacity: number;
 
   @IsOptional()
   @IsString()
-  @Length(0, 500)
+  @Length(0, DESCRIPTION_MAX)
   description?: string;
 }
