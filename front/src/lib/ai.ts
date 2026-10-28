@@ -15,7 +15,7 @@ const UNAVAILABLE = 'El asistente no está disponible ahora. Podés armarlo paso
 
 const DRAFT_ERROR_MESSAGE: Partial<Record<number, string>> = {
   422: 'No pudimos armar el partido con eso. Probá contando deporte, día y hora.',
-  429: 'Ya usaste los 20 borradores de hoy. Seguí paso a paso o probá mañana.',
+  429: 'Ya usaste todos los borradores de hoy. Seguí paso a paso o probá mañana.',
   503: UNAVAILABLE,
 };
 
