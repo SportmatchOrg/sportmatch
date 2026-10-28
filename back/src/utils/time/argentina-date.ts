@@ -14,6 +14,30 @@ const argentinaDate = new Intl.DateTimeFormat('en-CA', {
 export const toArgentinaDate = (date: Date): string =>
   argentinaDate.format(date);
 
+const argentinaDateTime = new Intl.DateTimeFormat('es-AR', {
+  timeZone: ARGENTINA_TIME_ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
+export const formatArgentinaDateTime = (date: Date): string =>
+  argentinaDateTime.format(date);
+
+const TIME_ZONE_SUFFIX = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+export const parseArgentinaDateTime = (value: string): Date | null => {
+  const date = new Date(
+    TIME_ZONE_SUFFIX.test(value) ? value : `${value}${ARGENTINA_UTC_OFFSET}`,
+  );
+
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 export const toDayIndex = (day: string): number =>
   new Date(`${day}T00:00:00Z`).getTime() / MS_PER_DAY;
 
