@@ -12,6 +12,11 @@ import { BaseMap } from '@/components/map/base-map';
 import { MapPin } from '@/components/map/map-pin';
 import { PlaceSuggestions } from '@/components/map/place-suggestions';
 import { CapacityStepper } from '@/components/matches/capacity-stepper';
+import {
+  AssistantButton,
+  AssistantNotice,
+  MatchAssistant,
+} from '@/components/matches/match-assistant';
 import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
 import { LevelPicker } from '@/components/matches/level-picker';
@@ -31,13 +36,20 @@ import { sportPhotoUrl } from '@/lib/sport-photo';
 import {
   MIN_PLACE_SEARCH_LENGTH,
   useGeocoding,
+  type Place,
   type PlaceSuggestion,
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
 import { useUserLocation } from '@/hooks/use-user-location';
+import { applyMatchDraft, type MatchDraft } from '@/lib/ai';
 import { suspensionErrorMessage, suspensionMessage } from '@/lib/suspension';
 import type { User } from '@/types/user';
-import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
+import {
+  LAST_STEP,
+  firstStepWithError,
+  incompleteSteps,
+  stepErrors,
+} from '@/lib/match-wizard';
 import {
   validateMatchForm,
   type MatchForm,
@@ -139,6 +151,9 @@ function MatchWizardForm({
   });
   const [addressStatus, setAddressStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assisted, setAssisted] = useState(false);
+  const [returnToReview, setReturnToReview] = useState(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRevision = useRef(0);
   const addressRevision = useRef(0);
@@ -200,6 +215,7 @@ function MatchWizardForm({
   const selectedPhoto = photoPreview ?? initialPhotoUrl;
   const preview = selectedPhoto ?? (sport ? sportPhotoUrl(sport.name, form.location) : null);
   const showingSuggestions = placeSearch.open && placeSearch.status === 'ready';
+  const incomplete = incompleteSteps(validateMatchForm(form));
 
   function changePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
@@ -245,6 +261,21 @@ function MatchWizardForm({
     void searchPlaces('');
   }
 
+  function applyPlace(place: Place, placeId: string) {
+    const location = place.label.slice(0, LOCATION_MAX);
+
+    selectedPlace.current = { latitude: place.latitude, longitude: place.longitude, name: location };
+    setSelectedPlaceId(placeId);
+    setAddressStatus('idle');
+    setForm((current) => ({
+      ...current,
+      location,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    }));
+    setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
+  }
+
   async function selectSuggestion(suggestion: PlaceSuggestion) {
     const revision = inputRevision.current;
     setPlaceSearch((state) => ({ ...state, status: 'selecting', open: false }));
@@ -253,20 +284,7 @@ function MatchWizardForm({
       const place = await getPlace(suggestion);
       if (revision !== inputRevision.current) return;
 
-      selectedPlace.current = {
-        latitude: place.latitude,
-        longitude: place.longitude,
-        name: place.label.slice(0, LOCATION_MAX),
-      };
-      setSelectedPlaceId(suggestion.id);
-      setAddressStatus('idle');
-      setForm((current) => ({
-        ...current,
-        location: place.label.slice(0, LOCATION_MAX),
-        latitude: place.latitude,
-        longitude: place.longitude,
-      }));
-      setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
+      applyPlace(place, suggestion.id);
       closeSuggestions();
     } catch {
       if (revision === inputRevision.current) {
@@ -301,6 +319,36 @@ function MatchWizardForm({
     } catch {
       if (revision === addressRevision.current) setAddressStatus('error');
     }
+  }
+
+  async function resolveDraftPlace(location: string) {
+    const [suggestion] = await searchPlaces(location);
+
+    if (suggestion) applyPlace(await getPlace(suggestion), suggestion.id);
+    else void searchPlaces('');
+  }
+
+  async function applyDraft(draft: MatchDraft) {
+    setForm((current) => applyMatchDraft(current, draft));
+    if (draft.location) await resolveDraftPlace(draft.location).catch(() => undefined);
+
+    setErrors({});
+    setAssisted(true);
+    setReturnToReview(false);
+    setStep(LAST_STEP);
+    setAssistantOpen(false);
+  }
+
+  function goToStep(target: number) {
+    setErrors({});
+    setReturnToReview(true);
+    setStep(target);
+  }
+
+  function continueLabel(): string | undefined {
+    if (step === LAST_STEP) return incomplete.length > 0 ? 'Completá lo que falta' : undefined;
+
+    return returnToReview ? 'Volver al resumen' : undefined;
   }
 
   async function save() {
@@ -354,6 +402,11 @@ function MatchWizardForm({
     if (submitting || saving.current || savedMatchId.current || addressStatus === 'loading') return;
     if (step === 3 && photoValidationError) return;
 
+    if (step === LAST_STEP && incomplete.length > 0) {
+      goToStep(incomplete[0]);
+      return;
+    }
+
     const found = stepErrors(validateMatchForm(form), step);
     setErrors(found);
 
@@ -361,6 +414,12 @@ function MatchWizardForm({
 
     if (step === LAST_STEP) {
       void save();
+      return;
+    }
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      setStep(LAST_STEP);
       return;
     }
 
@@ -387,14 +446,28 @@ function MatchWizardForm({
           text="Podés abrirlo o volver a editarlo para subir la foto. No hace falta crear otro partido."
           action={
             <div className="flex flex-col gap-3">
-              <Link href={`/partidos/${savedWithError}`} className={pillButtonClassName()}>Ver partido</Link>
-              <Link href={`/partidos/${savedWithError}/editar`} className={pillButtonClassName({ variant: 'glass' })}>Editar partido</Link>
+              <Link
+                href={`/partidos/${savedWithError}`}
+                className={pillButtonClassName()}
+              >
+                Ver partido
+              </Link>
+              <Link
+                href={`/partidos/${savedWithError}/editar`}
+                className={pillButtonClassName({ variant: 'glass' })}
+              >
+                Editar partido
+              </Link>
             </div>
           }
         />
         {toast && <Toast message={toast.message} tone={toast.tone} />}
       </main>
     );
+  }
+
+  if (assistantOpen) {
+    return <MatchAssistant onClose={() => setAssistantOpen(false)} onDraft={applyDraft} />;
   }
 
   return (
@@ -404,6 +477,12 @@ function MatchWizardForm({
         step={step}
         submitting={submitting}
         continueDisabled={step === 1 && addressStatus === 'loading'}
+        continueLabel={continueLabel()}
+        assistant={
+          mode === 'create' && step === 0 ? (
+            <AssistantButton onClick={() => setAssistantOpen(true)} />
+          ) : undefined
+        }
         onBack={handleBack}
         onExit={handleExit}
         onContinue={handleContinue}
@@ -572,7 +651,20 @@ function MatchWizardForm({
           </div>
         )}
 
-        {step === LAST_STEP && <MatchSummary form={form} sport={sport} organizer={user} photoUrl={selectedPhoto} />}
+        {step === LAST_STEP && (
+          <div className="flex flex-col gap-4">
+            {assisted && <AssistantNotice complete={incomplete.length === 0} />}
+
+            <MatchSummary
+              form={form}
+              sport={sport}
+              organizer={user}
+              photoUrl={selectedPhoto}
+              incompleteSteps={incomplete}
+              onEdit={goToStep}
+            />
+          </div>
+        )}
       </WizardShell>
 
       {toast && (
