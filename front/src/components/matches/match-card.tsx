@@ -43,7 +43,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
   const [photoFailed, setPhotoFailed] = useState(false);
 
   const Icon = SPORT_ICON[match.sport.name];
-  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const photo = match.photoUrl ?? sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const sport = SPORT_LABEL[match.sport.name];
   const canceled = match.status === 'CANCELED';

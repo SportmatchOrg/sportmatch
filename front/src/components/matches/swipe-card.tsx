@@ -58,7 +58,7 @@ export function SwipeCard({
 }: SwipeCardProps) {
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const Icon = SPORT_ICON[match.sport.name];
-  const photo = sportPhotoUrl(match.sport.name, match.id);
+  const photo = match.photoUrl ?? sportPhotoUrl(match.sport.name, match.id);
   const freeSpots = Math.max(0, match.capacity - match.joinedCount);
   const sport = SPORT_LABEL[match.sport.name];
   const level = LEVEL_LABEL[match.level];

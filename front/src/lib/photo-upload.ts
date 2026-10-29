@@ -3,6 +3,7 @@ export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 export const PHOTO_HINT = 'JPG, PNG o WebP · hasta 5 MB';
 
 export function photoError(file: File): string | null {
+  if (file.size === 0) return 'La foto está vacía';
   if (!PHOTO_TYPES.includes(file.type as (typeof PHOTO_TYPES)[number])) {
     return 'La foto tiene que ser JPG, PNG o WebP';
   }

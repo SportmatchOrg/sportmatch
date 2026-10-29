@@ -69,6 +69,7 @@ type MatchSummaryProps = {
   form: MatchForm;
   sport?: Sport;
   organizer: Host | null;
+  photoUrl?: string | null;
   incompleteSteps?: number[];
   onEdit?: (step: number) => void;
 };
@@ -77,18 +78,22 @@ export function MatchSummary({
   form,
   sport,
   organizer,
-                               incompleteSteps = [],
+  photoUrl,
+  incompleteSteps = [],
   onEdit,
 }: MatchSummaryProps) {
-  const [photoFailed, setPhotoFailed] = useState(false);
+  const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
 
   function missingProps(field: keyof MatchForm) {
     const step = stepOfField(field);
 
-    return { missing: incompleteSteps.includes(step), onEdit: () => onEdit?.(step) };
+    return {
+      missing: incompleteSteps.includes(step),
+      onEdit: () => onEdit?.(step),
+    };
   }
 
-  const photo = sport ? sportPhotoUrl(sport.name, form.location) : null;
+  const photo = photoUrl ?? (sport ? sportPhotoUrl(sport.name, form.location) : null);
   const Icon = sport ? SPORT_ICON[sport.name] : null;
   const deporteLabel = sport ? SPORT_LABEL[sport.name] : '—';
   const nivelLabel = form.level ? LEVEL_LABEL[form.level] : '—';
@@ -96,13 +101,14 @@ export function MatchSummary({
   return (
     <section className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-4">
       <div className="relative h-[180px] overflow-hidden rounded-lg bg-sunken lg:h-auto lg:min-h-[280px]">
-        {photo && !photoFailed ? (
+        {photo && failedPhoto !== photo ? (
           <Image
             src={photo}
+            unoptimized={photo.startsWith('blob:')}
             alt=""
             fill
             sizes="(min-width: 1024px) 480px, 100vw"
-            onError={() => setPhotoFailed(true)}
+            onError={() => setFailedPhoto(photo)}
             className="object-cover"
           />
         ) : (

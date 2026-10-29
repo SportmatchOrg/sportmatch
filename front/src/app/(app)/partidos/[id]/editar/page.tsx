@@ -103,6 +103,7 @@ export default function EditMatchPage({ params }: PageProps<'/partidos/[id]/edit
     <MatchWizard
       mode="edit"
       initialForm={toMatchForm(match)}
+      initialPhotoUrl={match.photoUrl}
       submit={(form) => updateMatch(id, form)}
       toastMessage={updatedMessage}
       errorMessage={updateErrorMessage}

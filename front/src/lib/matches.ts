@@ -90,6 +90,12 @@ export async function updateMatch(matchId: string, form: MatchForm): Promise<Mat
   });
 }
 
+export async function uploadMatchPhoto(matchId: string, file: File): Promise<{ photoUrl: string }> {
+  const body = new FormData();
+  body.append('photo', file);
+  return apiFetch(`/matches/${matchId}/photo`, { method: 'POST', body });
+}
+
 export async function requestToJoin(matchId: string): Promise<void> {
   await apiFetch(`/matches/${matchId}/join-requests`, { method: 'POST' });
 }

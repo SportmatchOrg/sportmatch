@@ -49,6 +49,7 @@ export type CancelReason = (typeof CANCEL_REASONS)[number];
 
 export type Match = {
   id: string;
+  photoUrl: string | null;
   sportId: string;
   sport: Sport;
   level: Level;
@@ -83,6 +84,7 @@ export type MatchDetail = Match & {
 
 export type PublicMatch = {
   id: string;
+  photoUrl: string | null;
   date: string;
   location: string;
   latitude: number | null;

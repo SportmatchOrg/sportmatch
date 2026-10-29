@@ -195,7 +195,7 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
     );
   }
 
-  const ambientPhoto = sportPhotoUrl(current.sport.name, current.id);
+  const ambientPhoto = current.photoUrl ?? sportPhotoUrl(current.sport.name, current.id);
   const offsetX = flyout ? (flyout === 'yes' ? FLYOUT_DISTANCE : -FLYOUT_DISTANCE) : drag.x;
   const offsetY = flyout ? FLYOUT_LIFT : drag.y;
   const decision =
