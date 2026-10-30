@@ -16,9 +16,9 @@ import { fetchMatchDraft, matchDraftErrorMessage, type MatchDraft } from '@/lib/
 import { cn } from '@/lib/utils';
 
 const EXAMPLES = [
-  'Fútbol 5 el sábado a las 19 en River Courts, nivel intermedio',
-  'Pádel mañana a las 8 de la noche en Club Víbora',
-  'Básquet el jueves a las 21, somos 6, tranqui',
+  'Fútbol 5 el sábado a las 19 en Parque Centenario, nivel intermedio, faltan 4',
+  'Pádel mañana a las 20 en Club Ciudad de Buenos Aires, nivel avanzado, faltan 2',
+  'Básquet el jueves a las 21 en Parque Chacabuco, principiantes, faltan 6',
 ];
 
 const TEXT_MIN = 3;
@@ -153,14 +153,14 @@ export function MatchAssistant({ onClose, onDraft }: MatchAssistantProps) {
     <div className={WIZARD_FRAME}>
       <div className={WIZARD_PANEL}>
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <header className="flex shrink-0 px-5 pt-6 lg:justify-end lg:px-10 lg:pt-8">
-            <IconButton label="Volver al paso a paso" onClick={onClose}>
-              <X className="size-5" aria-hidden="true" />
-            </IconButton>
-          </header>
+          <header className="flex shrink-0 flex-col gap-6 px-5 pt-6 lg:px-10 lg:pt-8">
+            <div className="lg:hidden">
+              <IconButton label="Volver al paso a paso" onClick={onClose}>
+                <X className="size-5" aria-hidden="true" />
+              </IconButton>
+            </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-40 lg:px-10 lg:pb-8">
-            <div className="flex flex-col gap-6 lg:max-w-2xl">
+            <div className="flex items-start justify-between gap-6">
               <div className="flex flex-col gap-3">
                 <span className="flex items-center gap-1.5 text-overline text-brand uppercase">
                   <Sparkles className="size-3.5" aria-hidden="true" />
@@ -178,6 +178,14 @@ export function MatchAssistant({ onClose, onDraft }: MatchAssistantProps) {
                 </p>
               </div>
 
+              <IconButton label="Volver al paso a paso" onClick={onClose} className="hidden lg:flex">
+                <X className="size-5" aria-hidden="true" />
+              </IconButton>
+            </div>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-10 pb-40 lg:px-10 lg:pb-8">
+            <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-10">
               <div className="flex flex-col gap-3">
                 <textarea
                   aria-label="Describí el partido"
@@ -186,7 +194,7 @@ export function MatchAssistant({ onClose, onDraft }: MatchAssistantProps) {
                   value={text}
                   disabled={busy}
                   autoFocus
-                  placeholder="Ej. pádel mañana a las 8 de la noche en Club Víbora"
+                  placeholder="Ej. fútbol 5 el sábado a las 19 en Parque Centenario, nivel intermedio, faltan 4"
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? ERROR_ID : undefined}
                   onChange={(event) => changeText(event.target.value)}
