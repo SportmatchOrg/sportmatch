@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SESSION_COOKIE_NAME } from '../auth/session-cookie';
 import { KPI_KEY_HEADER, KPI_KEY_SECURITY } from '../kpis/kpi-key.guard';
 
 export const SWAGGER_PATH = 'docs';
@@ -19,6 +20,7 @@ const buildDocumentConfig = () =>
       bearerFormat: 'JWT',
       description: 'ID token de Firebase',
     })
+    .addCookieAuth(SESSION_COOKIE_NAME)
     .addApiKey(
       { type: 'apiKey', in: 'header', name: KPI_KEY_HEADER },
       KPI_KEY_SECURITY,

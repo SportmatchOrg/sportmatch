@@ -1,5 +1,6 @@
 'use client';
 
+import type { User as FirebaseUser } from 'firebase/auth';
 import { LoaderCircle, MapPin, User as UserIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
@@ -23,9 +24,11 @@ import {
   hasPassword,
   isWeakPassword,
   isWrongPassword,
+  releaseCredential,
   syncDisplayName,
 } from '@/lib/account';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { openSession } from '@/lib/session';
 import { updateProfile } from '@/lib/users';
 import { cn } from '@/lib/utils';
 import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
@@ -71,13 +74,13 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 }
 
 export function EditProfileForm({ user }: { user: User }) {
-  const { user: firebaseUser } = useAuth();
+  const { user: sessionUser } = useAuth();
   const syncProfileCache = useSyncProfileCache();
   const photo = useUploadProfilePhoto(user.id);
   const photoInput = useRef<HTMLInputElement>(null);
   const photoHintId = useId();
   const photoErrorId = useId();
-  const canChangePassword = hasPassword(firebaseUser);
+  const canChangePassword = hasPassword(sessionUser);
 
   const [name, setName] = useState(user.name);
   const [city, setCity] = useState(user.city ?? '');
@@ -126,16 +129,25 @@ export function EditProfileForm({ user }: { user: User }) {
   }
 
   async function save(): Promise<Errors | string | null> {
-    if (wantsPassword && firebaseUser) {
-      try {
-        await confirmPassword(firebaseUser, currentPassword);
-      } catch (caught) {
-        return {
-          currentPassword: isWrongPassword(caught) ? WRONG_PASSWORD : getAuthErrorMessage(caught),
-        };
-      }
+    if (!wantsPassword || !sessionUser) return saveProfile(null);
+
+    let credential: FirebaseUser;
+    try {
+      credential = await confirmPassword(sessionUser.email, currentPassword);
+    } catch (caught) {
+      return {
+        currentPassword: isWrongPassword(caught) ? WRONG_PASSWORD : getAuthErrorMessage(caught),
+      };
     }
 
+    try {
+      return await saveProfile(credential);
+    } finally {
+      await releaseCredential();
+    }
+  }
+
+  async function saveProfile(credential: FirebaseUser | null): Promise<Errors | string | null> {
     let saved: User;
     try {
       saved = await updateProfile(user.id, {
@@ -155,17 +167,18 @@ export function EditProfileForm({ user }: { user: User }) {
       sports: saved.sports,
     });
 
-    if (firebaseUser) {
+    if (credential) {
       try {
-        await syncDisplayName(firebaseUser, trimmedName);
+        await syncDisplayName(credential, trimmedName);
       } catch {
         return 'Tu perfil se guardó, pero no pudimos sincronizar el nombre con Firebase. Probá de nuevo.';
       }
     }
 
-    if (wantsPassword && firebaseUser) {
+    if (credential) {
       try {
-        await changePassword(firebaseUser, newPassword);
+        await changePassword(credential, newPassword);
+        await openSession(credential);
       } catch (caught) {
         setToast({ message: 'Tu perfil se guardó, pero no pudimos cambiar la contraseña.', tone: 'danger' });
         return {
