@@ -1,5 +1,28 @@
 # SportMatch - Design System
 
+### Mobile map (SPO-305)
+
+The map page fills the mobile viewport (`fixed inset-0`) behind the floating
+navigation. Keep the shared app layout's bottom padding for other pages.
+`--map-bottom-inset` uses `max(120px, calc(env(safe-area-inset-bottom) + 104px))`,
+matching Discover's lower clearance. The location button sits 40px above that
+baseline so it cannot cover Google's attribution links. Header and state panels
+respect the top safe area; state panels scroll when vertical space is limited.
+
+`BaseMap.bottomInset` opts into `.map-with-bottom-inset` in `app/globals.css`.
+Only below the desktop breakpoint, it moves Google's logo wrapper (the `div`
+containing the Maps link) and the complete bottom row (the wrapper whose
+`.gm-style-cc` child contains the Terms link). These are **internal Google DOM
+selectors**, not a stable API: recheck them after Maps updates. Never hide,
+duplicate, restyle the attribution content or disable its links. The wizard's
+map does not opt in, and desktop keeps its original positions.
+
+Before delivery, check iPhone Safari and Android Chrome, including browser bars
+expanding/collapsing, landscape, the full logo, attribution and tappable Terms,
+one-finger map gestures, navigation, location, filters and empty/error panels.
+If the internal selectors stop working reliably, stop and report it in SPO-305
+before switching to the ticket's continuous-background fallback.
+
 **What the product is:** a dark, photography-led, mobile-first sports-discovery app (Spanish, rioplatense voice). Not a dashboard. Chrome floats over full-bleed imagery; one primary action per screen; electric blue is rationed.
 
 **Canonical implementation:** `prototype/sportmatch/`. Tokens live in

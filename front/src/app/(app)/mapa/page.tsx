@@ -40,13 +40,13 @@ const USER_ZOOM = 15;
 const PIN_Z_INDEX = USER_LOCATION_Z_INDEX + 1;
 
 const SCREEN =
-  'flex h-[calc(100dvh-(--spacing(28)))] w-full lg:h-[calc(100dvh-(--spacing(20)))]';
+  'fixed inset-0 flex w-full [--map-bottom-inset:max(120px,calc(env(safe-area-inset-bottom)_+_104px))] lg:static lg:h-[calc(100dvh-(--spacing(20)))]';
 
 const SIDE_LIST =
   'hidden w-md shrink-0 flex-col gap-4 overflow-y-auto border-r border-glass-strong bg-raised px-6 py-6 lg:flex';
 
 const PANEL =
-  'absolute inset-x-5 top-36 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
+  'absolute inset-x-5 top-[calc(env(safe-area-inset-top)_+_144px)] z-10 mx-auto max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_144px_-_var(--map-bottom-inset)_-_16px)] max-w-sm overflow-y-auto rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6 lg:max-h-none';
 
 const MOBILE_CHIPS = '-mx-4 -my-1 overflow-x-auto px-4 py-1 [scrollbar-width:none]';
 
@@ -203,7 +203,7 @@ export default function MapPage() {
       </aside>
 
       <div className="relative min-w-0 flex-1">
-        <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full">
+        <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full" bottomInset>
           {located.map((match) => (
             <AdvancedMarker
               key={match.id}
@@ -225,7 +225,7 @@ export default function MapPage() {
           <IconButton
             label="Centrar en mi ubicación"
             onClick={recenter}
-            className="absolute right-4 bottom-10 z-10"
+            className="absolute right-4 bottom-[calc(var(--map-bottom-inset)_+_40px)] z-10 lg:bottom-10"
           >
             <LocateFixed className="size-5" aria-hidden="true" />
           </IconButton>
