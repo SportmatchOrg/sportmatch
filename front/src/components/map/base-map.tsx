@@ -3,17 +3,19 @@
 import { Map, type MapProps } from '@vis.gl/react-google-maps';
 
 import { requireEnv } from '@/lib/env';
+import { cn } from '@/lib/utils';
 
 type BaseMapProps = Required<
   Pick<MapProps, 'defaultCenter' | 'defaultZoom' | 'className'>
 > &
-  Pick<MapProps, 'children'>;
+  Pick<MapProps, 'children'> & { bottomInset?: boolean };
 
 export function BaseMap({
   defaultCenter,
   defaultZoom,
   className,
   children,
+  bottomInset = false,
 }: BaseMapProps) {
   const mapId = requireEnv(
     process.env.NEXT_PUBLIC_GOOGLE_MAP_ID,
@@ -29,7 +31,7 @@ export function BaseMap({
       gestureHandling="greedy"
       defaultCenter={defaultCenter}
       defaultZoom={defaultZoom}
-      className={className}
+      className={cn(className, bottomInset && 'map-with-bottom-inset')}
     >
       {children}
     </Map>
