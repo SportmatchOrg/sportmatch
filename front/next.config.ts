@@ -11,7 +11,18 @@ if (
   );
 }
 
+const apiUrl = process.env.API_URL?.replace(/\/+$/, "");
+
+if (!apiUrl) {
+  throw new Error(
+    "Missing environment variable API_URL. Copy front/.env.example to front/.env and fill it in.",
+  );
+}
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: `${apiUrl}/:path*` }];
+  },
   images: {
     remotePatterns: [
       {

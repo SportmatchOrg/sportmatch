@@ -18,7 +18,8 @@ cp .env.example .env
 
 | Variable | Descripción |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | URL base de la API del backend. En local, `http://localhost:3001`. |
+| `API_URL` | URL del backend, solo del lado del servidor. Next.js la usa para el proxy `/api/*` y para la vista previa de los links compartidos. En local, `http://localhost:3001`. |
+| `NEXT_PUBLIC_API_URL` | Base de las llamadas del navegador. Siempre `/api`: el front le habla al proxy de su propio dominio. Se fija al compilar, así que cambiarla exige volver a desplegar. |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Credenciales del proyecto de Firebase. Se obtienen en la consola de Firebase, en la configuración de la app web. |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | |
