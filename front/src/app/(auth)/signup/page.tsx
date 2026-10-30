@@ -12,7 +12,8 @@ import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { useAuth } from '@/context/auth-context';
+import { sessionErrorMessage } from '@/lib/auth-errors';
 import { LOGIN_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
 
@@ -20,6 +21,7 @@ const MIN_PASSWORD_LENGTH = 6;
 
 export default function SignupPage() {
   const { checkingSession, next } = useRedirectIfAuthenticated();
+  const { startSession } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -42,8 +44,9 @@ export default function SignupPage() {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(credential.user, { displayName: name.trim() });
+      await startSession(credential.user);
     } catch (caught) {
-      setError(getAuthErrorMessage(caught));
+      setError(sessionErrorMessage(caught));
       setSubmitting(false);
     }
   }
