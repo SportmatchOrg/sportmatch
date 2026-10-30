@@ -1,10 +1,8 @@
 import { signOut } from 'firebase/auth';
 
 import { accountBlockedMessage, saveAccountBlockedNotice } from './account-block';
-import { requireEnv } from './env';
+import { apiBaseUrl } from './api-url';
 import { auth } from './firebase';
-
-const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_URL');
 
 const NO_CONTENT = 204;
 const UNAUTHORIZED = 401;
@@ -83,7 +81,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...init,
     headers,
   });
