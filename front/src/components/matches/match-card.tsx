@@ -58,7 +58,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
       : ROLE_CHIP[role];
 
   return (
-    <article className="relative overflow-hidden rounded-lg bg-glass shadow-bevel-lit transition active:scale-[var(--press-scale-card)] lg:rounded-md">
+    <article className="relative min-w-0 overflow-hidden rounded-lg bg-glass transition active:scale-[var(--press-scale-card)] lg:rounded-md">
       <Link
         href={`/partidos/${match.id}`}
         aria-label={`Ver el partido de ${sport} en ${match.location}`}
@@ -68,8 +68,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
       <div className="lg:flex lg:min-h-[126px] lg:items-stretch">
         <div
           className={cn(
-            'relative shrink-0 overflow-hidden bg-sunken lg:aspect-auto lg:w-[132px]',
-            role === 'host' ? 'aspect-video' : 'aspect-[16/11]',
+            'relative h-[132px] shrink-0 overflow-hidden bg-sunken lg:h-auto lg:w-[132px]',
             canceled && 'opacity-60'
           )}
         >
@@ -90,7 +89,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
 
           <span className="absolute inset-0 bg-linear-to-t from-scrim-strong via-scrim-soft to-transparent lg:hidden" />
 
-          <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2 lg:hidden">
+          <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2 lg:hidden">
             <span className="flex flex-wrap gap-2">
               <SportChip name={match.sport.name} />
               <span className={cn(CHIP, roleChip)}>{roleLabel}</span>
@@ -99,12 +98,12 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
             {role === 'player' && !canceled && <SpotsBadge freeSpots={freeSpots} onPhoto />}
           </div>
 
-          <h3 className="absolute inset-x-4 bottom-4 truncate text-subhead text-white lg:hidden">
+          <h3 className="absolute inset-x-[14px] bottom-3 truncate text-subhead text-white lg:hidden">
             {match.location}
           </h3>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 p-4 lg:justify-center lg:gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-[14px] lg:justify-center lg:gap-2 lg:p-4">
           <div className="hidden shrink-0 items-center justify-between gap-3 lg:flex">
             <span className="text-overline text-ink-46 uppercase">{sport}</span>
 
@@ -116,13 +115,13 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
           </h3>
 
           <div className="flex min-w-0 items-center justify-between gap-3">
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex shrink-0 items-center gap-2 text-callout text-ink-64">
+            <span className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="flex shrink-0 items-center gap-2 text-callout whitespace-nowrap text-ink-64">
                 <Clock className="size-4 shrink-0 text-brand" aria-hidden="true" />
                 {formatMatchDay(match.date)} · {formatMatchTime(match.date)}
               </span>
 
-              <span className="flex min-w-0 shrink items-center gap-2 text-callout text-ink-64">
+              <span className="flex min-w-0 flex-1 items-center gap-2 text-callout text-ink-64">
                 <MapPin className="size-4 shrink-0 text-brand" aria-hidden="true" />
                 <span className="truncate">{match.location}</span>
               </span>
@@ -159,6 +158,7 @@ export function MatchCard({ match, role, panel, action }: MatchCardProps) {
           {action}
         </div>
       )}
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 z-20 rounded-[inherit] shadow-bevel-lit" />
     </article>
   );
 }
