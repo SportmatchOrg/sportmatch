@@ -1,21 +1,17 @@
 'use client';
 
-import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
+import { useMap } from '@vis.gl/react-google-maps';
 import { FunnelX, LocateFixed, MapPinOff, TriangleAlert } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
+import { ClusteredMatchPins } from '@/components/map/clustered-match-pins';
 import { FitBounds } from '@/components/map/fit-bounds';
 import { MapFilterChips } from '@/components/map/map-filter-chips';
 import { MapFiltersSheet } from '@/components/map/map-filters-sheet';
 import { MapHeader } from '@/components/map/map-header';
 import { MapSearchBar } from '@/components/map/map-search-bar';
-import { MatchPin } from '@/components/map/match-pin';
-import {
-  USER_LOCATION_Z_INDEX,
-  UserLocationMarker,
-} from '@/components/map/user-location-marker';
+import { UserLocationMarker } from '@/components/map/user-location-marker';
 import { MatchRow } from '@/components/matches/match-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
@@ -31,13 +27,11 @@ import {
   toMatchesQuery,
   type MapFilters,
 } from '@/lib/map-filters';
-import { SPORT_LABEL, type Match } from '@/types/match';
+import type { Match } from '@/types/match';
 
 const DEFAULT_ZOOM = 12;
 
 const USER_ZOOM = 15;
-
-const PIN_Z_INDEX = USER_LOCATION_Z_INDEX + 1;
 
 const SCREEN =
   'fixed inset-0 flex w-full lg:static lg:h-[calc(100dvh-(--spacing(20)))]';
@@ -70,7 +64,6 @@ function MapPanel({ children }: { children: ReactNode }) {
 }
 
 export default function MapPage() {
-  const router = useRouter();
   const map = useMap();
   const { location } = useUserLocation();
   const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
@@ -205,17 +198,7 @@ export default function MapPage() {
 
       <div className="relative min-w-0 flex-1">
         <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full" bottomInset>
-          {located.map((match) => (
-            <AdvancedMarker
-              key={match.id}
-              position={position(match)}
-              title={`${SPORT_LABEL[match.sport.name]} · ${match.location}`}
-              onClick={() => router.push(`/partidos/${match.id}`)}
-              zIndex={PIN_Z_INDEX}
-            >
-              <MatchPin sport={match.sport.name} />
-            </AdvancedMarker>
-          ))}
+          <ClusteredMatchPins matches={located} />
 
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
