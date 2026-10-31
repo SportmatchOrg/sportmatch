@@ -18,6 +18,6 @@
 @media (width < 64rem) {
   .map-with-bottom-inset .gm-style div:has(> a[href*="maps.google.com/maps"]),
   .map-with-bottom-inset .gm-style div:has(> .gm-style-cc > div > a[href*="terms_maps"]) {
-    bottom: var(--map-bottom-inset) !important;
+    bottom: var(--nav-bottom-clearance) !important;
   }
 }
