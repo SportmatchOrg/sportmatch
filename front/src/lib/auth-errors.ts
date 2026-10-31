@@ -1,5 +1,7 @@
 import { FirebaseError } from 'firebase/app';
 
+import { ApiError } from './api';
+
 const MESSAGES: Record<string, string> = {
   'auth/invalid-credential': 'Email o contraseña incorrectos.',
   'auth/email-already-in-use': 'Ya existe una cuenta con ese email.',
@@ -26,4 +28,8 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 
   return MESSAGES[code] ?? FALLBACK;
+}
+
+export function sessionErrorMessage(error: unknown): string {
+  return error instanceof ApiError ? error.message : getAuthErrorMessage(error);
 }

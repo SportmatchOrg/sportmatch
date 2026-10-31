@@ -1,6 +1,5 @@
 'use client';
 
-import { signOut } from 'firebase/auth';
 import { LogOut, Pencil, Share2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,8 +11,8 @@ import { ScreenHeader } from '@/components/ui/screen-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { UserAvatar } from '@/components/user-avatar';
+import { useAuth } from '@/context/auth-context';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { auth } from '@/lib/firebase';
 import { ADMIN_REPORTS_HREF, EDIT_PROFILE_HREF } from '@/lib/nav-items';
 import { shareLink } from '@/lib/share';
 import { cn } from '@/lib/utils';
@@ -35,6 +34,7 @@ type ToastState = { message: string; tone: ToastTone };
 export default function SettingsPage() {
   const router = useRouter();
   const { user, loading, error } = useCurrentUser();
+  const { endSession } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -62,7 +62,7 @@ export default function SettingsPage() {
     setSigningOut(true);
 
     try {
-      await signOut(auth);
+      await endSession();
       router.replace(LOGIN_ROUTE);
     } catch {
       setToast({ message: SIGN_OUT_ERROR, tone: 'danger' });

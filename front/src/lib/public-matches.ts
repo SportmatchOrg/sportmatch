@@ -1,7 +1,5 @@
-import { requireEnv } from '@/lib/env';
+import { apiBaseUrl } from '@/lib/api-url';
 import { LEVEL_LABEL, SPORT_LABEL, type PublicMatch } from '@/types/match';
-
-const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_URL');
 
 const NOT_FOUND = 404;
 
@@ -21,7 +19,7 @@ type ShareableMatch = Pick<
 > & { organizer: { name: string } };
 
 export async function publicFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(`${BASE_URL}${path}`, init);
+  return fetch(`${apiBaseUrl()}${path}`, init);
 }
 
 export async function fetchPublicMatch(

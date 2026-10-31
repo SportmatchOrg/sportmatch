@@ -20,6 +20,7 @@ import { RemindersModule } from './reminders/reminders.module';
 import { StorageModule } from './storage/storage.module';
 import { UserBlocksModule } from './user-blocks/user-blocks.module';
 import { AiModule } from './ai/ai.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AiModule } from './ai/ai.module';
     RemindersModule,
     UserBlocksModule,
     AiModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

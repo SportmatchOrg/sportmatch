@@ -41,8 +41,10 @@ export class UsersController {
   }
 
   @Get('me')
-  me(@CurrentUser() user: FirebaseUser) {
-    return this.usersService.upsertFromFirebase(user);
+  async me(@CurrentUser() user: FirebaseUser) {
+    const account = await this.usersService.upsertFromFirebase(user);
+
+    return { ...account, signInProvider: user.signInProvider };
   }
 
   @Get('search')
