@@ -17,6 +17,17 @@ Verificar manualmente que las funciones principales de Sportmatch continúen fun
 | Dev | https://sportmatch-git-dev-sportmatch2.vercel.app | https://sportmatch-dev-aqhcazaacaf7e6g0.brazilsouth-01.azurewebsites.net |
 | Producción | Pendiente de configuración | Pendiente de configuración |
 
+## Variables de despliegue del front
+
+El navegador no llama al backend directamente: usa el proxy `/api/*` del propio dominio del front, que Next.js reenvía al backend.
+
+| Variable | Valor | Entornos |
+| --- | --- | --- |
+| `API_URL` | URL del backend en Azure, sin `/` final. Variable de servidor. | dev, preview y producción |
+| `NEXT_PUBLIC_API_URL` | `/api`. Se fija al compilar: después de cambiarla hay que volver a desplegar. | dev, preview y producción |
+
+Si falta `API_URL`, el build del front falla indicando cuál es.
+
 ## Antes de empezar
 
 1. Elegir el entorno que se va a probar y anotar la URL y el commit desplegado.
