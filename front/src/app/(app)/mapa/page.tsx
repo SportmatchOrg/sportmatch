@@ -43,7 +43,7 @@ const SCREEN =
   'flex h-[calc(100dvh-(--spacing(28)))] w-full lg:h-[calc(100dvh-(--spacing(20)))]';
 
 const SIDE_LIST =
-  'hidden w-md shrink-0 flex-col gap-4 overflow-y-auto border-r border-glass-strong bg-raised py-6 lg:flex';
+  'hidden w-md shrink-0 flex-col gap-4 overflow-y-auto border-r border-glass-strong bg-raised px-6 py-6 lg:flex';
 
 const PANEL =
   'absolute inset-x-5 top-36 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
@@ -112,19 +112,19 @@ export default function MapPage() {
   function renderList() {
     if (loading) {
       return (
-        <div className="flex flex-col gap-4 px-6">
+        <>
           <Skeleton className="h-7 w-40 rounded-md" />
           {[0, 1, 2, 3].map((index) => (
             <Skeleton key={index} className="h-[100px] shrink-0 rounded-md" />
           ))}
-        </div>
+        </>
       );
     }
 
     if (located.length === 0) return null;
 
     return (
-      <div className="flex flex-col gap-4 px-6">
+      <>
         <h1 className="text-headline font-bold text-white">
           {located.length === 1 ? '1 partido' : `${located.length} partidos`}
         </h1>
@@ -135,7 +135,7 @@ export default function MapPage() {
             </li>
           ))}
         </ul>
-      </div>
+      </>
     );
   }
 
@@ -198,10 +198,8 @@ export default function MapPage() {
   return (
     <main className={SCREEN}>
       <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
-        <div className="shrink-0 px-6">
-          <MapSearchBar {...searchProps} />
-        </div>
-        {renderChips(`${CHIPS_ROW} px-6`)}
+        <MapSearchBar {...searchProps} />
+        {renderChips(CHIPS_ROW)}
         {renderList()}
       </aside>
 
@@ -222,7 +220,7 @@ export default function MapPage() {
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
 
-        <MapHeader {...searchProps}>{renderChips(`${CHIPS_ROW} -mx-4 -my-1 px-4`)}</MapHeader>
+        <MapHeader {...searchProps}>{renderChips(CHIPS_ROW)}</MapHeader>
 
         {location && (
           <IconButton
