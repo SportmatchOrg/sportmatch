@@ -250,14 +250,20 @@ export class MatchesService {
     }
   }
 
+  async assertCanChangePhoto(userId: string, matchId: string) {
+    const match = await this.assertIsOrganizer(userId, matchId);
+    this.assertNotCanceled(match.status);
+
+    return match;
+  }
+
   async uploadPhoto(
     firebaseUid: string,
     id: string,
     photo: Express.Multer.File | undefined,
   ) {
     const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const match = await this.assertIsOrganizer(user.id, id);
-    this.assertNotCanceled(match.status);
+    const match = await this.assertCanChangePhoto(user.id, id);
     if (!photo) throw new BadRequestException(PHOTO_UPLOAD_ERROR);
 
     const path = `matches/${id}`;
@@ -275,8 +281,7 @@ export class MatchesService {
         photoUrl,
       );
       if (count === 0) {
-        const current = await this.assertIsOrganizer(user.id, id);
-        this.assertNotCanceled(current.status);
+        await this.assertCanChangePhoto(user.id, id);
         throw new ConflictException(
           'La foto cambió durante la subida. Volvé a intentarlo.',
         );
