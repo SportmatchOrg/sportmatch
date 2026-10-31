@@ -13,6 +13,7 @@ import {
 
 import { apiFetch } from '@/lib/api';
 import { closeSession, openSession } from '@/lib/session';
+import { announceSessionChange, onSessionChangedElsewhere } from '@/lib/session-channel';
 import { onSessionEnded } from '@/lib/session-events';
 import type { SessionUser } from '@/types/session';
 import type { CurrentUser } from '@/types/user';
@@ -32,6 +33,10 @@ async function fetchSessionUser(): Promise<SessionUser> {
   return { uid: firebaseUid, email, signInProvider };
 }
 
+function isSameSessionUser(current: SessionUser | null, next: SessionUser | null): boolean {
+  return current?.uid === next?.uid && current?.signInProvider === next?.signInProvider;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,22 +52,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
 
-    const unsubscribe = onSessionEnded(() => setUser(null));
+    const unsubscribeEnded = onSessionEnded(() => {
+      setUser(null);
+      announceSessionChange();
+    });
+
+    const unsubscribeElsewhere = onSessionChangedElsewhere(() => {
+      fetchSessionUser()
+        .catch(() => null)
+        .then((sessionUser) => {
+          if (!active) return;
+          setUser((current) => (isSameSessionUser(current, sessionUser) ? current : sessionUser));
+        });
+    });
 
     return () => {
       active = false;
-      unsubscribe();
+      unsubscribeEnded();
+      unsubscribeElsewhere();
     };
   }, []);
 
   const startSession = useCallback(async (firebaseUser: FirebaseUser) => {
     await openSession(firebaseUser);
     setUser(await fetchSessionUser());
+    announceSessionChange();
   }, []);
 
   const endSession = useCallback(async () => {
     await closeSession();
     setUser(null);
+    announceSessionChange();
   }, []);
 
   const value = useMemo(

@@ -57,6 +57,8 @@ const CURRENT_PASSWORD_REQUIRED = 'Ingresá tu contraseña actual.';
 const WRONG_PASSWORD = 'La contraseña actual es incorrecta.';
 const WEAK_PASSWORD = `La contraseña nueva es muy débil. Usá al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
 const PASSWORD_MISMATCH = 'Las contraseñas no coinciden.';
+const PASSWORD_CHANGED_SESSION_ERROR =
+  'Tu contraseña se cambió, pero no pudimos renovar tu sesión. Iniciá sesión con la contraseña nueva.';
 
 type FieldName = 'name' | 'city' | 'currentPassword' | 'newPassword' | 'repeatPassword';
 
@@ -128,6 +130,12 @@ export function EditProfileForm({ user }: { user: User }) {
     return found;
   }
 
+  function clearPasswordFields() {
+    setCurrentPassword('');
+    setNewPassword('');
+    setRepeatPassword('');
+  }
+
   async function save(): Promise<Errors | string | null> {
     if (!wantsPassword || !sessionUser) return saveProfile(null);
 
@@ -178,12 +186,18 @@ export function EditProfileForm({ user }: { user: User }) {
     if (credential) {
       try {
         await changePassword(credential, newPassword);
-        await openSession(credential);
       } catch (caught) {
         setToast({ message: 'Tu perfil se guardó, pero no pudimos cambiar la contraseña.', tone: 'danger' });
         return {
           newPassword: isWeakPassword(caught) ? WEAK_PASSWORD : getAuthErrorMessage(caught),
         };
+      }
+
+      try {
+        await openSession(credential);
+      } catch {
+        clearPasswordFields();
+        return PASSWORD_CHANGED_SESSION_ERROR;
       }
     }
 
@@ -212,9 +226,7 @@ export function EditProfileForm({ user }: { user: User }) {
 
       setName(trimmedName);
       setCity(trimmedCity);
-      setCurrentPassword('');
-      setNewPassword('');
-      setRepeatPassword('');
+      clearPasswordFields();
       setToast({ message: SAVED, tone: 'success' });
     } catch {
       setToast({ message: 'No pudimos completar todas las operaciones. Revisá tu perfil antes de volver a intentar.', tone: 'danger' });
