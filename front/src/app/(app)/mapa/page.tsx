@@ -48,7 +48,8 @@ const SIDE_LIST =
 const PANEL =
   'absolute inset-x-5 top-36 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
 
-const MOBILE_CHIPS = '-mx-4 -my-1 overflow-x-auto px-4 py-1 [scrollbar-width:none]';
+const CHIPS_ROW =
+  'shrink-0 flex-nowrap overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 type LocatedMatch = Match & { latitude: number; longitude: number };
 
@@ -198,7 +199,7 @@ export default function MapPage() {
     <main className={SCREEN}>
       <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
         <MapSearchBar {...searchProps} />
-        {renderChips('flex-wrap')}
+        {renderChips(CHIPS_ROW)}
         {renderList()}
       </aside>
 
@@ -219,7 +220,7 @@ export default function MapPage() {
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
 
-        <MapHeader {...searchProps}>{renderChips(MOBILE_CHIPS)}</MapHeader>
+        <MapHeader {...searchProps}>{renderChips(CHIPS_ROW)}</MapHeader>
 
         {location && (
           <IconButton
