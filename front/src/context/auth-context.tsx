@@ -1,41 +1,96 @@
 'use client';
 
-import { onIdTokenChanged, type User } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
 
-import { auth } from '@/lib/firebase';
+import { apiFetch } from '@/lib/api';
+import { closeSession, openSession } from '@/lib/session';
+import { announceSessionChange, onSessionChangedElsewhere } from '@/lib/session-channel';
+import { onSessionEnded } from '@/lib/session-events';
+import type { SessionUser } from '@/types/session';
+import type { CurrentUser } from '@/types/user';
 
 type AuthContextValue = {
-  user: User | null;
+  user: SessionUser | null;
   loading: boolean;
+  startSession: (firebaseUser: FirebaseUser) => Promise<void>;
+  endSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+async function fetchSessionUser(): Promise<SessionUser> {
+  const { firebaseUid, email, signInProvider } = await apiFetch<CurrentUser>('/users/me');
+
+  return { uid: firebaseUid, email, signInProvider };
+}
+
+function isSameSessionUser(current: SessionUser | null, next: SessionUser | null): boolean {
+  return current?.uid === next?.uid && current?.signInProvider === next?.signInProvider;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+    let active = true;
+
+    fetchSessionUser()
+      .catch(() => null)
+      .then((sessionUser) => {
+        if (!active) return;
+        setUser(sessionUser);
+        setLoading(false);
+      });
+
+    const unsubscribeEnded = onSessionEnded(() => {
+      setUser(null);
+      announceSessionChange();
     });
 
-    return unsubscribe;
+    const unsubscribeElsewhere = onSessionChangedElsewhere(() => {
+      fetchSessionUser()
+        .catch(() => null)
+        .then((sessionUser) => {
+          if (!active) return;
+          setUser((current) => (isSameSessionUser(current, sessionUser) ? current : sessionUser));
+        });
+    });
+
+    return () => {
+      active = false;
+      unsubscribeEnded();
+      unsubscribeElsewhere();
+    };
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {children}
-    </AuthContext.Provider>
+  const startSession = useCallback(async (firebaseUser: FirebaseUser) => {
+    await openSession(firebaseUser);
+    setUser(await fetchSessionUser());
+    announceSessionChange();
+  }, []);
+
+  const endSession = useCallback(async () => {
+    await closeSession();
+    setUser(null);
+    announceSessionChange();
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, startSession, endSession }),
+    [user, loading, startSession, endSession]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

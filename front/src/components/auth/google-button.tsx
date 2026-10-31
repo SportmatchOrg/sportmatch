@@ -3,7 +3,8 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 
-import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { useAuth } from '@/context/auth-context';
+import { sessionErrorMessage } from '@/lib/auth-errors';
 import { auth } from '@/lib/firebase';
 
 type GoogleButtonProps = {
@@ -13,6 +14,7 @@ type GoogleButtonProps = {
 };
 
 export function GoogleButton({ label, disabled = false, onError }: GoogleButtonProps) {
+  const { startSession } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
   async function handleClick() {
@@ -20,9 +22,10 @@ export function GoogleButton({ label, disabled = false, onError }: GoogleButtonP
     setSubmitting(true);
 
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const { user } = await signInWithPopup(auth, new GoogleAuthProvider());
+      await startSession(user);
     } catch (caught) {
-      onError(getAuthErrorMessage(caught));
+      onError(sessionErrorMessage(caught));
       setSubmitting(false);
     }
   }

@@ -6,6 +6,7 @@ export type FirebaseUser = {
   email: string;
   name: string;
   photoUrl?: string;
+  signInProvider: string;
 };
 
 export interface FirebaseIdToken extends DecodedIdToken {

@@ -1,8 +1,7 @@
-import { signOut } from 'firebase/auth';
-
 import { accountBlockedMessage, saveAccountBlockedNotice } from './account-block';
 import { apiBaseUrl } from './api-url';
-import { auth } from './firebase';
+import { closeSession } from './session';
+import { notifySessionEnded } from './session-events';
 
 const NO_CONTENT = 204;
 const UNAUTHORIZED = 401;
@@ -24,20 +23,18 @@ type AccountBlock = { until: string | null };
 
 type AccountBlockedBody = { code?: unknown; until?: unknown } | null;
 
-async function endSession(message: string, status: number): Promise<never> {
-  await signOut(auth).catch(() => undefined);
-  throw new ApiError(message, status);
+function expireSession(): never {
+  notifySessionEnded();
+  throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
 }
 
-function expireSession(): Promise<never> {
-  return endSession(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
-}
-
-function blockSession({ until }: AccountBlock): Promise<never> {
+async function blockSession({ until }: AccountBlock): Promise<never> {
   const message = accountBlockedMessage(until);
 
   saveAccountBlockedNotice(message);
-  return endSession(message, FORBIDDEN);
+  await closeSession().catch(() => undefined);
+  notifySessionEnded();
+  throw new ApiError(message, FORBIDDEN);
 }
 
 async function readAccountBlock(response: Response): Promise<AccountBlock | null> {
@@ -64,30 +61,20 @@ async function readErrorMessage(response: Response, path: string): Promise<strin
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const user = auth.currentUser;
-
-  if (!user) {
-    return expireSession();
-  }
-
-  const token = await user.getIdToken();
   const headers = new Headers(init.headers);
   if (init.body instanceof FormData) {
     headers.delete('Content-Type');
   } else if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
 
   const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...init,
     headers,
+    credentials: 'include',
   });
 
   if (response.status === UNAUTHORIZED) {
-    // Token vencido, revocado o borrado: la sesión local ya no sirve (BUG-8).
     return expireSession();
   }
 

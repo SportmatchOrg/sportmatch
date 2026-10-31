@@ -11,11 +11,12 @@ import { FormError } from '@/components/auth/form-error';
 import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
+import { useAuth } from '@/context/auth-context';
 import { useAccountBlockedNotice } from '@/hooks/use-account-blocked-notice';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { SIGNUP_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
+import { sessionErrorMessage } from '@/lib/auth-errors';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -24,6 +25,7 @@ const BLOCKED_NOTICE =
 
 export default function LoginPage() {
   const { checkingSession, next } = useRedirectIfAuthenticated();
+  const { startSession } = useAuth();
   const blockedNotice = useAccountBlockedNotice();
 
   const [email, setEmail] = useState('');
@@ -37,9 +39,10 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      await startSession(user);
     } catch (caught) {
-      setError(getAuthErrorMessage(caught));
+      setError(sessionErrorMessage(caught));
       setSubmitting(false);
     }
   }
