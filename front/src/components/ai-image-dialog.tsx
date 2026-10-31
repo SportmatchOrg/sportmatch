@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderCircle, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { PillButton } from '@/components/ui/pill-button';
+import { ShinyText } from '@/components/ui/shiny-text';
 import {
   generateImage,
   imageErrorMessage,
@@ -24,6 +25,25 @@ import {
 const PROMPT_MAX = 500;
 const SAVE_ERROR = 'No pudimos guardar la foto. Probá de nuevo.';
 const PROMPT_ID = 'ai-image-prompt';
+
+const SWEEP =
+  'absolute inset-0 animate-ai-shimmer bg-[linear-gradient(110deg,transparent_35%,var(--color-brand-tint)_50%,transparent_65%)] bg-[length:200%_100%] motion-reduce:animate-none';
+
+function GeneratingOverlay() {
+  return (
+    <div
+      role="status"
+      className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-base/60 backdrop-blur-sm"
+    >
+      <span className={SWEEP} aria-hidden="true" />
+      <Sparkles
+        className="relative size-8 animate-ai-twinkle text-brand motion-reduce:animate-none"
+        aria-hidden="true"
+      />
+      <ShinyText className="relative text-callout font-semibold">Pintando tu imagen…</ShinyText>
+    </div>
+  );
+}
 
 type AiImageDialogProps = {
   target: ImageTarget;
@@ -36,6 +56,7 @@ export function AiImageDialog({ target, matchId, disabled = false, onUse }: AiIm
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [image, setImage] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [using, setUsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +83,7 @@ export function AiImageDialog({ target, matchId, disabled = false, onUse }: AiIm
 
     try {
       setImage(await generateImage({ prompt: prompt.trim(), target, matchId }));
+      setRevision((current) => current + 1);
     } catch (caught) {
       setError(imageErrorMessage(caught));
     } finally {
@@ -123,22 +145,19 @@ export function AiImageDialog({ target, matchId, disabled = false, onUse }: AiIm
         />
 
         {(image || generating) && (
-          <div className="relative flex h-48 items-center justify-center overflow-hidden rounded-md bg-sunken">
+          <div className="relative h-48 overflow-hidden rounded-md bg-sunken shadow-bevel">
             {image && (
               <Image
+                key={revision}
                 src={image}
                 alt="Vista previa de la imagen generada"
                 fill
                 sizes="384px"
                 unoptimized
-                className="object-cover"
+                className="animate-ai-reveal object-cover motion-reduce:animate-none"
               />
             )}
-            {generating && (
-              <span className="absolute inset-0 flex items-center justify-center bg-base/70">
-                <LoaderCircle className="size-7 animate-spin text-white" aria-hidden="true" />
-              </span>
-            )}
+            {generating && <GeneratingOverlay />}
           </div>
         )}
 
