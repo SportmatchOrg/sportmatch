@@ -87,7 +87,7 @@ Las credenciales incluidas en `docker-compose.yml` son exclusivamente para desar
 El backend utiliza las siguientes variables de entorno:
 
 - `PORT`: puerto en el que se ejecuta la API.
-- `FRONT_URL`: origen permitido para las solicitudes del frontend.
+- `FRONT_URL`: origen permitido para las solicitudes del frontend. También se usa para rechazar con 403 los métodos que no son GET cuando la sesión viene en cookie y el `Origin` es otro, y define si la cookie `__session` lleva `Secure` (solo con `https`).
 - `DATABASE_URL`: conexión a PostgreSQL.
 - `FIREBASE_PROJECT_ID`: identificador del proyecto de Firebase.
 - `FIREBASE_CLIENT_EMAIL`: correo de la cuenta de servicio de Firebase.

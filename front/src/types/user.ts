@@ -34,6 +34,8 @@ export type User = {
   stats: UserStats & { suspendedUntil: string | null };
 };
 
+export type CurrentUser = User & { signInProvider: string };
+
 export type ProfileUpdate = {
   name: string;
   city: string | null;
