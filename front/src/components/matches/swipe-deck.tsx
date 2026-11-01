@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Compass, Layers, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -13,6 +14,7 @@ import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { joinRequestErrorMessage, requestToJoin } from '@/lib/matches';
+import { matchKeys } from '@/lib/query-keys';
 import { suspensionMessage } from '@/lib/suspension';
 import type { Match } from '@/types/match';
 
@@ -57,6 +59,7 @@ type DeckToast = {
 
 export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, loading: userLoading } = useCurrentUser();
   const [index, setIndex] = useState(0);
   const [previousMatches, setPreviousMatches] = useState(matches);
@@ -101,7 +104,10 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
 
       if (direction === 'yes' && current) {
         requestToJoin(current.id)
-          .then(() => setToast({ message: 'Solicitud enviada ⚡', tone: 'success' }))
+          .then(() => {
+            setToast({ message: 'Solicitud enviada ⚡', tone: 'success' });
+            void queryClient.invalidateQueries({ queryKey: matchKeys.mine() });
+          })
           .catch((error: unknown) =>
             setToast({ message: joinRequestErrorMessage(error), tone: 'danger' })
           );
@@ -113,8 +119,13 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
         setIndex((previous) => previous + 1);
       }, FLYOUT_DURATION);
     },
-    [current, user, userLoading]
+    [current, user, userLoading, queryClient]
   );
+
+  function restart() {
+    setIndex(0);
+    onRestart();
+  }
 
   function decide(direction: SwipeDecision) {
     if (flyout) return;
@@ -184,7 +195,7 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
           }
           action={
             matches.length ? (
-              <Button onClick={onRestart} className="gap-2 rounded-full">
+              <Button onClick={restart} className="gap-2 rounded-full">
                 <Compass className="size-[18px]" aria-hidden="true" />
                 Empezar de nuevo
               </Button>
