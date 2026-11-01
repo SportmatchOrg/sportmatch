@@ -36,7 +36,7 @@ const STACK = [
 ];
 
 const DECK =
-  'absolute top-[max(70px,calc(env(safe-area-inset-top)_+_12px))] right-4 bottom-[max(120px,calc(env(safe-area-inset-bottom)_+_104px))] left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-18rem))] lg:w-auto lg:shrink-0';
+  'absolute top-[max(70px,calc(env(safe-area-inset-top)_+_12px))] right-4 bottom-(--nav-bottom-clearance) left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-18rem))] lg:w-auto lg:shrink-0';
 
 const ACTION_BUTTON =
   'flex size-20 items-center justify-center rounded-full transition active:scale-95';

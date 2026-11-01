@@ -11,3 +11,13 @@
 @import "../design-system/splash-screen.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* SPO-305: Google owns these internal wrappers. Recheck them after Maps updates.
+   Move the logo and the entire attribution row together, keeping links intact.
+   Only the full-screen map opts in; the wizard and desktop stay unchanged. */
+@media (width < 64rem) {
+  .map-with-bottom-inset .gm-style div:has(> a[href*="maps.google.com/maps"]),
+  .map-with-bottom-inset .gm-style div:has(> .gm-style-cc > div > a[href*="terms_maps"]) {
+    bottom: var(--nav-bottom-clearance) !important;
+  }
+}
