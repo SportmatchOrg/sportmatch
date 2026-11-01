@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { IconButton } from '@/components/ui/icon-button';
 import { PillButton } from '@/components/ui/pill-button';
 import { ShinyText } from '@/components/ui/shiny-text';
 import {
@@ -25,6 +26,7 @@ import {
 const PROMPT_MAX = 500;
 const SAVE_ERROR = 'No pudimos guardar la foto. Probá de nuevo.';
 const PROMPT_ID = 'ai-image-prompt';
+const ABOVE_WIZARD = 'z-[70]';
 
 const SWEEP =
   'absolute inset-0 animate-ai-shimmer bg-[linear-gradient(110deg,transparent_35%,var(--color-brand-tint)_50%,transparent_65%)] bg-[length:200%_100%] motion-reduce:animate-none';
@@ -121,12 +123,18 @@ export function AiImageDialog({ target, matchId, disabled = false, onUse }: AiIm
         Generar con IA
       </DialogTrigger>
 
-      <DialogContent>
-        <div className="flex flex-col gap-2">
-          <DialogTitle>Generar con IA</DialogTitle>
-          <DialogDescription>
-            Contanos cómo la querés. Cada intento cuenta para tu límite diario.
-          </DialogDescription>
+      <DialogContent className={ABOVE_WIZARD} overlayClassName={ABOVE_WIZARD}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <DialogTitle>Generar con IA</DialogTitle>
+            <DialogDescription>
+              Contanos cómo la querés. Cada intento cuenta para tu límite diario.
+            </DialogDescription>
+          </div>
+
+          <DialogClose render={<IconButton label="Cerrar" variant="ghost" size="sm" disabled={busy} />}>
+            <X className="size-5" aria-hidden="true" />
+          </DialogClose>
         </div>
 
         <TextareaField
@@ -184,22 +192,14 @@ export function AiImageDialog({ target, matchId, disabled = false, onUse }: AiIm
               </PillButton>
             </>
           ) : (
-            <>
-              <DialogClose
-                render={<PillButton variant="glass" size="md" disabled={busy} className="flex-1" />}
-              >
-                Cancelar
-              </DialogClose>
-
-              <PillButton
-                size="md"
-                disabled={!canGenerate}
-                onClick={() => void generate()}
-                className="flex-1"
-              >
-                {generating ? 'Generando…' : 'Generar'}
-              </PillButton>
-            </>
+            <PillButton
+              size="md"
+              disabled={!canGenerate}
+              onClick={() => void generate()}
+              className="flex-1"
+            >
+              {generating ? 'Generando…' : 'Generar'}
+            </PillButton>
           )}
         </div>
       </DialogContent>
