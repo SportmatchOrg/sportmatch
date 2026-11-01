@@ -1,8 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Bell, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   NotificationList,
@@ -16,6 +17,7 @@ import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { useUnreadCount } from '@/context/unread-count-context';
 import { useNotifications } from '@/hooks/use-notifications';
 import { markAllAsRead, markAsRead, notificationHref } from '@/lib/notifications';
+import { notificationKeys } from '@/lib/query-keys';
 import type { AppNotification } from '@/types/notification';
 
 const PAGE = 'flex w-full flex-col gap-6 px-5 py-6 lg:px-6 lg:py-10 xl:px-8';
@@ -27,23 +29,15 @@ const MARK_ALL_ERROR = 'No pudimos marcarlas como leídas. Probá de nuevo.';
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { notifications, loading, error, reload } = useNotifications();
-  const {
-    count: unreadCount,
-    loading: unreadLoading,
-    reload: reloadUnreadCount,
-  } = useUnreadCount();
+  const { count: unreadCount } = useUnreadCount();
   const [markingAll, setMarkingAll] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const lastUnreadCount = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (unreadLoading) return;
-
-    if (lastUnreadCount.current !== null && unreadCount > lastUnreadCount.current) reload();
-
-    lastUnreadCount.current = unreadCount;
-  }, [unreadCount, unreadLoading, reload]);
+  function refreshNotifications() {
+    return queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+  }
 
   useEffect(() => {
     if (!toast) return;
@@ -55,7 +49,7 @@ export default function NotificationsPage() {
   function open(notification: AppNotification) {
     if (notification.readAt === null) {
       void markAsRead(notification.id)
-        .then(reloadUnreadCount)
+        .then(refreshNotifications)
         .catch(() => undefined);
     }
 
@@ -67,8 +61,7 @@ export default function NotificationsPage() {
 
     try {
       await markAllAsRead();
-      reload();
-      reloadUnreadCount();
+      await refreshNotifications();
     } catch {
       setToast(MARK_ALL_ERROR);
     } finally {

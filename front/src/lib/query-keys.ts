@@ -10,10 +10,13 @@ export const matchKeys = {
   joinRequests: (matchId: string) => [...matchKeys.all, 'join-requests', matchId] as const,
   invitationResponse: (matchId: string) => [...matchKeys.all, 'invitation-response', matchId] as const,
   participation: (matchId: string) => [...matchKeys.all, 'participation', matchId] as const,
+  invitations: (matchId: string) => [...matchKeys.all, 'invitations', matchId] as const,
 };
 
 export const notificationKeys = {
+  all: ['notifications'] as const,
   unreadCount: ['notifications', 'unread-count'] as const,
+  list: ['notifications', 'list'] as const,
 };
 
 export const userKeys = {
