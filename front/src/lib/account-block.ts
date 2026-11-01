@@ -6,6 +6,14 @@ const BLOCK_DAYS: Record<BlockDuration, number | null> = {
   PERMANENT: null,
 };
 
+export const BLOCK_DURATIONS = Object.keys(BLOCK_DAYS) as BlockDuration[];
+
+export const BLOCK_DURATION_LABEL: Record<BlockDuration, string> = {
+  DAYS_7: '7 días',
+  DAYS_30: '30 días',
+  PERMANENT: 'Permanente',
+};
+
 const MS_PER_DAY = 86_400_000;
 
 const BLOCKED_MESSAGE = 'Tu cuenta está bloqueada';

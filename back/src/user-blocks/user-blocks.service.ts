@@ -40,7 +40,7 @@ export class UserBlocksService {
     const blocked = await this.userBlocksRepository.block(
       userId,
       blockFor(duration),
-      reportId ? { reportId, reviewedById: admin.id } : undefined,
+      { adminId: admin.id, duration, reportId },
     );
 
     if (!blocked) {
@@ -50,9 +50,11 @@ export class UserBlocksService {
     return blocked;
   }
 
-  async unblock(userId: string) {
+  async unblock(firebaseUid: string, userId: string) {
+    const admin = await this.usersService.findByFirebaseUid(firebaseUid);
+
     await this.getUser(userId);
-    await this.userBlocksRepository.unblock(userId);
+    await this.userBlocksRepository.unblock(userId, admin.id);
   }
 
   private async getUser(id: string) {
