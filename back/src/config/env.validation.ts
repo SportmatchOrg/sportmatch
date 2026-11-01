@@ -92,6 +92,14 @@ class EnvironmentVariables {
   @Matches(FREE_MODEL_LIST)
   AI_FALLBACK_MODEL?: string;
 
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  CF_ACCOUNT_ID?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @IsString()
+  CF_API_TOKEN?: string;
+
   @IsOptional()
   @IsInt()
   @Min(1)

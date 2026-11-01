@@ -16,12 +16,14 @@ function DialogClose(props: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
-function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.Props) {
+type DialogContentProps = DialogPrimitive.Popup.Props & { overlayClassName?: string };
+
+function DialogContent({ className, overlayClassName, children, ...props }: DialogContentProps) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
         data-slot="dialog-overlay"
-        className="fixed inset-0 z-50 bg-scrim"
+        className={cn('fixed inset-0 z-50 bg-scrim', overlayClassName)}
       />
       <DialogPrimitive.Popup
         data-slot="dialog-content"

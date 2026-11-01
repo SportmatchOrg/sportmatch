@@ -10,5 +10,6 @@ import { PublicMatchesController } from './public-matches.controller';
   imports: [UsersModule, NotificationsModule],
   controllers: [MatchesController, PublicMatchesController],
   providers: [MatchesService, MatchesRepository],
+  exports: [MatchesService],
 })
 export class MatchesModule {}
