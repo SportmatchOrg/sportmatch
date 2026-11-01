@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Ban } from 'lucide-react';
+import { ArrowRight, Ban, History } from 'lucide-react';
 import Link from 'next/link';
 
 import { RESOLUTION_ACTION, RESOLUTIONS } from '@/components/admin/report-resolutions';
@@ -18,7 +18,7 @@ import { REPORT_REASON_LABEL, type AdminReport, type ReportResolution } from '@/
 const PLAYER_LINK =
   'flex min-w-0 flex-1 items-center gap-2.5 rounded-sm focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none';
 
-const MATCH_LINK =
+const DETAIL_LINK =
   'flex items-center gap-2 self-start rounded-sm text-caption text-ink-64 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none';
 
 const OWN_REPORT_NOTICE = 'Este reporte es en tu contra: lo tiene que resolver otro administrador.';
@@ -29,6 +29,7 @@ type ReportDetailSheetProps = {
   onClose: () => void;
   onResolve: (report: AdminReport, status: ReportResolution) => void;
   onBlock: (report: AdminReport) => void;
+  onHistory: (report: AdminReport) => void;
 };
 
 function PlayerLink({ player, caption }: { player: PublicUser; caption: string }) {
@@ -58,7 +59,7 @@ function ReportMatchLink({ match }: { match: NonNullable<AdminReport['match']> }
   const Icon = SPORT_ICON[match.sport.name];
 
   return (
-    <Link href={`/partidos/${match.id}`} className={MATCH_LINK}>
+    <Link href={`/partidos/${match.id}`} className={DETAIL_LINK}>
       <Icon className="size-4 shrink-0 text-brand" aria-hidden="true" />
       <span>
         {SPORT_LABEL[match.sport.name]} · {match.location} · {formatMatchDateTime(match.date)}
@@ -103,7 +104,7 @@ function ReportFooter({
   isOwnReport,
   onResolve,
   onBlock,
-}: Omit<ReportDetailSheetProps, 'onClose' | 'report'> & { report: AdminReport }) {
+}: Omit<ReportDetailSheetProps, 'onClose' | 'onHistory' | 'report'> & { report: AdminReport }) {
   const resolvedBy = formatResolvedBy(report);
 
   if (resolvedBy) return <p className="text-caption text-ink-46">{resolvedBy}</p>;
@@ -119,6 +120,7 @@ export function ReportDetailSheet({
   onClose,
   onResolve,
   onBlock,
+  onHistory,
 }: ReportDetailSheetProps) {
   return (
     <BottomSheet
@@ -140,6 +142,11 @@ export function ReportDetailSheet({
             <ArrowRight className="size-4 shrink-0 text-ink-46" aria-hidden="true" />
             <PlayerLink player={report.reportedUser} caption="Reportado" />
           </div>
+
+          <button type="button" onClick={() => onHistory(report)} className={DETAIL_LINK}>
+            <History className="size-4 shrink-0 text-brand" aria-hidden="true" />
+            Ver historial de {report.reportedUser.name}
+          </button>
 
           {report.comment && (
             <p className="rounded-sm bg-glass-thin px-3 py-2.5 text-callout text-ink-80">

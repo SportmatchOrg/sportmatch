@@ -1,3 +1,4 @@
+import type { BlockDuration } from '@/lib/account-block';
 import type { PublicUser, Sport } from '@/types/match';
 
 export type ReportReason = 'AGGRESSIVE_BEHAVIOR' | 'OFFENSIVE_LANGUAGE' | 'FAKE_PROFILE' | 'OTHER';
@@ -62,4 +63,26 @@ export type AdminReport = {
   reportedUser: ReportedUser;
   reviewedBy: PublicUser | null;
   match: ReportMatch | null;
+};
+
+export type ModerationActionType =
+  | 'REPORT_REVIEWED'
+  | 'REPORT_DISMISSED'
+  | 'USER_BLOCKED'
+  | 'USER_UNBLOCKED';
+
+export const MODERATION_ACTION_LABEL: Record<ModerationActionType, string> = {
+  REPORT_REVIEWED: 'Reporte revisado',
+  REPORT_DISMISSED: 'Reporte descartado',
+  USER_BLOCKED: 'Cuenta bloqueada',
+  USER_UNBLOCKED: 'Cuenta desbloqueada',
+};
+
+export type ModerationAction = {
+  id: string;
+  type: ModerationActionType;
+  reportId: string | null;
+  detail: { duration: BlockDuration } | null;
+  createdAt: string;
+  admin: PublicUser;
 };

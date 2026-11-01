@@ -27,3 +27,7 @@ export const adminReportKeys = {
   all: ['admin-reports'] as const,
   list: (status: ReportStatus) => [...adminReportKeys.all, 'list', status] as const,
 };
+
+export const adminUserKeys = {
+  moderation: (userId: string) => ['admin-users', userId, 'moderation'] as const,
+};
