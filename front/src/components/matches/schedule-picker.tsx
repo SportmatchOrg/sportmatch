@@ -1,11 +1,11 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { es } from 'react-day-picker/locale';
 
 import { FieldError } from '@/components/matches/field-error';
 import { Calendar } from '@/components/ui/calendar';
+import { Select } from '@/components/ui/select';
 import { formatMatchDay, formatMatchTime } from '@/lib/match-date';
 import { localDateTimeValue } from '@/lib/match-form';
 
@@ -22,9 +22,6 @@ const MINUTES = Array.from({ length: 60 / MINUTE_STEP }, (_, index) => index * M
 const ROW_LABEL = 'text-overline text-ink-46 uppercase';
 
 const ROW_VALUE = 'text-overline font-bold tabular-nums text-brand uppercase';
-
-const SELECT =
-  'h-12 w-full appearance-none rounded-sm bg-glass pr-10 pl-4 text-callout font-bold tabular-nums text-white shadow-bevel transition outline-none [color-scheme:dark] hover:bg-glass-strong focus-visible:ring-2 focus-visible:ring-brand';
 
 function RowLabel({ label, value }: { label: string; value: string }) {
   return (
@@ -63,24 +60,17 @@ type TimeSelectProps = {
 
 function TimeSelect({ label, value, options, isDisabled, onChange }: TimeSelectProps) {
   return (
-    <label className="relative flex-1">
-      <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className={SELECT}
-      >
-        {options.map((option) => (
-          <option key={option} value={option} disabled={isDisabled(option)}>
-            {pad(option)}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        className="pointer-events-none absolute top-1/2 right-3 size-5 -translate-y-1/2 text-ink-46"
-        aria-hidden="true"
-      />
-    </label>
+    <Select
+      label={label}
+      value={value}
+      options={options.map((option) => ({
+        value: option,
+        label: pad(option),
+        disabled: isDisabled(option),
+      }))}
+      onChange={onChange}
+      className="flex-1"
+    />
   );
 }
 
