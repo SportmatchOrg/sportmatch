@@ -70,6 +70,8 @@ export type Match = {
   ratingPending: boolean | null;
 };
 
+export type LocatedMatch = Match & { latitude: number; longitude: number };
+
 export type MyMatches = {
   organizing: Match[];
   playing: Match[];
