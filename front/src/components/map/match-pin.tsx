@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { SPORT_LABEL, type SportName } from '@/types/match';
 
-const PILL =
+export const PILL =
   'flex h-9.5 items-center gap-1.5 whitespace-nowrap rounded-full bg-sheet px-3 text-caption font-bold text-white';
 
 const TAIL = 'h-2 w-4 -translate-y-px bg-sheet [clip-path:polygon(0_0,100%_0,50%_100%)]';
