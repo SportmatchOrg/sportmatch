@@ -40,6 +40,8 @@ Copy `.env.example` to `.env` and fill it in. The values are in the team's share
 | `OPENROUTER_API_KEY` | No | Key of the fallback AI text provider (OpenRouter). Without both keys the API still boots and the `/ai/*` endpoints answer 503. |
 | `AI_TEXT_MODEL` | No | Gemini model. Defaults to `gemini-3.5-flash-lite`. |
 | `AI_FALLBACK_MODEL` | No | OpenRouter models, comma separated, in priority order. OpenRouter tries the next one when one fails. Only `:free` models, since a paid one gets charged: the API refuses to boot if any model does not end in `:free`. |
+| `CF_ACCOUNT_ID` | No | Cloudflare account id used by `POST /ai/images` (Workers AI, FLUX.1 schnell). Without it and `CF_API_TOKEN` that endpoint answers 503. |
+| `CF_API_TOKEN` | No | Cloudflare API token with Workers AI access. Backend only; never expose it to the front. |
 | `AI_MATCH_DRAFT_DAILY_LIMIT` | No | Match drafts each user can generate per day (Argentina time). Defaults to 20. Past it, 429. |
 | `AI_IMAGE_DAILY_LIMIT` | No | AI images each user can generate per day (Argentina time). Defaults to 5. Past it, 429. |
 

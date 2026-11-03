@@ -355,6 +355,7 @@ enum AiUsageKind {
 enum AiProvider {
   GEMINI
   OPENROUTER
+  CLOUDFLARE
 
   @@map("ai_provider")
 }

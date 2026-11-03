@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
+import { AiImageDialog } from '@/components/ai-image-dialog';
 import { uploadMatchPhoto } from '@/lib/matches';
 import { PHOTO_HINT, PHOTO_TYPES, photoError } from '@/lib/photo-upload';
 import { sportPhotoUrl } from '@/lib/sport-photo';
@@ -93,6 +94,7 @@ type MatchWizardProps = {
   mode: 'create' | 'edit';
   initialForm: MatchForm;
   initialPhotoUrl?: string | null;
+  matchId?: string;
   submit: (form: MatchForm) => Promise<Match>;
   toastMessage: (form: MatchForm, sport?: Sport) => string;
   errorMessage: (error: unknown) => string;
@@ -119,6 +121,7 @@ function MatchWizardForm({
   mode,
   initialForm,
   initialPhotoUrl = null,
+  matchId,
   submit,
   toastMessage,
   errorMessage,
@@ -217,14 +220,23 @@ function MatchWizardForm({
   const showingSuggestions = placeSearch.open && placeSearch.status === 'ready';
   const incomplete = incompleteSteps(validateMatchForm(form));
 
-  function changePhoto(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = '';
-    if (!file) return;
+  function selectPhoto(file: File) {
     const error = photoError(file);
     setPhotoValidationError(error);
     setPhoto(error ? null : file);
     setPhotoPreview(error ? null : URL.createObjectURL(file));
+  }
+
+  function changePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    selectPhoto(file);
+  }
+
+  async function useGeneratedPhoto(file: File): Promise<boolean> {
+    selectPhoto(file);
+    return true;
   }
 
   function discardPhotoSelection() {
@@ -621,6 +633,7 @@ function MatchWizardForm({
                 <PillButton variant="glass" size="md" disabled={submitting} onClick={() => photoInput.current?.click()} aria-describedby={photoValidationError ? `${photoHintId} ${photoErrorId}` : photoHintId}>
                   {selectedPhoto ? 'Cambiar foto' : 'Elegir foto'}
                 </PillButton>
+                <AiImageDialog target="match" matchId={matchId} disabled={submitting} onUse={useGeneratedPhoto} />
                 {(photo || photoValidationError) && <PillButton variant="glass" size="md" disabled={submitting} onClick={discardPhotoSelection}>Descartar selección</PillButton>}
               </div>
               <input ref={photoInput} type="file" accept={PHOTO_TYPES.join(',')} disabled={submitting} onChange={changePhoto} aria-label="Elegir foto del partido" className="sr-only" tabIndex={-1} />

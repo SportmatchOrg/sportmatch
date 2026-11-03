@@ -4,6 +4,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { LoaderCircle, MapPin, User as UserIcon } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
+import { AiImageDialog } from '@/components/ai-image-dialog';
 import { AuthField } from '@/components/auth/auth-field';
 import { PasswordField } from '@/components/auth/password-field';
 import { EditField, editFieldErrorId } from '@/components/profile/edit-field';
@@ -95,12 +96,16 @@ export function EditProfileForm({ user }: { user: User }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  async function applyPhoto(file: File): Promise<boolean> {
+    const updated = await photo.upload(file);
+    if (updated) setToast({ message: 'Foto actualizada', tone: 'success' });
+    return updated;
+  }
+
   async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = '';
-    if (file && await photo.upload(file)) {
-      setToast({ message: 'Foto actualizada', tone: 'success' });
-    }
+    if (file) await applyPhoto(file);
   }
 
   useEffect(() => {
@@ -274,6 +279,7 @@ export function EditProfileForm({ user }: { user: User }) {
             {photo.pending ? 'Subiendo foto…' : 'Cambiar foto'}
           </span>
         </button>
+        <AiImageDialog target="profile" disabled={saving || photo.pending} onUse={applyPhoto} />
         <input
           ref={photoInput}
           type="file"
