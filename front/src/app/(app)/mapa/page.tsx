@@ -27,7 +27,7 @@ import {
   toMatchesQuery,
   type MapFilters,
 } from '@/lib/map-filters';
-import type { Match } from '@/types/match';
+import type { LocatedMatch, Match } from '@/types/match';
 
 const DEFAULT_ZOOM = 12;
 
@@ -44,8 +44,6 @@ const PANEL =
 
 const CHIPS_ROW =
   'shrink-0 flex-nowrap overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
-
-type LocatedMatch = Match & { latitude: number; longitude: number };
 
 function isLocated(match: Match): match is LocatedMatch {
   return match.latitude !== null && match.longitude !== null;

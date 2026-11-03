@@ -5,11 +5,11 @@ import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { MatchPin } from '@/components/map/match-pin';
+import { MatchPin, PILL } from '@/components/map/match-pin';
 import { USER_LOCATION_Z_INDEX } from '@/components/map/user-location-marker';
-import { SPORT_LABEL, type Match } from '@/types/match';
+import { cn } from '@/lib/utils';
+import { SPORT_LABEL, type LocatedMatch } from '@/types/match';
 
-type LocatedMatch = Match & { latitude: number; longitude: number };
 type MatchMarker = google.maps.marker.AdvancedMarkerElement;
 
 const PIN_Z_INDEX = USER_LOCATION_Z_INDEX + 1;
@@ -17,8 +17,7 @@ const PIN_Z_INDEX = USER_LOCATION_Z_INDEX + 1;
 const renderer: Renderer = {
   render({ count, position }) {
     const capsule = document.createElement('span');
-    capsule.className =
-      'flex h-9.5 min-w-9.5 cursor-pointer items-center justify-center rounded-full bg-sheet px-3 text-caption font-bold text-white drop-shadow-map-pin';
+    capsule.className = cn(PILL, 'min-w-9.5 cursor-pointer justify-center drop-shadow-map-pin');
     capsule.textContent = count > 99 ? '99+' : String(count);
 
     return new google.maps.marker.AdvancedMarkerElement({
@@ -77,7 +76,6 @@ export function ClusteredMatchPins({ matches }: { matches: LocatedMatch[] }) {
     const instance = new MarkerClusterer({
       map,
       renderer,
-      // Keep coincident matches grouped even at Google's highest zoom.
       algorithm: new SuperClusterAlgorithm({ maxZoom: 22 }),
     });
     clusterer.current = instance;
