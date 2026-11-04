@@ -1,48 +1,44 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchMatches } from '@/lib/matches';
+import { matchKeys } from '@/lib/query-keys';
 import type { Match, MatchesQuery } from '@/types/match';
-
-type MatchesState = {
-  matches: Match[];
-  loading: boolean;
-  error: string | null;
-};
 
 const ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un momento.';
 
-const INITIAL_STATE: MatchesState = { matches: [], loading: true, error: null };
+const STALE_TIME_MS = 5_000;
 
-export function useMatches(query?: MatchesQuery) {
+const NO_FILTERS: MatchesQuery = {};
+
+const NO_MATCHES: Match[] = [];
+
+export const matchesQueryOptions = (query: MatchesQuery) =>
+  queryOptions({
+    queryKey: matchKeys.list(query),
+    queryFn: () => fetchMatches(query),
+    staleTime: STALE_TIME_MS,
+  });
+
+export function useMatches(query: MatchesQuery = NO_FILTERS) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<MatchesState>(INITIAL_STATE);
-  const [reloadToken, setReloadToken] = useState(0);
 
-  const reload = useCallback(() => {
-    setState((current) => ({ ...current, loading: true, error: null }));
-    setReloadToken((token) => token + 1);
-  }, []);
+  const { data, isPending, isLoadingError, refetch } = useQuery({
+    ...matchesQueryOptions(query),
+    enabled: !sessionLoading && !!firebaseUser,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  });
 
-  useEffect(() => {
-    if (sessionLoading || !firebaseUser) return;
+  const reload = useCallback(() => void refetch(), [refetch]);
 
-    let active = true;
-
-    fetchMatches(query)
-      .then((matches) => {
-        if (active) setState({ matches, loading: false, error: null });
-      })
-      .catch(() => {
-        if (active) setState({ matches: [], loading: false, error: ERROR_MESSAGE });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [sessionLoading, firebaseUser, query, reloadToken]);
-
-  return { ...state, loading: sessionLoading || state.loading, reload };
+  return {
+    matches: data ?? NO_MATCHES,
+    loading: sessionLoading || isPending,
+    error: isLoadingError ? ERROR_MESSAGE : null,
+    reload,
+  };
 }

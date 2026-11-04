@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 import { useAuth } from '@/context/auth-context';
@@ -16,12 +16,17 @@ const ERROR_MESSAGE = 'No pudimos cargar tus partidos. Probá de nuevo en un mom
 
 const NO_MATCHES: MyMatches = { organizing: [], playing: [], played: [], requested: [], invited: [] };
 
+export const myMatchesQueryOptions = () =>
+  queryOptions({
+    queryKey: matchKeys.mine(),
+    queryFn: fetchMyMatches,
+  });
+
 export function useMyMatches({ pollIntervalMs }: UseMyMatchesOptions = {}) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
 
   const { data, isPending, isLoadingError, refetch } = useQuery({
-    queryKey: matchKeys.mine(),
-    queryFn: fetchMyMatches,
+    ...myMatchesQueryOptions(),
     enabled: !sessionLoading && !!firebaseUser,
     refetchInterval: pollIntervalMs ?? false,
   });
