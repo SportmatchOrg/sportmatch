@@ -49,6 +49,7 @@ export function useInvitations(matchId: string) {
 
     try {
       const invitation = await invitePlayer(matchId, user.id);
+      await queryClient.cancelQueries({ queryKey: matchKeys.invitations(matchId) });
       queryClient.setQueryData<Invitation[]>(matchKeys.invitations(matchId), (current = []) => [
         ...current.filter((item) => item.userId !== user.id),
         { ...invitation, user },
