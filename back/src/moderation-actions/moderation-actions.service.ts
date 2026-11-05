@@ -1,16 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { UsersService } from '../users/users.service';
 import { ModerationActionsRepository } from './moderation-actions.repository';
 
 @Injectable()
 export class ModerationActionsService {
   constructor(
     private readonly moderationActionsRepository: ModerationActionsRepository,
+    private readonly usersService: UsersService,
   ) {}
 
   async findAllByUser(userId: string) {
-    if (!(await this.moderationActionsRepository.findUserById(userId))) {
-      throw new NotFoundException(`User with id ${userId} was not found`);
-    }
+    await this.usersService.assertExists(userId);
 
     return this.moderationActionsRepository.findAllByTargetUser(userId);
   }

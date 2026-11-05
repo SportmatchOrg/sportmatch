@@ -14,13 +14,6 @@ const MODERATION_ACTION = {
 export class ModerationActionsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUserById(id: string) {
-    return this.prisma.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-  }
-
   findAllByTargetUser(targetUserId: string) {
     return this.prisma.moderationAction.findMany({
       where: { targetUserId },
