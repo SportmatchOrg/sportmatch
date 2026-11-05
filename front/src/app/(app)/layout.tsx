@@ -7,6 +7,7 @@ import { TabBar } from '@/components/tab-bar';
 import { TopNavBar } from '@/components/top-nav-bar';
 import { useAuth } from '@/context/auth-context';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { usePrefetchAppData } from '@/hooks/use-prefetch-app-data';
 import { UnreadCountProvider } from '@/context/unread-count-context';
 import { LoadingScreen } from '@/components/loading-screen';
 import { MapsProvider } from '@/components/map/maps-provider';
@@ -35,6 +36,7 @@ function AppContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicPage = isPublicMatchPath(pathname);
   const { user: profile } = useCurrentUser();
+  usePrefetchAppData(!!user && !publicPage);
   const needsOnboarding =
     profile?.onboardedAt === null && pathname !== ONBOARDING_HREF && !isOnboardingDismissed();
   const [splashVisible, setSplashVisible] = useState(isSplashPending);
