@@ -55,6 +55,8 @@ model User {
   reportsGiven           Report[]       @relation("ReportsGiven")
   reportsReceived        Report[]       @relation("ReportsReceived")
   reportsReviewed        Report[]       @relation("ReportsReviewed")
+  moderationActionsTaken ModerationAction[] @relation("ModerationActionsTaken")
+  moderationHistory      ModerationAction[] @relation("ModerationHistory")
   lateWithdrawals        LateWithdrawal[]
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
@@ -234,9 +236,36 @@ model Report {
   reviewedAt     DateTime?
   createdAt      DateTime     @default(now())
 
+  moderationActions ModerationAction[]
+
   @@index([status, createdAt])
   @@index([reportedUserId])
   @@map("reports")
+}
+
+enum ModerationActionType {
+  REPORT_REVIEWED
+  REPORT_DISMISSED
+  USER_BLOCKED
+  USER_UNBLOCKED
+
+  @@map("moderation_action_type")
+}
+
+model ModerationAction {
+  id           String               @id @default(cuid())
+  adminId      String
+  admin        User                 @relation("ModerationActionsTaken", fields: [adminId], references: [id])
+  targetUserId String
+  targetUser   User                 @relation("ModerationHistory", fields: [targetUserId], references: [id])
+  reportId     String?
+  report       Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  type         ModerationActionType
+  detail       Json?
+  createdAt    DateTime             @default(now())
+
+  @@index([targetUserId, createdAt])
+  @@map("moderation_actions")
 }
 
 enum NotificationType {

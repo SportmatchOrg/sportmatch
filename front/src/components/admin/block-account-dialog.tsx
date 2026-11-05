@@ -13,16 +13,21 @@ import {
 } from '@/components/ui/dialog';
 import { PillButton } from '@/components/ui/pill-button';
 import { SegmentedControl, type SegmentOption } from '@/components/ui/segmented-control';
-import { blockEndDate, formatBlockEnd, type BlockDuration } from '@/lib/account-block';
+import {
+  BLOCK_DURATIONS,
+  BLOCK_DURATION_LABEL,
+  blockEndDate,
+  formatBlockEnd,
+  type BlockDuration,
+} from '@/lib/account-block';
 import { blockAccount, blockAccountErrorMessage } from '@/lib/admin-reports';
 import { adminReportKeys } from '@/lib/query-keys';
 import type { AdminReport } from '@/types/report';
 
-const DURATION_OPTIONS: SegmentOption<BlockDuration>[] = [
-  { value: 'DAYS_7', label: '7 días' },
-  { value: 'DAYS_30', label: '30 días' },
-  { value: 'PERMANENT', label: 'Permanente' },
-];
+const DURATION_OPTIONS: SegmentOption<BlockDuration>[] = BLOCK_DURATIONS.map((value) => ({
+  value,
+  label: BLOCK_DURATION_LABEL[value],
+}));
 
 const ERROR_ID = 'block-account-error';
 

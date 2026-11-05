@@ -19,6 +19,7 @@ import { ReportsModule } from './reports/reports.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { StorageModule } from './storage/storage.module';
 import { UserBlocksModule } from './user-blocks/user-blocks.module';
+import { ModerationActionsModule } from './moderation-actions/moderation-actions.module';
 import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 
@@ -44,6 +45,7 @@ import { AuthModule } from './auth/auth.module';
     ReportsModule,
     RemindersModule,
     UserBlocksModule,
+    ModerationActionsModule,
     AiModule,
     AuthModule,
   ],

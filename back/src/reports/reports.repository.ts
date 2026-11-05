@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { ReportStatus } from '../generated/prisma/client';
+import {
+  ModerationActionType,
+  type ReportStatus,
+} from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import type { ReportResolution } from './dto/resolve-report.dto';
@@ -31,6 +34,16 @@ const REPORT_DETAILS = {
 
 type ReportedUserWithCount = {
   _count: { reportsReceived: number };
+};
+
+const RESOLUTION_ACTION: Record<ReportResolution, ModerationActionType> = {
+  REVIEWED: ModerationActionType.REPORT_REVIEWED,
+  DISMISSED: ModerationActionType.REPORT_DISMISSED,
+};
+
+type ReportTarget = {
+  id: string;
+  reportedUserId: string;
 };
 
 const withReportCount = <T extends { reportedUser: ReportedUserWithCount }>({
@@ -104,16 +117,31 @@ export class ReportsRepository {
     );
   }
 
-  async resolveOpen(
-    id: string,
+  resolveOpen(
+    { id, reportedUserId }: ReportTarget,
     status: ReportResolution,
     reviewedById: string,
   ): Promise<boolean> {
-    const { count } = await this.prisma.report.updateMany({
-      where: { id, status: 'OPEN' },
-      data: { status, reviewedById, reviewedAt: new Date() },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.report.updateMany({
+        where: { id, status: 'OPEN' },
+        data: { status, reviewedById, reviewedAt: new Date() },
+      });
 
-    return count > 0;
+      if (count === 0) {
+        return false;
+      }
+
+      await tx.moderationAction.create({
+        data: {
+          type: RESOLUTION_ACTION[status],
+          adminId: reviewedById,
+          targetUserId: reportedUserId,
+          reportId: id,
+        },
+      });
+
+      return true;
+    });
   }
 }

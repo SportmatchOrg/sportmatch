@@ -34,7 +34,7 @@ export class AdminReportsService {
       );
     }
 
-    if (!(await this.reportsRepository.resolveOpen(id, status, admin.id))) {
+    if (!(await this.reportsRepository.resolveOpen(report, status, admin.id))) {
       throw new ConflictException('Only open reports can be resolved');
     }
 

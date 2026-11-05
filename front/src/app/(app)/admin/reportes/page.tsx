@@ -4,6 +4,7 @@ import { ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import { BlockAccountDialog } from '@/components/admin/block-account-dialog';
+import { ModerationHistoryDialog } from '@/components/admin/moderation-history-dialog';
 import { ReportDetailSheet } from '@/components/admin/report-detail-sheet';
 import { ReportListSkeleton } from '@/components/admin/report-list-skeleton';
 import { ReportRow } from '@/components/admin/report-row';
@@ -63,6 +64,7 @@ export default function AdminReportsPage() {
   const [status, setStatus] = useState<ReportStatus>('OPEN');
   const [selected, setSelected] = useState<AdminReport | null>(null);
   const [blocking, setBlocking] = useState<AdminReport | null>(null);
+  const [historyOf, setHistoryOf] = useState<AdminReport | null>(null);
   const { reports, loading, error, reload } = useAdminReports(status, allowed);
   const { resolve } = useResolveReport();
   const { toast, showToast } = useTimedToast();
@@ -83,6 +85,16 @@ export default function AdminReportsPage() {
   function handleBlock(report: AdminReport) {
     setSelected(null);
     setBlocking(report);
+  }
+
+  function handleHistory(report: AdminReport) {
+    setSelected(null);
+    setHistoryOf(report);
+  }
+
+  function closeHistory() {
+    setSelected(historyOf);
+    setHistoryOf(null);
   }
 
   function handleBlocked() {
@@ -175,7 +187,12 @@ export default function AdminReportsPage() {
         onClose={() => setSelected(null)}
         onResolve={handleResolve}
         onBlock={handleBlock}
+        onHistory={handleHistory}
       />
+
+      {historyOf && (
+        <ModerationHistoryDialog player={historyOf.reportedUser} onClose={closeHistory} />
+      )}
 
       {blocking && (
         <BlockAccountDialog

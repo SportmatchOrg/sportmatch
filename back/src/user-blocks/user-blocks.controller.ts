@@ -31,7 +31,7 @@ export class UserBlocksController {
 
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  unblock(@Param('id') id: string) {
-    return this.userBlocksService.unblock(id);
+  unblock(@CurrentUser() user: FirebaseUser, @Param('id') id: string) {
+    return this.userBlocksService.unblock(user.uid, id);
   }
 }

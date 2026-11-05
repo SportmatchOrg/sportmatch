@@ -1,9 +1,10 @@
-import type { BlockDuration } from '@/lib/account-block';
+import { BLOCK_DURATION_LABEL, type BlockDuration } from '@/lib/account-block';
 import { ApiError, apiFetch } from '@/lib/api';
 import { formatRelativeTime } from '@/lib/relative-time';
 import {
   REPORT_RESOLVED_BY_LABEL,
   type AdminReport,
+  type ModerationAction,
   type ReportResolution,
   type ReportStatus,
 } from '@/types/report';
@@ -59,6 +60,10 @@ export async function blockAccount({ userId, duration, reportId }: BlockAccountI
   });
 }
 
+export async function fetchModerationHistory(userId: string): Promise<ModerationAction[]> {
+  return apiFetch<ModerationAction[]>(`/admin/users/${userId}/moderation`);
+}
+
 function errorMessage(
   error: unknown,
   messages: Partial<Record<number, string>>,
@@ -88,4 +93,10 @@ export function formatResolvedBy(report: AdminReport): string | null {
   const when = report.reviewedAt ? ` · ${formatRelativeTime(report.reviewedAt)}` : '';
 
   return `${REPORT_RESOLVED_BY_LABEL[report.status]} ${reviewer}${when}`;
+}
+
+export function formatModeratedBy({ detail, admin }: ModerationAction): string {
+  const moderatedBy = `por ${admin.name}`;
+
+  return detail ? `${BLOCK_DURATION_LABEL[detail.duration]} · ${moderatedBy}` : moderatedBy;
 }
