@@ -1,7 +1,9 @@
+import type { MatchesQuery } from '@/types/match';
 import type { ReportStatus } from '@/types/report';
 
 export const matchKeys = {
   all: ['matches'] as const,
+  list: (query: MatchesQuery) => [...matchKeys.all, 'list', query] as const,
   mine: () => [...matchKeys.all, 'mine'] as const,
   myActions: () => [...matchKeys.all, 'my-actions'] as const,
   detail: (matchId: string) => [...matchKeys.all, 'detail', matchId] as const,
@@ -10,10 +12,17 @@ export const matchKeys = {
   joinRequests: (matchId: string) => [...matchKeys.all, 'join-requests', matchId] as const,
   invitationResponse: (matchId: string) => [...matchKeys.all, 'invitation-response', matchId] as const,
   participation: (matchId: string) => [...matchKeys.all, 'participation', matchId] as const,
+  invitations: (matchId: string) => [...matchKeys.all, 'invitations', matchId] as const,
+};
+
+export const sportKeys = {
+  all: ['sports'] as const,
 };
 
 export const notificationKeys = {
+  all: ['notifications'] as const,
   unreadCount: ['notifications', 'unread-count'] as const,
+  list: ['notifications', 'list'] as const,
 };
 
 export const userKeys = {

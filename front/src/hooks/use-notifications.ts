@@ -1,52 +1,32 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchNotifications } from '@/lib/notifications';
+import { notificationKeys } from '@/lib/query-keys';
 import type { AppNotification } from '@/types/notification';
-
-type NotificationsState = {
-  notifications: AppNotification[];
-  loading: boolean;
-  error: string | null;
-};
 
 const ERROR_MESSAGE = 'No pudimos cargar tus notificaciones. Probá de nuevo en un momento.';
 
-const INITIAL_STATE: NotificationsState = {
-  notifications: [],
-  loading: true,
-  error: null,
-};
+const NO_NOTIFICATIONS: AppNotification[] = [];
 
 export function useNotifications() {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
-  const [state, setState] = useState<NotificationsState>(INITIAL_STATE);
-  const [reloadToken, setReloadToken] = useState(0);
 
-  const reload = useCallback(() => {
-    setState((current) => (current.error ? { ...current, loading: true, error: null } : current));
-    setReloadToken((token) => token + 1);
-  }, []);
+  const { data, isPending, isLoadingError, refetch } = useQuery({
+    queryKey: notificationKeys.list,
+    queryFn: fetchNotifications,
+    enabled: !sessionLoading && !!firebaseUser,
+  });
 
-  useEffect(() => {
-    if (sessionLoading || !firebaseUser) return;
+  const reload = useCallback(() => void refetch(), [refetch]);
 
-    let active = true;
-
-    fetchNotifications()
-      .then((notifications) => {
-        if (active) setState({ notifications, loading: false, error: null });
-      })
-      .catch(() => {
-        if (active) setState({ notifications: [], loading: false, error: ERROR_MESSAGE });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [sessionLoading, firebaseUser, reloadToken]);
-
-  return { ...state, loading: sessionLoading || state.loading, reload };
+  return {
+    notifications: data ?? NO_NOTIFICATIONS,
+    loading: sessionLoading || isPending,
+    error: isLoadingError ? ERROR_MESSAGE : null,
+    reload,
+  };
 }
