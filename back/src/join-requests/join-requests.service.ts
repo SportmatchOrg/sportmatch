@@ -169,6 +169,7 @@ export class JoinRequestsService {
     } catch (error) {
       throw toPrismaHttpException(error, {
         P2002: 'The user is already a participant',
+        P2025: `Join request with id ${id} was not found`,
       });
     }
   }
