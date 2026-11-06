@@ -1,6 +1,7 @@
 import { Mail, MapPin } from 'lucide-react';
 import Image from 'next/image';
 
+import { PlayerSearchButton } from '@/components/profile/player-search-button';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileIdentityRow } from '@/components/profile/profile-layout';
 import { ProfileSports } from '@/components/profile/profile-sports';
@@ -43,7 +44,8 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-base from-[3%] to-transparent to-[62%]" />
         {isOwnProfile && (
-          <div className="absolute top-5 right-5 lg:hidden">
+          <div className="absolute top-5 right-5 flex gap-2 lg:hidden">
+            <PlayerSearchButton variant="icon" />
             <SettingsLink />
           </div>
         )}
@@ -76,7 +78,10 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         </div>
 
         {isOwnProfile && (
-          <SettingsLink variant="labelled" className="hidden lg:flex lg:shrink-0" />
+          <div className="hidden items-center gap-2 lg:flex lg:shrink-0">
+            <PlayerSearchButton variant="labelled" />
+            <SettingsLink variant="labelled" />
+          </div>
         )}
         {reportable && (
           <ReportUserButton
