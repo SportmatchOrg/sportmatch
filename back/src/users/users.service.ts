@@ -7,7 +7,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import {
@@ -75,10 +74,6 @@ export class UsersService {
     private readonly storage: StorageService,
   ) {}
 
-  findAll() {
-    return this.usersRepository.findAll();
-  }
-
   async findOne(id: string) {
     return (await this.buildProfile(await this.getById(id))).profile;
   }
@@ -107,22 +102,6 @@ export class UsersService {
     const user = await this.findByFirebaseUid(firebaseUid);
 
     return this.usersRepository.searchByName(query, user.id);
-  }
-
-  async create(createUserDto: CreateUserDto) {
-    const existingUser = await this.usersRepository.findByFirebaseUid(
-      createUserDto.firebaseUid,
-    );
-
-    if (existingUser) {
-      return existingUser;
-    }
-
-    try {
-      return await this.usersRepository.create(createUserDto);
-    } catch (error) {
-      throw this.toHttpException(error, createUserDto.email);
-    }
   }
 
   ensureExists(user: FirebaseUser) {
