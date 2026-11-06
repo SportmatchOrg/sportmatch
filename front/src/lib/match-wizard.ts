@@ -13,7 +13,7 @@ export const WIZARD_STEPS: WizardStep[] = [
   {
     name: 'Jugadores',
     question: '¿Cuántos jugadores?',
-    fields: ['capacity', 'level', 'title', 'description'],
+    fields: ['capacity', 'level', 'description'],
   },
   { name: 'Revisión', question: '¿Listo para publicar?', fields: [] },
 ];
