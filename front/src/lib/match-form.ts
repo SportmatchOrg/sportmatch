@@ -5,7 +5,6 @@ import {
   DESCRIPTION_MAX,
   LOCATION_MAX,
   LOCATION_MIN,
-  TITLE_MAX,
   type Level,
   type Match,
 } from '@/types/match';
@@ -18,7 +17,6 @@ export type MatchForm = {
   latitude: number | null;
   longitude: number | null;
   capacity: string;
-  title: string;
   description: string;
 };
 
@@ -32,7 +30,6 @@ export const EMPTY_MATCH_FORM: MatchForm = {
   latitude: null,
   longitude: null,
   capacity: String(CAPACITY_DEFAULT),
-  title: '',
   description: '',
 };
 
@@ -70,10 +67,6 @@ export function validateMatchForm(form: MatchForm): MatchFormErrors {
     errors.capacity = 'Escribí un número entero.';
   } else if (capacity < CAPACITY_MIN || capacity > CAPACITY_MAX) {
     errors.capacity = `El cupo va de ${CAPACITY_MIN} a ${CAPACITY_MAX} jugadores.`;
-  }
-
-  if (form.title.length > TITLE_MAX) {
-    errors.title = `El título no puede superar los ${TITLE_MAX} caracteres.`;
   }
 
   if (form.description.length > DESCRIPTION_MAX) {
@@ -121,7 +114,6 @@ export function toMatchForm(match: Match): MatchForm {
     latitude: match.latitude ?? null,
     longitude: match.longitude ?? null,
     capacity: String(match.capacity),
-    title: '',
     description: match.description ?? '',
   };
 }

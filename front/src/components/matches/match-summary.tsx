@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, ChevronRight, MapPin, Trophy, Type, Users } from 'lucide-react';
+import { Calendar, ChevronRight, MapPin, Trophy, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useState, type ComponentType, type SVGProps } from 'react';
 
@@ -125,7 +125,7 @@ export function MatchSummary({
           <span className={CHIP}>{deporteLabel}</span>
 
           <h2 className="text-headline font-bold text-white">
-            {form.title.trim() || `${deporteLabel} · ${nivelLabel}`}
+            {`${deporteLabel} · ${nivelLabel}`}
           </h2>
         </div>
       </div>
@@ -134,8 +134,6 @@ export function MatchSummary({
         {incompleteSteps.includes(stepOfField('sportId')) && (
           <SummaryRow icon={Trophy} label="Deporte" value={deporteLabel} {...missingProps('sportId')} />
         )}
-
-        {form.title.trim() && <SummaryRow icon={Type} label="Título" value={form.title} />}
 
         <SummaryRow
           icon={MapPin}
