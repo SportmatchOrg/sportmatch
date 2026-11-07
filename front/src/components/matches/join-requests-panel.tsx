@@ -10,14 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TOAST_DURATION, Toast } from '@/components/ui/toast';
 import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
 import { useJoinRequests } from '@/hooks/use-join-requests';
-import { ApiError } from '@/lib/api';
 import { resolveJoinRequest, type JoinRequest } from '@/lib/join-requests';
 import { formatPlayers } from '@/lib/match-capacity';
+import { resolveRequestErrorMessage } from '@/lib/matches';
 import { cn } from '@/lib/utils';
-
-const CONFLICT = 409;
-const FULL_MESSAGE = 'No se pudo aceptar: el partido está lleno';
-const RESOLVE_FALLBACK = 'No pudimos resolver la solicitud. Probá de nuevo.';
 
 type JoinRequestsPanelProps = {
   partidoId: string;
@@ -126,11 +122,7 @@ export function JoinRequestsPanel({
     try {
       await resolveJoinRequest(partidoId, request.id, status);
     } catch (caught) {
-      setToast(
-        status === 'ACCEPTED' && caught instanceof ApiError && caught.status === CONFLICT
-          ? FULL_MESSAGE
-          : RESOLVE_FALLBACK
-      );
+      setToast(resolveRequestErrorMessage(caught));
     } finally {
       invalidateMatches();
       setResolvingId(null);
