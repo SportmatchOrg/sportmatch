@@ -9,11 +9,19 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { Response } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
@@ -23,6 +31,7 @@ import { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesService } from './matches.service';
 import { PhotoUploadInterceptor } from '../storage/photo-upload.interceptor';
+import { NEXT_CURSOR_HEADER } from '../utils/matches/match-cursor';
 
 @ApiTags('Partidos')
 @ApiBearerAuth()
@@ -46,11 +55,30 @@ export class MatchesController {
   }
 
   @Get()
-  findAll(
+  @ApiOkResponse({
+    headers: {
+      [NEXT_CURSOR_HEADER]: {
+        description:
+          'Cursor de la página siguiente. No se manda si no hay más páginas.',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  async findAll(
     @CurrentUser() user: FirebaseUser,
     @Query() query: FindMatchesQueryDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.matchesService.findUpcoming(user.uid, query);
+    const { matches, nextCursor } = await this.matchesService.findUpcoming(
+      user.uid,
+      query,
+    );
+
+    if (nextCursor) {
+      response.setHeader(NEXT_CURSOR_HEADER, nextCursor);
+    }
+
+    return matches;
   }
 
   @Get('mine')
