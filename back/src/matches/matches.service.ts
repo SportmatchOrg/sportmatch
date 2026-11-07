@@ -93,7 +93,7 @@ export class MatchesService {
 
     const ranked = await this.rankByCompatibility(available, user, origin);
     const { page, lastKey } = takeMatchPage(ranked, after, query.limit);
-    const listed = await this.matchesRepository.findListedByIds(
+    const listed = await this.matchesRepository.findActiveListedByIds(
       page.map(({ match }) => match.id),
       user.id,
     );

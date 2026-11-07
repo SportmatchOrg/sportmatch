@@ -103,9 +103,9 @@ export class MatchesRepository {
     });
   }
 
-  findListedByIds(ids: string[], userId: string) {
+  findActiveListedByIds(ids: string[], userId: string) {
     return this.prisma.match.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids }, status: 'ACTIVE' },
       include: matchInclude(userId),
     });
   }
