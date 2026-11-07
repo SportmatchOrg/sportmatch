@@ -2,6 +2,7 @@ import { Transform, Type, type TransformFnParams } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
+  IsInt,
   IsLatitude,
   IsLongitude,
   IsNotEmpty,
@@ -55,4 +56,36 @@ export class FindMatchesQueryDto {
   @Min(0.5)
   @Max(50)
   radiusKm?: number;
+
+  @IsOptional()
+  @Transform(toOptionalNumber)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  limit?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  cursor?: string;
+
+  @IsOptional()
+  @Transform(toOptionalNumber)
+  @IsLatitude()
+  north?: number;
+
+  @IsOptional()
+  @Transform(toOptionalNumber)
+  @IsLatitude()
+  south?: number;
+
+  @IsOptional()
+  @Transform(toOptionalNumber)
+  @IsLongitude()
+  east?: number;
+
+  @IsOptional()
+  @Transform(toOptionalNumber)
+  @IsLongitude()
+  west?: number;
 }
