@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import {
   recentNoShowCount,
   suspendedUntil,
@@ -31,39 +30,6 @@ type UserScore = {
 };
 
 const EMPTY_SCORE: UserScore = { rating: null, ratingCount: 0 };
-
-const countByUser = (userIds: string[]): Map<string, number> => {
-  const counts = new Map<string, number>();
-
-  for (const userId of userIds) {
-    counts.set(userId, (counts.get(userId) ?? 0) + 1);
-  }
-
-  return counts;
-};
-
-const toScore = (
-  stars: number[],
-  noShows: number,
-  lates: number,
-): UserScore => {
-  const scores = [
-    ...stars,
-    ...Array<number>(noShows).fill(NO_SHOW_SCORE),
-    ...Array<number>(lates).fill(LATE_WITHDRAWAL_SCORE),
-  ];
-
-  if (scores.length === 0) {
-    return EMPTY_SCORE;
-  }
-
-  const total = scores.reduce((sum, score) => sum + score, 0);
-
-  return {
-    rating: Math.round((total / scores.length) * 10) / 10,
-    ratingCount: stars.length,
-  };
-};
 
 @Injectable()
 export class UsersService {
@@ -201,16 +167,12 @@ export class UsersService {
     }
   }
 
-  async findEffectiveReceivedScores(userId: string): Promise<number[]> {
-    return (await this.findEffectiveScoresBy([userId])).get(userId) ?? [];
-  }
-
   async getScores(userIds: string[]): Promise<Map<string, UserScore>> {
     if (userIds.length === 0) {
       return new Map();
     }
 
-    return this.computeScores(userIds, await this.findNoShowDatesBy(userIds));
+    return this.computeScores(userIds);
   }
 
   async getSuspensions(userIds: string[]): Promise<Map<string, Date | null>> {
@@ -250,6 +212,7 @@ export class UsersService {
     return new Map(
       matches.map((match) => [
         match.id,
+        // Keep the confirmation rule in sync with UsersRepository.findScoreTotals.
         confirmedNoShows(match.noShowReports, match.organizerId),
       ]),
     );
@@ -288,37 +251,27 @@ export class UsersService {
 
   private async computeScores(
     userIds: string[],
-    noShowDates: Map<string, Date[]>,
   ): Promise<Map<string, UserScore>> {
-    const [effectiveScores, lateWithdrawals, canceledMatches] =
-      await Promise.all([
-        this.findEffectiveScoresBy(userIds),
-        this.usersRepository.countLateWithdrawalsBy(userIds),
-        this.usersRepository.findCanceledMatchDates(userIds),
-      ]);
-
-    const lateWithdrawalsByUser = new Map(
-      lateWithdrawals.map(({ userId, _count }) => [userId, _count._all]),
-    );
-
-    const lateCancelsByUser = countByUser(
-      canceledMatches
-        .filter(
-          ({ date, canceledAt }) =>
-            canceledAt !== null && isLateWithdrawal(date, canceledAt.getTime()),
-        )
-        .map(({ organizerId }) => organizerId),
-    );
+    const totals = await this.usersRepository.findScoreTotals(userIds);
 
     return new Map(
-      userIds.map((userId) => {
-        const stars = effectiveScores.get(userId) ?? [];
-        const noShows = noShowDates.get(userId)?.length ?? 0;
-        const lates =
-          (lateWithdrawalsByUser.get(userId) ?? 0) +
-          (lateCancelsByUser.get(userId) ?? 0);
+      totals.map(({ userId, starsSum, starsCount, noShows, lates }) => {
+        const count = starsCount + noShows + lates;
 
-        return [userId, toScore(stars, noShows, lates)];
+        if (count === 0) {
+          return [userId, EMPTY_SCORE];
+        }
+
+        const sum =
+          starsSum + noShows * NO_SHOW_SCORE + lates * LATE_WITHDRAWAL_SCORE;
+
+        return [
+          userId,
+          {
+            rating: Math.round((sum / count) * 10) / 10,
+            ratingCount: starsCount,
+          },
+        ];
       }),
     );
   }
@@ -342,40 +295,12 @@ export class UsersService {
     return datesByUser;
   }
 
-  private async findEffectiveScoresBy(
-    userIds: string[],
-  ): Promise<Map<string, number[]>> {
-    const ratings = await this.usersRepository.findReceivedRatings(userIds);
-    const scoresByUser = new Map(
-      userIds.map((userId) => [userId, [] as number[]]),
-    );
-
-    if (ratings.length === 0) {
-      return scoresByUser;
-    }
-
-    const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
-    const confirmedByMatch = await this.findConfirmedNoShows({ matchIds });
-
-    for (const { score, matchId, raterId, ratedUserId } of ratings) {
-      const confirmed = confirmedByMatch.get(matchId);
-
-      if (confirmed?.has(ratedUserId) || confirmed?.has(raterId)) {
-        continue;
-      }
-
-      scoresByUser.get(ratedUserId)?.push(score);
-    }
-
-    return scoresByUser;
-  }
-
   private async buildProfile<T extends { id: string }>(user: T) {
-    const [noShowDates, playedDates] = await Promise.all([
+    const [noShowDates, playedDates, scores] = await Promise.all([
       this.findNoShowDatesBy([user.id]),
       this.usersRepository.findPlayedDates(user.id),
+      this.computeScores([user.id]),
     ]);
-    const scores = await this.computeScores([user.id], noShowDates);
     const userNoShowDates = noShowDates.get(user.id) ?? [];
 
     return {
