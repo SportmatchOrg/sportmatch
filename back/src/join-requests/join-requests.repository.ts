@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import type { JoinRequestOrigin } from '../generated/prisma/client';
+import type {
+  JoinRequest,
+  JoinRequestOrigin,
+} from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { isFull } from '../utils/matches/player-count';
 
 const PUBLIC_USER = {
   select: { id: true, name: true, photoUrl: true },
 } as const;
+
+export type AcceptOutcome =
+  | { outcome: 'accepted'; request: JoinRequest }
+  | { outcome: 'full' }
+  | { outcome: 'not-pending' };
 
 @Injectable()
 export class JoinRequestsRepository {
@@ -62,14 +70,24 @@ export class JoinRequestsRepository {
     });
   }
 
-  reject(id: string) {
-    return this.prisma.joinRequest.update({
-      where: { id },
-      data: { status: 'REJECTED' },
+  rejectIfPending(id: string): Promise<JoinRequest | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.joinRequest.updateMany({
+        where: { id, status: 'PENDING' },
+        data: { status: 'REJECTED' },
+      });
+
+      return count === 0
+        ? null
+        : tx.joinRequest.findUniqueOrThrow({ where: { id } });
     });
   }
 
-  accept(joinRequestId: string, matchId: string, userId: string) {
+  acceptIfPending(
+    joinRequestId: string,
+    matchId: string,
+    userId: string,
+  ): Promise<AcceptOutcome> {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM matches WHERE id = ${matchId} FOR UPDATE`;
 
@@ -82,13 +100,17 @@ export class JoinRequestsRepository {
       ]);
 
       if (isFull(joined, match.capacity)) {
-        return null;
+        return { outcome: 'full' };
       }
 
-      const request = await tx.joinRequest.update({
-        where: { id: joinRequestId },
+      const { count } = await tx.joinRequest.updateMany({
+        where: { id: joinRequestId, status: 'PENDING' },
         data: { status: 'ACCEPTED' },
       });
+
+      if (count === 0) {
+        return { outcome: 'not-pending' };
+      }
 
       await tx.participant.create({ data: { matchId, userId } });
 
@@ -99,7 +121,11 @@ export class JoinRequestsRepository {
         });
       }
 
-      return request;
+      const request = await tx.joinRequest.findUniqueOrThrow({
+        where: { id: joinRequestId },
+      });
+
+      return { outcome: 'accepted', request };
     });
   }
 
