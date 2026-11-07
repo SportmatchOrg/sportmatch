@@ -13,6 +13,9 @@ import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { UpdateJoinRequestDto } from './dto/update-join-request.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
 
+const ALREADY_RESOLVED = 'The join request is already resolved';
+const MATCH_FULL = 'The match is full';
+
 @Injectable()
 export class JoinRequestsService {
   constructor(
@@ -48,7 +51,7 @@ export class JoinRequestsService {
     }
 
     if (isFull(match._count.participants, match.capacity)) {
-      throw new ConflictException('The match is full');
+      throw new ConflictException(MATCH_FULL);
     }
 
     const existingRequest =
@@ -125,14 +128,19 @@ export class JoinRequestsService {
     }
 
     if (joinRequest.status !== 'PENDING') {
-      throw new ConflictException('The join request is already resolved');
+      throw new ConflictException(ALREADY_RESOLVED);
     }
 
     this.assertNotPlayed(match.date);
 
     try {
       if (updateJoinRequestDto.status === 'REJECTED') {
-        const rejectedRequest = await this.joinRequestsRepository.reject(id);
+        const rejectedRequest =
+          await this.joinRequestsRepository.rejectIfPending(id);
+
+        if (!rejectedRequest) {
+          throw await this.notPendingError(id, matchId);
+        }
 
         await this.notificationsService.notify({
           userId: joinRequest.userId,
@@ -145,17 +153,21 @@ export class JoinRequestsService {
       }
 
       if (isFull(match._count.participants, match.capacity)) {
-        throw new ConflictException('The match is full');
+        throw new ConflictException(MATCH_FULL);
       }
 
-      const acceptedRequest = await this.joinRequestsRepository.accept(
+      const result = await this.joinRequestsRepository.acceptIfPending(
         id,
         matchId,
         joinRequest.userId,
       );
 
-      if (!acceptedRequest) {
-        throw new ConflictException('The match is full');
+      if (result.outcome === 'full') {
+        throw new ConflictException(MATCH_FULL);
+      }
+
+      if (result.outcome === 'not-pending') {
+        throw await this.notPendingError(id, matchId);
       }
 
       await this.notificationsService.notify({
@@ -165,13 +177,24 @@ export class JoinRequestsService {
         type: 'JOIN_REQUEST_ACCEPTED',
       });
 
-      return acceptedRequest;
+      return result.request;
     } catch (error) {
       throw toPrismaHttpException(error, {
         P2002: 'The user is already a participant',
         P2025: `Join request with id ${id} was not found`,
       });
     }
+  }
+
+  private async notPendingError(id: string, matchId: string) {
+    const current = await this.joinRequestsRepository.findRequestByIdAndMatch(
+      id,
+      matchId,
+    );
+
+    return current
+      ? new ConflictException(ALREADY_RESOLVED)
+      : new NotFoundException(`Join request with id ${id} was not found`);
   }
 
   private assertNotPlayed(date: Date) {
