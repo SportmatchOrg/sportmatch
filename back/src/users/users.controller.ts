@@ -15,7 +15,6 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { PhotoUploadInterceptor } from '../storage/photo-upload.interceptor';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
-import { CreateUserDto } from './dto/create-user.dto';
 import { SearchUsersQueryDto } from './dto/search-users-query.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
@@ -29,16 +28,6 @@ import { OwnAccountGuard } from '../auth/own-account.guard';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
 
   @Get('me')
   async me(@CurrentUser() user: FirebaseUser) {

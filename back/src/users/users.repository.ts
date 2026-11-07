@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FirebaseUser } from '../auth/types';
 import type { Prisma } from '../generated/prisma/client';
@@ -40,10 +39,6 @@ const SEARCH_LIMIT = 10;
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  findAll() {
-    return this.prisma.user.findMany({ select: PUBLIC_USER });
-  }
 
   searchByName(query: string, excludedUserId: string) {
     return this.prisma.user.findMany({
@@ -143,10 +138,6 @@ export class UsersRepository {
       },
       select: { date: true },
     });
-  }
-
-  create(data: CreateUserDto) {
-    return this.prisma.user.create({ data });
   }
 
   ensureExists(user: FirebaseUser) {
