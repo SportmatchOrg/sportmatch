@@ -4,11 +4,9 @@ import { keepPreviousData, queryOptions, useQuery } from '@tanstack/react-query'
 import { useCallback } from 'react';
 
 import { useAuth } from '@/context/auth-context';
-import { fetchMatches } from '@/lib/matches';
+import { fetchMatches, MATCHES_ERROR_MESSAGE } from '@/lib/matches';
 import { matchKeys } from '@/lib/query-keys';
 import type { Match, MatchesQuery } from '@/types/match';
-
-const ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un momento.';
 
 const STALE_TIME_MS = 5_000;
 
@@ -38,7 +36,7 @@ export function useMatches(query: MatchesQuery = NO_FILTERS) {
   return {
     matches: data ?? NO_MATCHES,
     loading: sessionLoading || isPending,
-    error: isLoadingError ? ERROR_MESSAGE : null,
+    error: isLoadingError ? MATCHES_ERROR_MESSAGE : null,
     reload,
   };
 }

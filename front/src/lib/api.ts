@@ -60,7 +60,9 @@ async function readErrorMessage(response: Response, path: string): Promise<strin
     : `Request to ${path} failed with status ${response.status}`;
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export type ApiResponse<T> = { data: T; headers: Headers };
+
+async function send(path: string, init: RequestInit): Promise<Response> {
   const headers = new Headers(init.headers);
   if (init.body instanceof FormData) {
     headers.delete('Content-Type');
@@ -90,9 +92,26 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     throw new ApiError(await readErrorMessage(response, path), response.status);
   }
 
+  return response;
+}
+
+async function readBody<T>(response: Response): Promise<T> {
   if (response.status === NO_CONTENT) {
     return undefined as T;
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return readBody<T>(await send(path, init));
+}
+
+export async function apiFetchWithHeaders<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const response = await send(path, init);
+
+  return { data: await readBody<T>(response), headers: response.headers };
 }

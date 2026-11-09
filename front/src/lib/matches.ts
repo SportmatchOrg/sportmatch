@@ -1,4 +1,4 @@
-import { ApiError, apiFetch } from '@/lib/api';
+import { ApiError, apiFetch, apiFetchWithHeaders } from '@/lib/api';
 import { toCreateMatchBody, toUpdateMatchBody, type MatchForm } from '@/lib/match-form';
 import { suspensionErrorMessage } from '@/lib/suspension';
 import type {
@@ -8,6 +8,10 @@ import type {
   MatchesQuery,
   MyMatches,
 } from '@/types/match';
+
+const NEXT_CURSOR_HEADER = 'X-Next-Cursor';
+
+export const MATCHES_ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un momento.';
 
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
@@ -92,6 +96,23 @@ export async function fetchMatches(query: MatchesQuery = {}): Promise<Match[]> {
 
   return apiFetch<Match[]>(search ? `/matches?${search}` : '/matches');
 }
+
+export type MatchesPageQuery = MatchesQuery & { limit: number; cursor?: string };
+
+export type MatchesPage = { matches: Match[]; nextCursor: string | null };
+
+export async function fetchMatchesPage(
+  query: MatchesPageQuery,
+  signal?: AbortSignal
+): Promise<MatchesPage> {
+  const { data, headers } = await apiFetchWithHeaders<Match[]>(
+    `/matches?${toSearchParams(query)}`,
+    { signal }
+  );
+
+  return { matches: data, nextCursor: headers.get(NEXT_CURSOR_HEADER) };
+}
+
 export async function fetchMyMatches(): Promise<MyMatches> {
   return apiFetch<MyMatches>('/matches/mine');
 }

@@ -111,6 +111,10 @@ export function hasActiveFilters(filters: MapFilters): boolean {
   );
 }
 
+export function nearbyQuery(origin: NearbyOrigin, radiusKm: number): MatchesQuery {
+  return { lat: origin.latitude, lng: origin.longitude, radiusKm };
+}
+
 export function toMatchesQuery(filters: MapFilters, now = new Date()): MatchesQuery {
   const query: MatchesQuery = {};
 
@@ -124,11 +128,7 @@ export function toMatchesQuery(filters: MapFilters, now = new Date()): MatchesQu
 
   if (filters.levels.length > 0) query.level = filters.levels;
 
-  if (filters.nearby) {
-    query.lat = filters.nearby.latitude;
-    query.lng = filters.nearby.longitude;
-    query.radiusKm = NEARBY_RADIUS_KM;
-  }
+  if (filters.nearby) Object.assign(query, nearbyQuery(filters.nearby, NEARBY_RADIUS_KM));
 
   return query;
 }

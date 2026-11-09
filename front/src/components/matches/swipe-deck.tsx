@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 
+import { LoadingScreen } from '@/components/loading-screen';
 import { SwipeCard, type SwipeDecision } from '@/components/matches/swipe-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -25,6 +26,9 @@ const FLYOUT_DISTANCE = 600;
 const FLYOUT_LIFT = -40;
 const FLYOUT_DURATION = 300;
 const TAP_TOLERANCE = 8;
+const PREFETCH_REMAINING = 5;
+
+const STALE_AFTER_JOIN = [matchKeys.lists(), matchKeys.discoverLists()];
 
 const RETURN_TRANSITION = 'transform 320ms var(--ease-spring)';
 
@@ -49,6 +53,8 @@ const NO_DRAG: Drag = { x: 0, y: 0, active: false };
 
 type SwipeDeckProps = {
   matches: Match[];
+  hasMore: boolean;
+  onLoadMore: () => void;
   onRestart: () => void;
 };
 
@@ -57,12 +63,11 @@ type DeckToast = {
   tone: ToastTone;
 };
 
-export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
+export function SwipeDeck({ matches, hasMore, onLoadMore, onRestart }: SwipeDeckProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, loading: userLoading } = useCurrentUser();
   const [index, setIndex] = useState(0);
-  const [previousMatches, setPreviousMatches] = useState(matches);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
   const [flyout, setFlyout] = useState<SwipeDecision | null>(null);
   const [toast, setToast] = useState<DeckToast | null>(null);
@@ -77,10 +82,9 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  if (matches !== previousMatches) {
-    setPreviousMatches(matches);
-    setIndex(0);
-  }
+  useEffect(() => {
+    if (matches.length - index <= PREFETCH_REMAINING) onLoadMore();
+  }, [index, matches.length, onLoadMore]);
 
   const current = matches[index];
 
@@ -107,6 +111,9 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
           .then(() => {
             setToast({ message: 'Solicitud enviada ⚡', tone: 'success' });
             void queryClient.invalidateQueries({ queryKey: matchKeys.mine() });
+            STALE_AFTER_JOIN.forEach((queryKey) =>
+              void queryClient.invalidateQueries({ queryKey, refetchType: 'none' })
+            );
           })
           .catch((error: unknown) =>
             setToast({ message: joinRequestErrorMessage(error), tone: 'danger' })
@@ -180,6 +187,10 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
         document.body
       )
     : null;
+
+  if (!current && hasMore) {
+    return <LoadingScreen />;
+  }
 
   if (!matches.length || !current) {
     return (
