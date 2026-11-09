@@ -107,6 +107,11 @@ export type MatchesQuery = {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  north?: number;
+  south?: number;
+  east?: number;
+  west?: number;
+  limit?: number;
 };
 
 export const CAPACITY_MIN = 2;
