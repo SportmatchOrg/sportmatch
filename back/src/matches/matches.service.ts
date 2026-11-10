@@ -6,12 +6,28 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import type { Level, MatchStatus, User } from '../generated/prisma/client';
+import type {
+  Level,
+  Match,
+  MatchStatus,
+  User,
+} from '../generated/prisma/client';
 import type { CreateNotificationInput } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
+import { distanceBand } from '../utils/geo/distance-band';
 import { distanceKm } from '../utils/geo/distance-km';
 import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
+import {
+  decodeMatchCursor,
+  encodeMatchCursor,
+} from '../utils/matches/match-cursor';
+import {
+  buildMatchSortKey,
+  compareMatchSortKeys,
+  takeMatchPage,
+  type MatchSortKey,
+} from '../utils/matches/match-sort-key';
 import { isFull, playerCount } from '../utils/matches/player-count';
 import { isRatingWindowOpen } from '../utils/ratings/rating-window';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
@@ -25,11 +41,19 @@ import { PHOTO_UPLOAD_ERROR, StorageService } from '../storage/storage.service';
 
 const DEFAULT_RADIUS_KM = 5;
 
+type Coordinates = {
+  lat: number;
+  lng: number;
+};
+
 type CompatibilityCandidate = {
+  id: string;
   sportId: string;
   level: Level;
   organizerId: string;
   date: Date;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 @Injectable()
@@ -44,6 +68,48 @@ export class MatchesService {
   ) {}
 
   async findUpcoming(firebaseUid: string, query: FindMatchesQueryDto) {
+    this.assertValidUpcomingQuery(query);
+
+    const origin = this.toOrigin(query);
+    const after = this.parseCursor(query.cursor, origin !== null);
+    const user = await this.usersService.findByFirebaseUid(firebaseUid);
+    const candidates = await this.matchesRepository.findUpcomingCandidates(
+      user.id,
+      query,
+    );
+    const radiusKm = query.radiusKm ?? DEFAULT_RADIUS_KM;
+
+    const available = candidates
+      .filter((match) => !isFull(match._count.participants, match.capacity))
+      .filter((match) => {
+        if (!origin) {
+          return true;
+        }
+
+        const distance = this.distanceFrom(origin, match);
+
+        return distance !== null && distance < radiusKm;
+      });
+
+    const ranked = await this.rankByCompatibility(available, user, origin);
+    const { page, lastKey } = takeMatchPage(ranked, after, query.limit);
+    const listed = await this.matchesRepository.findActiveListedByIds(
+      page.map(({ match }) => match.id),
+      user.id,
+    );
+    const listedById = new Map(listed.map((match) => [match.id, match]));
+
+    return {
+      matches: page.flatMap(({ match }) => {
+        const found = listedById.get(match.id);
+
+        return found ? [this.toListResponse(found, user.id)] : [];
+      }),
+      nextCursor: lastKey ? encodeMatchCursor(lastKey) : null,
+    };
+  }
+
+  private assertValidUpcomingQuery(query: FindMatchesQueryDto) {
     if ((query.lat === undefined) !== (query.lng === undefined)) {
       throw new BadRequestException('lat and lng must be provided together');
     }
@@ -56,31 +122,76 @@ export class MatchesService {
       throw new BadRequestException('from cannot be later than to');
     }
 
-    const user = await this.usersService.findByFirebaseUid(firebaseUid);
-    const matches = await this.matchesRepository.findUpcoming(user.id, query);
-    const { lat, lng, radiusKm } = query;
+    if (query.cursor !== undefined && query.limit === undefined) {
+      throw new BadRequestException('cursor requires limit');
+    }
 
-    const available = matches
-      .filter((match) => !isFull(match._count.participants, match.capacity))
-      .filter(
-        (match) =>
-          lat === undefined ||
-          lng === undefined ||
-          (match.latitude !== null &&
-            match.longitude !== null &&
-            distanceKm(lat, lng, match.latitude, match.longitude) <
-              (radiusKm ?? DEFAULT_RADIUS_KM)),
-      );
-
-    const sorted = await this.sortByCompatibility(available, user);
-
-    return sorted.map((match) => this.toListResponse(match, user.id));
+    this.assertValidZone(query);
   }
 
-  private async sortByCompatibility<T extends CompatibilityCandidate>(
+  private assertValidZone({ north, south, east, west }: FindMatchesQueryDto) {
+    if (
+      north === undefined &&
+      south === undefined &&
+      east === undefined &&
+      west === undefined
+    ) {
+      return;
+    }
+
+    if (
+      north === undefined ||
+      south === undefined ||
+      east === undefined ||
+      west === undefined
+    ) {
+      throw new BadRequestException(
+        'north, south, east and west must be provided together',
+      );
+    }
+
+    if (south >= north || west >= east) {
+      throw new BadRequestException(
+        'south must be lower than north and west lower than east',
+      );
+    }
+  }
+
+  private toOrigin({ lat, lng }: FindMatchesQueryDto): Coordinates | null {
+    return lat === undefined || lng === undefined ? null : { lat, lng };
+  }
+
+  private parseCursor(
+    cursor: string | undefined,
+    withDistance: boolean,
+  ): MatchSortKey | null {
+    if (cursor === undefined) {
+      return null;
+    }
+
+    const key = decodeMatchCursor(cursor, withDistance);
+
+    if (!key) {
+      throw new BadRequestException('cursor is not valid for this query');
+    }
+
+    return key;
+  }
+
+  private distanceFrom(
+    origin: Coordinates,
+    { latitude, longitude }: Pick<Match, 'latitude' | 'longitude'>,
+  ): number | null {
+    return latitude === null || longitude === null
+      ? null
+      : distanceKm(origin.lat, origin.lng, latitude, longitude);
+  }
+
+  private async rankByCompatibility<T extends CompatibilityCandidate>(
     matches: T[],
     player: Pick<User, 'id' | 'level'>,
-  ): Promise<T[]> {
+    origin: Coordinates | null,
+  ): Promise<{ match: T; key: MatchSortKey }[]> {
     if (matches.length === 0) {
       return [];
     }
@@ -95,18 +206,25 @@ export class MatchesService {
     ]);
     const preferredSports = new Set(preferredSportIds);
 
-    const scoreOf = (organizerId: string): number =>
-      scores.get(organizerId)?.rating ?? 0;
+    const bandOf = (match: T): number | null => {
+      const distance = origin && this.distanceFrom(origin, match);
 
-    return [...matches].sort(
-      (a, b) =>
-        Number(preferredSports.has(b.sportId)) -
-          Number(preferredSports.has(a.sportId)) ||
-        Number(b.level === preferredLevel) -
-          Number(a.level === preferredLevel) ||
-        scoreOf(b.organizerId) - scoreOf(a.organizerId) ||
-        a.date.getTime() - b.date.getTime(),
-    );
+      return distance === null ? null : distanceBand(distance);
+    };
+
+    return matches
+      .map((match) => ({
+        match,
+        key: buildMatchSortKey({
+          isPreferredSport: preferredSports.has(match.sportId),
+          isPreferredLevel: match.level === preferredLevel,
+          band: bandOf(match),
+          score: scores.get(match.organizerId)?.rating ?? 0,
+          date: match.date,
+          id: match.id,
+        }),
+      }))
+      .sort((a, b) => compareMatchSortKeys(a.key, b.key));
   }
 
   private async findPreferredLevel(

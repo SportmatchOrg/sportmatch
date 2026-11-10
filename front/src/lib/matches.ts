@@ -13,6 +13,13 @@ const CONFLICT = 409;
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
+const RESOLVE_REQUEST_FALLBACK = 'No pudimos resolver la solicitud. Probá de nuevo.';
+const RESOLVE_REQUEST_CONFLICTS: Record<string, string> = {
+  full: 'No se pudo aceptar: el partido está lleno',
+  resolved: 'Esta solicitud ya fue resuelta',
+  canceled: 'El partido está cancelado',
+  'already a participant': 'Este jugador ya está anotado',
+};
 
 export function joinRequestErrorMessage(error: unknown): string {
   const suspension = suspensionErrorMessage(error);
@@ -31,6 +38,23 @@ export function joinRequestErrorMessage(error: unknown): string {
   if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
 
   return JOIN_REQUEST_FALLBACK;
+}
+
+export function resolveRequestErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return RESOLVE_REQUEST_FALLBACK;
+
+  if (error.status === CONFLICT) {
+    const message = error.message.toLowerCase();
+    const conflict = Object.entries(RESOLVE_REQUEST_CONFLICTS).find(([fragment]) =>
+      message.includes(fragment)
+    );
+    return conflict ? conflict[1] : RESOLVE_REQUEST_FALLBACK;
+  }
+
+  if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
+  if (error.status === NOT_FOUND) return 'Esta solicitud ya no existe';
+
+  return RESOLVE_REQUEST_FALLBACK;
 }
 
 export function leaveErrorMessage(error: unknown): string {

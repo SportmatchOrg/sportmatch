@@ -4,7 +4,7 @@ Instrucciones compartidas para Claude Code, Codex, GitHub Copilot y cualquier ot
 
 ## 1. Producto y alcance
 
-Sportmatch es una aplicación web responsiva que conecta personas que quieren practicar deportes. El MVP incluye autenticación, perfiles, creación y descubrimiento de partidos, solicitudes para unirse y ratings.
+Sportmatch es una aplicación web responsiva que conecta personas que quieren practicar deportes. El MVP incluye autenticación, perfiles, creación y descubrimiento de partidos, solicitudes para unirse, invitaciones, calificaciones, notificaciones en la app y push, reportes y moderación, fotos de perfil y partido, y un asistente de IA para preparar borradores de partidos.
 
 Requerimientos funcionales de referencia:
 
@@ -70,12 +70,16 @@ npm --prefix back ci
 docker compose up -d db
 ```
 
+`npm ci` es un comando nativo de npm que instala a partir del lockfile, no un script de `package.json`.
+
 Desarrollo:
 
 ```bash
 npm --prefix front run dev
 npm --prefix back run start:dev
 ```
+
+Para servir el build de Next.js, ejecutar primero `npm --prefix front run build` y luego `npm --prefix front run start`. Para aplicar Prettier al código y los tests del backend, usar `npm --prefix back run format`.
 
 Verificación completa antes de un push o una PR:
 
@@ -121,6 +125,8 @@ npx nest generate resource <nombre> --no-spec
 
 ## 6. Tests
 
+Conservar los dos archivos `.spec.ts` existentes en `back/src/` y el entorno de pruebas e2e en `back/test/`, que incluye `join-requests.e2e-spec.ts`. La suite e2e se ejecuta por separado con `npm --prefix back run test:e2e` desde un shell compatible con la asignación POSIX de variables. Usar una base local descartable: la suite borra datos. `npm run verify` ejecuta los tests unitarios.
+
 Por ahora el proyecto no crea tests nuevos:
 
 - Usar siempre `--no-spec` al generar resources, controllers o services.
@@ -161,8 +167,12 @@ npm run db:generate
 npm run db:migrate
 npm run db:deploy
 npm run db:seed
+npm run db:seed:demo
+npm run admin:promote -- <email>
 npm run db:studio
 ```
+
+El seed general es solo para local: elimina los partidos. El seed demo usa `SEED_DEMO_EMAIL` para identificar la cuenta de demo. `admin:promote` requiere una cuenta existente y opera sobre la base indicada por `DATABASE_URL`; ver la [guía de despliegue](docs/deployment.md).
 
 Todo cambio de schema debe acompañarse con una migración de Prisma. No modificar la base de datos manualmente.
 

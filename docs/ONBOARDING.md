@@ -54,7 +54,7 @@ Este comando ejecuta lint, tests y builds de ambos proyectos. Actualmente el bac
   - `prisma/`: Schema, migraciones y seed de Prisma 7.
   - `src/generated/prisma`: Cliente generado por Prisma (no editable manualmente).
   - `src/<resource>/`: Módulos de negocio con las cuatro capas (module, controller, service, repository).
-  - Recursos existentes: `users`, `matches`, `join-requests`, `ratings`, `sports`, `notifications`, `reports`, `reminders`, `user-blocks`, `push-subscriptions`, `storage`, `auth`, `firebase`, `config`, `health`, `kpis`, `ai`, `utils`.
+  - Recursos existentes: `users`, `matches`, `join-requests`, `ratings`, `sports`, `notifications`, `reports`, `moderation-actions`, `reminders`, `user-blocks`, `push-subscriptions`, `storage`, `auth`, `firebase`, `config`, `health`, `kpis`, `ai`, `utils`.
 - `docker-compose.yml`: Servicios de PostgreSQL 18 y backend.
 - `package.json` raíz: Coordina comandos de ambas aplicaciones y configura Husky.
 - `.github/`: Workflows de CI, automatizaciones y plantillas de PR.
