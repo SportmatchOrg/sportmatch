@@ -3,7 +3,10 @@ import type { ReportStatus } from '@/types/report';
 
 export const matchKeys = {
   all: ['matches'] as const,
-  list: (query: MatchesQuery) => [...matchKeys.all, 'list', query] as const,
+  lists: () => [...matchKeys.all, 'list'] as const,
+  list: (query: MatchesQuery) => [...matchKeys.lists(), query] as const,
+  discoverLists: () => [...matchKeys.all, 'discover'] as const,
+  discover: (query: MatchesQuery) => [...matchKeys.discoverLists(), query] as const,
   mine: () => [...matchKeys.all, 'mine'] as const,
   myActions: () => [...matchKeys.all, 'my-actions'] as const,
   detail: (matchId: string) => [...matchKeys.all, 'detail', matchId] as const,
