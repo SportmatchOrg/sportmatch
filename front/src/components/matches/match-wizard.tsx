@@ -58,7 +58,6 @@ import {
 } from '@/lib/match-form';
 import {
   DESCRIPTION_MAX,
-  TITLE_MAX,
   LOCATION_MAX,
   type Sport,
   type Level,
@@ -640,16 +639,6 @@ function MatchWizardForm({
               <p id={photoHintId} className="text-caption text-ink-64">{PHOTO_HINT}</p>
               {photoValidationError && <p id={photoErrorId} role="alert" className="text-caption text-danger">{photoValidationError}</p>}
             </section>
-
-            <TextField
-              id="titulo"
-              label="Título"
-              maxLength={TITLE_MAX}
-              placeholder="Ej. Picado de los jueves"
-              value={form.title}
-              onChange={(event) => setField('title', event.target.value)}
-              error={errors.title}
-            />
 
             <TextareaField
               id="descripcion"
