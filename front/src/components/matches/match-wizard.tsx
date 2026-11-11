@@ -1,15 +1,22 @@
 'use client';
 
 import { Autocomplete } from '@base-ui/react/autocomplete';
-import { MapPin as MapPinIcon } from 'lucide-react';
+import { ImageOff, MapPin as MapPinIcon } from 'lucide-react';
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
 import { MapPin } from '@/components/map/map-pin';
 import { PlaceSuggestions } from '@/components/map/place-suggestions';
 import { CapacityStepper } from '@/components/matches/capacity-stepper';
+import {
+  AssistantButton,
+  AssistantNotice,
+  MatchAssistant,
+} from '@/components/matches/match-assistant';
 import { SportPicker } from '@/components/matches/sport-picker';
 import { SchedulePicker } from '@/components/matches/schedule-picker';
 import { LevelPicker } from '@/components/matches/level-picker';
@@ -19,17 +26,31 @@ import { TextField } from '@/components/matches/text-field';
 import { TextareaField } from '@/components/matches/textarea-field';
 import { WizardShell } from '@/components/matches/wizard-shell';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useInvalidateMatches } from '@/hooks/use-invalidate-matches';
+import { AiImageDialog } from '@/components/ai-image-dialog';
+import { uploadMatchPhoto } from '@/lib/matches';
+import { PHOTO_HINT, PHOTO_TYPES, photoError } from '@/lib/photo-upload';
+import { sportPhotoUrl } from '@/lib/sport-photo';
 import {
   MIN_PLACE_SEARCH_LENGTH,
   useGeocoding,
+  type Place,
   type PlaceSuggestion,
 } from '@/hooks/use-geocoding';
 import { useSports } from '@/hooks/use-sports';
 import { useUserLocation } from '@/hooks/use-user-location';
+import { applyMatchDraft, type MatchDraft } from '@/lib/ai';
 import { suspensionErrorMessage, suspensionMessage } from '@/lib/suspension';
 import type { User } from '@/types/user';
-import { LAST_STEP, firstStepWithError, stepErrors } from '@/lib/match-wizard';
+import {
+  LAST_STEP,
+  firstStepWithError,
+  incompleteSteps,
+  stepErrors,
+} from '@/lib/match-wizard';
 import {
   validateMatchForm,
   type MatchForm,
@@ -37,10 +58,10 @@ import {
 } from '@/lib/match-form';
 import {
   DESCRIPTION_MAX,
-  TITLE_MAX,
   LOCATION_MAX,
   type Sport,
   type Level,
+  type Match,
 } from '@/types/match';
 
 type WizardToast = { message: string; tone: ToastTone };
@@ -71,7 +92,9 @@ function distanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: 
 type MatchWizardProps = {
   mode: 'create' | 'edit';
   initialForm: MatchForm;
-  submit: (form: MatchForm) => Promise<unknown>;
+  initialPhotoUrl?: string | null;
+  matchId?: string;
+  submit: (form: MatchForm) => Promise<Match>;
   toastMessage: (form: MatchForm, sport?: Sport) => string;
   errorMessage: (error: unknown) => string;
   doneHref: string;
@@ -96,6 +119,8 @@ export function MatchWizard(props: MatchWizardProps) {
 function MatchWizardForm({
   mode,
   initialForm,
+  initialPhotoUrl = null,
+  matchId,
   submit,
   toastMessage,
   errorMessage,
@@ -103,6 +128,7 @@ function MatchWizardForm({
   user,
 }: MatchWizardProps & { user: User | null }) {
   const router = useRouter();
+  const invalidateMatches = useInvalidateMatches();
   const { sports, loading: deportesLoading, error: deportesError } = useSports();
   const { location } = useUserLocation();
   const { ready: placesReady, searchPlaces, getPlace, getAddress } = useGeocoding(location);
@@ -111,6 +137,15 @@ function MatchWizardForm({
   const [errors, setErrors] = useState<MatchFormErrors>({});
   const [toast, setToast] = useState<WizardToast | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoValidationError, setPhotoValidationError] = useState<string | null>(null);
+  const [savedWithError, setSavedWithError] = useState<string | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoHintId = useId();
+  const photoErrorId = useId();
+  const saving = useRef(false);
+  const savedMatchId = useRef<string | null>(null);
   const [placeSearch, setPlaceSearch] = useState<PlaceSearch>({
     status: 'idle',
     suggestions: [],
@@ -118,6 +153,9 @@ function MatchWizardForm({
   });
   const [addressStatus, setAddressStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assisted, setAssisted] = useState(false);
+  const [returnToReview, setReturnToReview] = useState(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRevision = useRef(0);
   const addressRevision = useRef(0);
@@ -128,11 +166,15 @@ function MatchWizardForm({
   );
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || savedWithError) return;
 
     const timer = setTimeout(() => setToast(null), TOAST_DURATION);
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, savedWithError]);
+
+  useEffect(() => () => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+  }, [photoPreview]);
 
   useEffect(() => {
     return () => {
@@ -172,7 +214,35 @@ function MatchWizardForm({
   }, [step, placeSearch.open, placeSearch.status, placesReady, form.location, form.latitude, form.longitude, searchPlaces]);
 
   const sport = sports.find((candidate) => candidate.id === form.sportId);
+  const selectedPhoto = photoPreview ?? initialPhotoUrl;
+  const preview = selectedPhoto ?? (sport ? sportPhotoUrl(sport.name, form.location) : null);
   const showingSuggestions = placeSearch.open && placeSearch.status === 'ready';
+  const incomplete = incompleteSteps(validateMatchForm(form));
+
+  function selectPhoto(file: File) {
+    const error = photoError(file);
+    setPhotoValidationError(error);
+    setPhoto(error ? null : file);
+    setPhotoPreview(error ? null : URL.createObjectURL(file));
+  }
+
+  function changePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+    selectPhoto(file);
+  }
+
+  async function useGeneratedPhoto(file: File): Promise<boolean> {
+    selectPhoto(file);
+    return true;
+  }
+
+  function discardPhotoSelection() {
+    setPhoto(null);
+    setPhotoPreview(null);
+    setPhotoValidationError(null);
+  }
 
   function setField<K extends keyof MatchForm>(key: K, value: MatchForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -202,6 +272,21 @@ function MatchWizardForm({
     void searchPlaces('');
   }
 
+  function applyPlace(place: Place, placeId: string) {
+    const location = place.label.slice(0, LOCATION_MAX);
+
+    selectedPlace.current = { latitude: place.latitude, longitude: place.longitude, name: location };
+    setSelectedPlaceId(placeId);
+    setAddressStatus('idle');
+    setForm((current) => ({
+      ...current,
+      location,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    }));
+    setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
+  }
+
   async function selectSuggestion(suggestion: PlaceSuggestion) {
     const revision = inputRevision.current;
     setPlaceSearch((state) => ({ ...state, status: 'selecting', open: false }));
@@ -210,20 +295,7 @@ function MatchWizardForm({
       const place = await getPlace(suggestion);
       if (revision !== inputRevision.current) return;
 
-      selectedPlace.current = {
-        latitude: place.latitude,
-        longitude: place.longitude,
-        name: place.label.slice(0, LOCATION_MAX),
-      };
-      setSelectedPlaceId(suggestion.id);
-      setAddressStatus('idle');
-      setForm((current) => ({
-        ...current,
-        location: place.label.slice(0, LOCATION_MAX),
-        latitude: place.latitude,
-        longitude: place.longitude,
-      }));
-      setErrors((current) => ({ ...current, location: undefined, latitude: undefined }));
+      applyPlace(place, suggestion.id);
       closeSuggestions();
     } catch {
       if (revision === inputRevision.current) {
@@ -260,7 +332,44 @@ function MatchWizardForm({
     }
   }
 
+  async function resolveDraftPlace(location: string) {
+    const [suggestion] = await searchPlaces(location);
+
+    if (suggestion) applyPlace(await getPlace(suggestion), suggestion.id);
+    else void searchPlaces('');
+  }
+
+  async function applyDraft(draft: MatchDraft) {
+    setForm((current) => applyMatchDraft(current, draft));
+    if (draft.location) await resolveDraftPlace(draft.location).catch(() => undefined);
+
+    setErrors({});
+    setAssisted(true);
+    setReturnToReview(false);
+    setStep(LAST_STEP);
+    setAssistantOpen(false);
+  }
+
+  function goToStep(target: number) {
+    setErrors({});
+    setReturnToReview(true);
+    setStep(target);
+  }
+
+  function continueLabel(): string | undefined {
+    if (step === LAST_STEP) return incomplete.length > 0 ? 'Completá lo que falta' : undefined;
+
+    return returnToReview ? 'Volver al resumen' : undefined;
+  }
+
   async function save() {
+    if (saving.current || savedMatchId.current) return;
+    const invalidPhoto = photoValidationError ?? (photo ? photoError(photo) : null);
+    if (invalidPhoto) {
+      setPhotoValidationError(invalidPhoto);
+      setStep(3);
+      return;
+    }
     const found = validateMatchForm(form);
 
     if (Object.keys(found).length > 0) {
@@ -269,20 +378,45 @@ function MatchWizardForm({
       return;
     }
 
+    saving.current = true;
     setSubmitting(true);
 
     try {
-      await submit(form);
+      const saved = await submit(form);
+      savedMatchId.current = saved.id;
+      if (photo) {
+        try {
+          await uploadMatchPhoto(saved.id, photo);
+        } catch {
+          setSavedWithError(saved.id);
+          setToast({ message: 'No pudimos subir la foto', tone: 'danger' });
+          await invalidateMatches();
+          return;
+        }
+      }
+      await invalidateMatches();
       setToast({ message: toastMessage(form, sport), tone: 'success' });
       redirectTimer.current = setTimeout(() => router.replace(doneHref), TOAST_DURATION);
     } catch (caught) {
+      if (savedMatchId.current) {
+        setSavedWithError(savedMatchId.current);
+        setToast({ message: 'El partido se guardó, pero no pudimos actualizar la vista.', tone: 'danger' });
+        return;
+      }
       setToast({ message: suspensionErrorMessage(caught) ?? errorMessage(caught), tone: 'danger' });
       setSubmitting(false);
+      saving.current = false;
     }
   }
 
   function handleContinue() {
-    if (submitting || addressStatus === 'loading') return;
+    if (submitting || saving.current || savedMatchId.current || addressStatus === 'loading') return;
+    if (step === 3 && photoValidationError) return;
+
+    if (step === LAST_STEP && incomplete.length > 0) {
+      goToStep(incomplete[0]);
+      return;
+    }
 
     const found = stepErrors(validateMatchForm(form), step);
     setErrors(found);
@@ -291,6 +425,12 @@ function MatchWizardForm({
 
     if (step === LAST_STEP) {
       void save();
+      return;
+    }
+
+    if (returnToReview) {
+      setReturnToReview(false);
+      setStep(LAST_STEP);
       return;
     }
 
@@ -308,6 +448,39 @@ function MatchWizardForm({
     if (!submitting) router.back();
   }
 
+  if (savedWithError) {
+    return (
+      <main className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-base px-5 lg:static lg:min-h-[calc(100dvh-5rem)]">
+        <EmptyState
+          icon={ImageOff}
+          title="El partido quedó guardado"
+          text="Podés abrirlo o volver a editarlo para subir la foto. No hace falta crear otro partido."
+          action={
+            <div className="flex flex-col gap-3">
+              <Link
+                href={`/partidos/${savedWithError}`}
+                className={pillButtonClassName()}
+              >
+                Ver partido
+              </Link>
+              <Link
+                href={`/partidos/${savedWithError}/editar`}
+                className={pillButtonClassName({ variant: 'glass' })}
+              >
+                Editar partido
+              </Link>
+            </div>
+          }
+        />
+        {toast && <Toast message={toast.message} tone={toast.tone} />}
+      </main>
+    );
+  }
+
+  if (assistantOpen) {
+    return <MatchAssistant onClose={() => setAssistantOpen(false)} onDraft={applyDraft} />;
+  }
+
   return (
     <>
       <WizardShell
@@ -315,6 +488,12 @@ function MatchWizardForm({
         step={step}
         submitting={submitting}
         continueDisabled={step === 1 && addressStatus === 'loading'}
+        continueLabel={continueLabel()}
+        assistant={
+          mode === 'create' && step === 0 ? (
+            <AssistantButton onClick={() => setAssistantOpen(true)} />
+          ) : undefined
+        }
         onBack={handleBack}
         onExit={handleExit}
         onContinue={handleContinue}
@@ -442,15 +621,24 @@ function MatchWizardForm({
               error={errors.level}
             />
 
-            <TextField
-              id="titulo"
-              label="Título"
-              maxLength={TITLE_MAX}
-              placeholder="Ej. Picado de los jueves"
-              value={form.title}
-              onChange={(event) => setField('title', event.target.value)}
-              error={errors.title}
-            />
+            <section aria-label="Foto del partido" className="flex flex-col gap-3">
+              <p className="text-callout font-semibold text-white">Foto del partido <span className="font-normal text-ink-46">· opcional</span></p>
+              {preview && (
+                <div className="relative h-44 overflow-hidden rounded-md bg-sunken">
+                  <Image key={preview} src={preview} alt="Vista previa de la foto del partido" fill sizes="(min-width: 1024px) 600px, 100vw" unoptimized={preview.startsWith('blob:')} className="object-cover" />
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <PillButton variant="glass" size="md" disabled={submitting} onClick={() => photoInput.current?.click()} aria-describedby={photoValidationError ? `${photoHintId} ${photoErrorId}` : photoHintId}>
+                  {selectedPhoto ? 'Cambiar foto' : 'Elegir foto'}
+                </PillButton>
+                <AiImageDialog target="match" matchId={matchId} disabled={submitting} onUse={useGeneratedPhoto} />
+                {(photo || photoValidationError) && <PillButton variant="glass" size="md" disabled={submitting} onClick={discardPhotoSelection}>Descartar selección</PillButton>}
+              </div>
+              <input ref={photoInput} type="file" accept={PHOTO_TYPES.join(',')} disabled={submitting} onChange={changePhoto} aria-label="Elegir foto del partido" className="sr-only" tabIndex={-1} />
+              <p id={photoHintId} className="text-caption text-ink-64">{PHOTO_HINT}</p>
+              {photoValidationError && <p id={photoErrorId} role="alert" className="text-caption text-danger">{photoValidationError}</p>}
+            </section>
 
             <TextareaField
               id="descripcion"
@@ -465,7 +653,20 @@ function MatchWizardForm({
           </div>
         )}
 
-        {step === LAST_STEP && <MatchSummary form={form} sport={sport} organizer={user} />}
+        {step === LAST_STEP && (
+          <div className="flex flex-col gap-4">
+            {assisted && <AssistantNotice complete={incomplete.length === 0} />}
+
+            <MatchSummary
+              form={form}
+              sport={sport}
+              organizer={user}
+              photoUrl={selectedPhoto}
+              incompleteSteps={incomplete}
+              onEdit={goToStep}
+            />
+          </div>
+        )}
       </WizardShell>
 
       {toast && (

@@ -11,4 +11,11 @@ export class SportsRepository {
       orderBy: { name: 'asc' },
     });
   }
+
+  findByName(name: string) {
+    return this.prisma.sport.findUnique({
+      where: { name },
+      select: { id: true },
+    });
+  }
 }

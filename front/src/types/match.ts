@@ -49,6 +49,7 @@ export type CancelReason = (typeof CANCEL_REASONS)[number];
 
 export type Match = {
   id: string;
+  photoUrl: string | null;
   sportId: string;
   sport: Sport;
   level: Level;
@@ -69,6 +70,8 @@ export type Match = {
   ratingPending: boolean | null;
 };
 
+export type LocatedMatch = Match & { latitude: number; longitude: number };
+
 export type MyMatches = {
   organizing: Match[];
   playing: Match[];
@@ -81,6 +84,21 @@ export type MatchDetail = Match & {
   participants: PublicUser[];
 };
 
+export type PublicMatch = {
+  id: string;
+  photoUrl: string | null;
+  date: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  level: Level;
+  capacity: number;
+  status: MatchStatus;
+  sport: Sport;
+  organizer: { name: string; photoUrl: string | null };
+  joinedCount: number;
+};
+
 export type MatchesQuery = {
   from?: string;
   to?: string;
@@ -89,6 +107,11 @@ export type MatchesQuery = {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  north?: number;
+  south?: number;
+  east?: number;
+  west?: number;
+  limit?: number;
 };
 
 export const CAPACITY_MIN = 2;
@@ -96,5 +119,4 @@ export const CAPACITY_MAX = 30;
 export const CAPACITY_DEFAULT = 10;
 export const LOCATION_MIN = 3;
 export const LOCATION_MAX = 120;
-export const TITLE_MAX = 60;
 export const DESCRIPTION_MAX = 500;

@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useAuth } from '@/context/auth-context';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { useUnreadCount } from '@/context/unread-count-context';
 import { NAV_ITEMS, NEW_MATCH_HREF, PROFILE_HREF, isNavItemActive, type NavItem } from '@/lib/nav-items';
 import { cn } from '@/lib/utils';
@@ -73,7 +73,7 @@ function TopNavLink({ item, active }: { item: NavItem; active: boolean }) {
 
 export function TopNavBar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user } = useCurrentUser();
   const { count: unreadCount } = useUnreadCount();
   const profileActive = isNavItemActive(pathname, PROFILE_HREF);
 
@@ -117,8 +117,8 @@ export function TopNavBar() {
               className="inline-flex shrink-0 rounded-full ring-2 ring-brand ring-offset-2 ring-offset-raised transition"
             >
               <UserAvatar
-                name={user?.displayName ?? user?.email ?? ''}
-                photoUrl={user?.photoURL ?? null}
+                name={user?.name ?? user?.email ?? ''}
+                photoUrl={user?.photoUrl ?? null}
                 sizes="42px"
                 className="size-[42px]"
                 initialsClassName="text-caption"

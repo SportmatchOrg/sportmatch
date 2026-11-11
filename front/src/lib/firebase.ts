@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth';
+import { getAuth, inMemoryPersistence, setPersistence } from 'firebase/auth';
 
 import { requireEnv } from './env';
 
@@ -25,6 +25,6 @@ const config = {
 export const app = getApps().length ? getApp() : initializeApp(config);
 export const auth = getAuth(app);
 
-setPersistence(auth, browserLocalPersistence).catch((error) => {
+setPersistence(auth, inMemoryPersistence).catch((error) => {
   console.error('Could not set auth persistence:', error);
 });

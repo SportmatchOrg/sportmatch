@@ -13,6 +13,7 @@ export const TEST_USER: FirebaseUser = {
   uid: 'e2e-uid-organizer',
   email: 'organizer@e2e.test',
   name: 'Organizer E2E',
+  signInProvider: 'password',
 };
 
 /** Segundo usuario, para los casos donde importa NO ser el organizador. */
@@ -20,6 +21,7 @@ export const OTHER_USER: FirebaseUser = {
   uid: 'e2e-uid-other',
   email: 'other@e2e.test',
   name: 'Other E2E',
+  signInProvider: 'password',
 };
 
 export interface Baseline {

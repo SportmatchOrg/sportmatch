@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validateEnv } from './config/env.validation';
@@ -15,6 +16,12 @@ import { PushSubscriptionsModule } from './push-subscriptions/push-subscriptions
 import { HealthModule } from './health/health.module';
 import { KpisModule } from './kpis/kpis.module';
 import { ReportsModule } from './reports/reports.module';
+import { RemindersModule } from './reminders/reminders.module';
+import { StorageModule } from './storage/storage.module';
+import { UserBlocksModule } from './user-blocks/user-blocks.module';
+import { ModerationActionsModule } from './moderation-actions/moderation-actions.module';
+import { AiModule } from './ai/ai.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -22,7 +29,9 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
+    StorageModule,
     FirebaseModule,
     UsersModule,
     MatchesModule,
@@ -34,6 +43,11 @@ import { ReportsModule } from './reports/reports.module';
     HealthModule,
     KpisModule,
     ReportsModule,
+    RemindersModule,
+    UserBlocksModule,
+    ModerationActionsModule,
+    AiModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,4 +8,8 @@ export class SportsService {
   findAll() {
     return this.sportsRepository.findAll();
   }
+
+  async findIdByName(name: string): Promise<string | null> {
+    return (await this.sportsRepository.findByName(name))?.id ?? null;
+  }
 }

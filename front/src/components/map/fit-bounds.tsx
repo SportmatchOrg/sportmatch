@@ -1,7 +1,7 @@
 'use client';
 
 import { useMap } from '@vis.gl/react-google-maps';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const PADDING = { top: 144, right: 48, bottom: 48, left: 48 };
 
@@ -9,9 +9,12 @@ const SINGLE_POINT_ZOOM = 15;
 
 export function FitBounds({ points }: { points: google.maps.LatLngLiteral[] }) {
   const map = useMap();
+  const fitted = useRef(false);
 
   useEffect(() => {
-    if (!map || points.length === 0) return;
+    if (!map || points.length === 0 || fitted.current) return;
+
+    fitted.current = true;
 
     if (points.length === 1) {
       map.setCenter(points[0]);

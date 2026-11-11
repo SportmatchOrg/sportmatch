@@ -1,6 +1,58 @@
 import { Injectable } from '@nestjs/common';
+import {
+  ModerationActionType,
+  type ReportStatus,
+} from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
+import type { ReportResolution } from './dto/resolve-report.dto';
+
+const PUBLIC_USER = {
+  select: { id: true, name: true, photoUrl: true },
+} as const;
+
+const REPORT_DETAILS = {
+  reporter: PUBLIC_USER,
+  reportedUser: {
+    select: {
+      id: true,
+      name: true,
+      photoUrl: true,
+      _count: { select: { reportsReceived: true } },
+    },
+  },
+  reviewedBy: PUBLIC_USER,
+  match: {
+    select: {
+      id: true,
+      date: true,
+      location: true,
+      sport: { select: { id: true, name: true } },
+    },
+  },
+} as const;
+
+type ReportedUserWithCount = {
+  _count: { reportsReceived: number };
+};
+
+const RESOLUTION_ACTION: Record<ReportResolution, ModerationActionType> = {
+  REVIEWED: ModerationActionType.REPORT_REVIEWED,
+  DISMISSED: ModerationActionType.REPORT_DISMISSED,
+};
+
+type ReportTarget = {
+  id: string;
+  reportedUserId: string;
+};
+
+const withReportCount = <T extends { reportedUser: ReportedUserWithCount }>({
+  reportedUser: { _count, ...reportedUser },
+  ...report
+}: T) => ({
+  ...report,
+  reportedUser: { ...reportedUser, reportCount: _count.reportsReceived },
+});
 
 @Injectable()
 export class ReportsRepository {
@@ -36,6 +88,60 @@ export class ReportsRepository {
   create(reporterId: string, data: CreateReportDto) {
     return this.prisma.report.create({
       data: { ...data, reporterId },
+    });
+  }
+
+  findById(id: string) {
+    return this.prisma.report.findUnique({
+      where: { id },
+      select: { id: true, reportedUserId: true },
+    });
+  }
+
+  async findAllByStatus(status: ReportStatus) {
+    const reports = await this.prisma.report.findMany({
+      where: { status },
+      orderBy: { createdAt: 'desc' },
+      include: REPORT_DETAILS,
+    });
+
+    return reports.map(withReportCount);
+  }
+
+  async findWithDetailsById(id: string) {
+    return withReportCount(
+      await this.prisma.report.findUniqueOrThrow({
+        where: { id },
+        include: REPORT_DETAILS,
+      }),
+    );
+  }
+
+  resolveOpen(
+    { id, reportedUserId }: ReportTarget,
+    status: ReportResolution,
+    reviewedById: string,
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.report.updateMany({
+        where: { id, status: 'OPEN' },
+        data: { status, reviewedById, reviewedAt: new Date() },
+      });
+
+      if (count === 0) {
+        return false;
+      }
+
+      await tx.moderationAction.create({
+        data: {
+          type: RESOLUTION_ACTION[status],
+          adminId: reviewedById,
+          targetUserId: reportedUserId,
+          reportId: id,
+        },
+      });
+
+      return true;
     });
   }
 }

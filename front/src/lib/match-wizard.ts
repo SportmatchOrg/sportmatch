@@ -13,7 +13,7 @@ export const WIZARD_STEPS: WizardStep[] = [
   {
     name: 'Jugadores',
     question: '¿Cuántos jugadores?',
-    fields: ['capacity', 'level', 'title', 'description'],
+    fields: ['capacity', 'level', 'description'],
   },
   { name: 'Revisión', question: '¿Listo para publicar?', fields: [] },
 ];
@@ -32,10 +32,16 @@ export function stepErrors(errors: MatchFormErrors, step: number): MatchFormErro
   return found;
 }
 
-export function firstStepWithError(errors: MatchFormErrors): number {
-  const index = WIZARD_STEPS.findIndex((wizardStep) =>
-    wizardStep.fields.some((field) => errors[field])
+export function incompleteSteps(errors: MatchFormErrors): number[] {
+  return WIZARD_STEPS.flatMap((wizardStep, index) =>
+    wizardStep.fields.some((field) => errors[field]) ? [index] : []
   );
+}
 
-  return index === -1 ? LAST_STEP : index;
+export function firstStepWithError(errors: MatchFormErrors): number {
+  return incompleteSteps(errors)[0] ?? LAST_STEP;
+}
+
+export function stepOfField(field: keyof MatchForm): number {
+  return WIZARD_STEPS.findIndex((wizardStep) => wizardStep.fields.includes(field));
 }

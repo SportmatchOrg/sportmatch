@@ -1,7 +1,7 @@
 'use client';
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Mail } from 'lucide-react';
+import { Ban, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 
@@ -11,14 +11,22 @@ import { FormError } from '@/components/auth/form-error';
 import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
+import { useAuth } from '@/context/auth-context';
+import { useAccountBlockedNotice } from '@/hooks/use-account-blocked-notice';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { SIGNUP_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
+import { sessionErrorMessage } from '@/lib/auth-errors';
 
 const MIN_PASSWORD_LENGTH = 6;
 
+const BLOCKED_NOTICE =
+  'flex items-center gap-3 rounded-md bg-danger-tint p-4 text-callout font-semibold text-danger';
+
 export default function LoginPage() {
-  const { checkingSession } = useRedirectIfAuthenticated();
+  const { checkingSession, next } = useRedirectIfAuthenticated();
+  const { startSession } = useAuth();
+  const blockedNotice = useAccountBlockedNotice();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,9 +39,10 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      await startSession(user);
     } catch (caught) {
-      setError(getAuthErrorMessage(caught));
+      setError(sessionErrorMessage(caught));
       setSubmitting(false);
     }
   }
@@ -52,6 +61,13 @@ export default function LoginPage() {
           Iniciá sesión para encontrar tu próximo partido
         </p>
       </header>
+
+      {blockedNotice && (
+        <p role="alert" className={BLOCKED_NOTICE}>
+          <Ban className="size-5 shrink-0" aria-hidden="true" />
+          {blockedNotice}
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthField
@@ -95,7 +111,7 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-neutral-400">
         ¿No tenés cuenta?{' '}
-        <Link href="/signup" className="font-semibold text-sky-400 hover:underline">
+        <Link href={withNext(SIGNUP_HREF, next)} className="font-semibold text-sky-400 hover:underline">
           Registrate
         </Link>
       </p>

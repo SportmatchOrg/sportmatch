@@ -53,6 +53,10 @@ const PUSH_COPY: Record<NotificationType, { title: string; body: string }> = {
     title: 'Invitación rechazada',
     body: 'Un jugador no aceptó tu invitación.',
   },
+  MATCH_REMINDER: {
+    title: 'Mañana jugás',
+    body: 'Tenés un partido en las próximas 24 horas.',
+  },
 };
 
 function toPushMessage(input: CreateNotificationInput): PushMessage {

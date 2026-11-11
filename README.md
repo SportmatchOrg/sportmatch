@@ -87,7 +87,7 @@ Las credenciales incluidas en `docker-compose.yml` son exclusivamente para desar
 El backend utiliza las siguientes variables de entorno:
 
 - `PORT`: puerto en el que se ejecuta la API.
-- `FRONT_URL`: origen permitido para las solicitudes del frontend.
+- `FRONT_URL`: origen permitido para las solicitudes del frontend. También se usa para rechazar con 403 los métodos que no son GET cuando la sesión viene en cookie y el `Origin` es otro, y define si la cookie `__session` lleva `Secure` (solo con `https`).
 - `DATABASE_URL`: conexión a PostgreSQL.
 - `FIREBASE_PROJECT_ID`: identificador del proyecto de Firebase.
 - `FIREBASE_CLIENT_EMAIL`: correo de la cuenta de servicio de Firebase.
@@ -197,8 +197,14 @@ ghcr.io/sportmatchorg/sportmatch/back:latest
 
 - Una PR a `dev` o `main` ejecuta CI, DoD, traductor y QA Review; no publica imágenes.
 - Un push a `dev` ejecuta CI, publica la imagen con tag `dev` si cambió `back/` y ejecuta el Curador de contexto.
-- Un push a `main` ejecuta CI y publica la imagen con tag `latest` si cambió `back/`.
+- Un push a `main` ejecuta CI y publica la imagen del backend con tag `latest`, aunque no haya cambios en `back/`.
 - Un push a otra rama no ejecuta Pipeline; los workflows programados continúan ejecutándose por separado.
+
+## Documentación técnica
+
+- [API y Swagger](back/README.md#api-documentation).
+- [Modelo de datos y reglas de negocio](docs/data-model.md).
+- [Despliegue, migraciones y rollback](docs/deployment.md).
 
 ## Puertos
 

@@ -1,12 +1,12 @@
-import { signOut } from 'firebase/auth';
-
-import { requireEnv } from './env';
-import { auth } from './firebase';
-
-const BASE_URL = requireEnv(process.env.NEXT_PUBLIC_API_URL, 'NEXT_PUBLIC_API_URL');
+import { accountBlockedMessage, saveAccountBlockedNotice } from './account-block';
+import { apiBaseUrl } from './api-url';
+import { closeSession } from './session';
+import { notifySessionEnded } from './session-events';
 
 const NO_CONTENT = 204;
 const UNAUTHORIZED = 401;
+const FORBIDDEN = 403;
+const ACCOUNT_BLOCKED = 'ACCOUNT_BLOCKED';
 const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Volvé a iniciar sesión.';
 
 export class ApiError extends Error {
@@ -19,9 +19,32 @@ export class ApiError extends Error {
   }
 }
 
-async function expireSession(): Promise<never> {
-  await signOut(auth).catch(() => undefined);
+type AccountBlock = { until: string | null };
+
+type AccountBlockedBody = { code?: unknown; until?: unknown } | null;
+
+function expireSession(): never {
+  notifySessionEnded();
   throw new ApiError(SESSION_EXPIRED_MESSAGE, UNAUTHORIZED);
+}
+
+async function blockSession({ until }: AccountBlock): Promise<never> {
+  const message = accountBlockedMessage(until);
+
+  saveAccountBlockedNotice(message);
+  await closeSession().catch(() => undefined);
+  notifySessionEnded();
+  throw new ApiError(message, FORBIDDEN);
+}
+
+async function readAccountBlock(response: Response): Promise<AccountBlock | null> {
+  const body = (await response.json().catch(() => null)) as AccountBlockedBody;
+
+  if (body?.code !== ACCOUNT_BLOCKED) {
+    return null;
+  }
+
+  return { until: typeof body.until === 'string' ? body.until : null };
 }
 
 async function readErrorMessage(response: Response, path: string): Promise<string> {
@@ -37,36 +60,58 @@ async function readErrorMessage(response: Response, path: string): Promise<strin
     : `Request to ${path} failed with status ${response.status}`;
 }
 
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const user = auth.currentUser;
+export type ApiResponse<T> = { data: T; headers: Headers };
 
-  if (!user) {
-    return expireSession();
+async function send(path: string, init: RequestInit): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (init.body instanceof FormData) {
+    headers.delete('Content-Type');
+  } else if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
 
-  const token = await user.getIdToken();
-
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
-    },
+    headers,
+    credentials: 'include',
   });
 
   if (response.status === UNAUTHORIZED) {
-    // Token vencido, revocado o borrado: la sesión local ya no sirve (BUG-8).
     return expireSession();
+  }
+
+  if (response.status === FORBIDDEN) {
+    const block = await readAccountBlock(response.clone());
+
+    if (block) {
+      return blockSession(block);
+    }
   }
 
   if (!response.ok) {
     throw new ApiError(await readErrorMessage(response, path), response.status);
   }
 
+  return response;
+}
+
+async function readBody<T>(response: Response): Promise<T> {
   if (response.status === NO_CONTENT) {
     return undefined as T;
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return readBody<T>(await send(path, init));
+}
+
+export async function apiFetchWithHeaders<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const response = await send(path, init);
+
+  return { data: await readBody<T>(response), headers: response.headers };
 }

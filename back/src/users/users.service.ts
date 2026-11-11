@@ -1,13 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { isLateWithdrawal } from '../utils/matches/late-withdrawal';
 import {
   recentNoShowCount,
   suspendedUntil,
@@ -19,6 +19,7 @@ import type { NoShowReportsFilter } from './types';
 import { toPrismaHttpException } from '../utils/prisma/to-http-exception';
 import { toArgentinaDate } from '../utils/time/argentina-date';
 import { weekStreak } from '../utils/time/week-streak';
+import { PHOTO_UPLOAD_ERROR, StorageService } from '../storage/storage.service';
 
 const NO_SHOW_SCORE = 1;
 const LATE_WITHDRAWAL_SCORE = 2;
@@ -30,48 +31,14 @@ type UserScore = {
 
 const EMPTY_SCORE: UserScore = { rating: null, ratingCount: 0 };
 
-const countByUser = (userIds: string[]): Map<string, number> => {
-  const counts = new Map<string, number>();
-
-  for (const userId of userIds) {
-    counts.set(userId, (counts.get(userId) ?? 0) + 1);
-  }
-
-  return counts;
-};
-
-const toScore = (
-  stars: number[],
-  noShows: number,
-  lates: number,
-): UserScore => {
-  const scores = [
-    ...stars,
-    ...Array<number>(noShows).fill(NO_SHOW_SCORE),
-    ...Array<number>(lates).fill(LATE_WITHDRAWAL_SCORE),
-  ];
-
-  if (scores.length === 0) {
-    return EMPTY_SCORE;
-  }
-
-  const total = scores.reduce((sum, score) => sum + score, 0);
-
-  return {
-    rating: Math.round((total / scores.length) * 10) / 10,
-    ratingCount: stars.length,
-  };
-};
-
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(private readonly usersRepository: UsersRepository) {}
-
-  findAll() {
-    return this.usersRepository.findAll();
-  }
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly storage: StorageService,
+  ) {}
 
   async findOne(id: string) {
     return (await this.buildProfile(await this.getById(id))).profile;
@@ -79,6 +46,10 @@ export class UsersService {
 
   async assertExists(id: string) {
     await this.getById(id);
+  }
+
+  getSportIds(userId: string) {
+    return this.usersRepository.findSportIdsByUserId(userId);
   }
 
   async findByFirebaseUid(firebaseUid: string) {
@@ -99,28 +70,8 @@ export class UsersService {
     return this.usersRepository.searchByName(query, user.id);
   }
 
-  async create(createUserDto: CreateUserDto) {
-    const existingUser = await this.usersRepository.findByFirebaseUid(
-      createUserDto.firebaseUid,
-    );
-
-    if (existingUser) {
-      return existingUser;
-    }
-
-    try {
-      return await this.usersRepository.create(createUserDto);
-    } catch (error) {
-      throw this.toHttpException(error, createUserDto.email);
-    }
-  }
-
-  async ensureExists(user: FirebaseUser) {
-    const saved = await this.usersRepository.ensureExists(user);
-
-    await this.recordActivity(saved.id);
-
-    return saved;
+  ensureExists(user: FirebaseUser) {
+    return this.usersRepository.ensureExists(user);
   }
 
   async upsertFromFirebase(user: FirebaseUser) {
@@ -136,6 +87,23 @@ export class UsersService {
     };
   }
 
+  async completeOnboarding(id: string, dto: CompleteOnboardingDto) {
+    await this.assertSportsExist(dto.sportIds, NotFoundException);
+
+    try {
+      const user = await this.usersRepository.completeOnboarding(id, dto);
+
+      if (!user) {
+        await this.assertExists(id);
+        throw new ConflictException('Onboarding already completed');
+      }
+
+      return user;
+    } catch (error) {
+      throw this.toHttpException(error, id);
+    }
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
     if (updateUserDto.sportIds) {
       await this.assertSportsExist(updateUserDto.sportIds);
@@ -148,6 +116,49 @@ export class UsersService {
     }
   }
 
+  async uploadPhoto(id: string, photo: Express.Multer.File | undefined) {
+    if (!photo) throw new BadRequestException(PHOTO_UPLOAD_ERROR);
+
+    const user = await this.getById(id);
+    const path = `profiles/${id}`;
+    const photoUrl = await this.storage.upload(
+      photo.buffer,
+      photo.mimetype,
+      path,
+    );
+
+    try {
+      const { count } = await this.usersRepository.replacePhotoUrl(
+        id,
+        user.photoUrl,
+        photoUrl,
+      );
+      if (count === 0) {
+        await this.assertExists(id);
+        throw new ConflictException(
+          'La foto cambió durante la subida. Volvé a intentarlo.',
+        );
+      }
+    } catch (error) {
+      await this.tryRemovePhoto(photoUrl, 'new');
+      throw this.toHttpException(error, id);
+    }
+
+    if (user.photoUrl && this.storage.isStoredInPath(user.photoUrl, path)) {
+      await this.tryRemovePhoto(user.photoUrl, 'previous');
+    }
+
+    return { photoUrl };
+  }
+
+  private async tryRemovePhoto(url: string, kind: 'new' | 'previous') {
+    try {
+      await this.storage.remove(url);
+    } catch {
+      this.logger.warn(`Could not clean up ${kind} profile image`);
+    }
+  }
+
   async remove(id: string) {
     try {
       return await this.usersRepository.remove(id);
@@ -156,16 +167,12 @@ export class UsersService {
     }
   }
 
-  async findEffectiveReceivedScores(userId: string): Promise<number[]> {
-    return (await this.findEffectiveScoresBy([userId])).get(userId) ?? [];
-  }
-
   async getScores(userIds: string[]): Promise<Map<string, UserScore>> {
     if (userIds.length === 0) {
       return new Map();
     }
 
-    return this.computeScores(userIds, await this.findNoShowDatesBy(userIds));
+    return this.computeScores(userIds);
   }
 
   async getSuspensions(userIds: string[]): Promise<Map<string, Date | null>> {
@@ -205,25 +212,29 @@ export class UsersService {
     return new Map(
       matches.map((match) => [
         match.id,
+        // Keep the confirmation rule in sync with UsersRepository.findScoreTotals.
         confirmedNoShows(match.noShowReports, match.organizerId),
       ]),
     );
   }
 
-  private async assertSportsExist(sportIds: string[]) {
+  private async assertSportsExist(
+    sportIds: string[],
+    MissingSportsException = BadRequestException,
+  ) {
     const existing = new Set(
       await this.usersRepository.findExistingSportIds(sportIds),
     );
     const missing = sportIds.filter((sportId) => !existing.has(sportId));
 
     if (missing.length > 0) {
-      throw new BadRequestException(
+      throw new MissingSportsException(
         `The following sports do not exist: ${missing.join(', ')}`,
       );
     }
   }
 
-  private async recordActivity(userId: string) {
+  async recordActivity(userId: string) {
     try {
       await this.usersRepository.recordActivityDay(
         userId,
@@ -240,37 +251,27 @@ export class UsersService {
 
   private async computeScores(
     userIds: string[],
-    noShowDates: Map<string, Date[]>,
   ): Promise<Map<string, UserScore>> {
-    const [effectiveScores, lateWithdrawals, canceledMatches] =
-      await Promise.all([
-        this.findEffectiveScoresBy(userIds),
-        this.usersRepository.countLateWithdrawalsBy(userIds),
-        this.usersRepository.findCanceledMatchDates(userIds),
-      ]);
-
-    const lateWithdrawalsByUser = new Map(
-      lateWithdrawals.map(({ userId, _count }) => [userId, _count._all]),
-    );
-
-    const lateCancelsByUser = countByUser(
-      canceledMatches
-        .filter(
-          ({ date, canceledAt }) =>
-            canceledAt !== null && isLateWithdrawal(date, canceledAt.getTime()),
-        )
-        .map(({ organizerId }) => organizerId),
-    );
+    const totals = await this.usersRepository.findScoreTotals(userIds);
 
     return new Map(
-      userIds.map((userId) => {
-        const stars = effectiveScores.get(userId) ?? [];
-        const noShows = noShowDates.get(userId)?.length ?? 0;
-        const lates =
-          (lateWithdrawalsByUser.get(userId) ?? 0) +
-          (lateCancelsByUser.get(userId) ?? 0);
+      totals.map(({ userId, starsSum, starsCount, noShows, lates }) => {
+        const count = starsCount + noShows + lates;
 
-        return [userId, toScore(stars, noShows, lates)];
+        if (count === 0) {
+          return [userId, EMPTY_SCORE];
+        }
+
+        const sum =
+          starsSum + noShows * NO_SHOW_SCORE + lates * LATE_WITHDRAWAL_SCORE;
+
+        return [
+          userId,
+          {
+            rating: Math.round((sum / count) * 10) / 10,
+            ratingCount: starsCount,
+          },
+        ];
       }),
     );
   }
@@ -294,40 +295,12 @@ export class UsersService {
     return datesByUser;
   }
 
-  private async findEffectiveScoresBy(
-    userIds: string[],
-  ): Promise<Map<string, number[]>> {
-    const ratings = await this.usersRepository.findReceivedRatings(userIds);
-    const scoresByUser = new Map(
-      userIds.map((userId) => [userId, [] as number[]]),
-    );
-
-    if (ratings.length === 0) {
-      return scoresByUser;
-    }
-
-    const matchIds = [...new Set(ratings.map(({ matchId }) => matchId))];
-    const confirmedByMatch = await this.findConfirmedNoShows({ matchIds });
-
-    for (const { score, matchId, raterId, ratedUserId } of ratings) {
-      const confirmed = confirmedByMatch.get(matchId);
-
-      if (confirmed?.has(ratedUserId) || confirmed?.has(raterId)) {
-        continue;
-      }
-
-      scoresByUser.get(ratedUserId)?.push(score);
-    }
-
-    return scoresByUser;
-  }
-
   private async buildProfile<T extends { id: string }>(user: T) {
-    const [noShowDates, playedDates] = await Promise.all([
+    const [noShowDates, playedDates, scores] = await Promise.all([
       this.findNoShowDatesBy([user.id]),
       this.usersRepository.findPlayedDates(user.id),
+      this.computeScores([user.id]),
     ]);
-    const scores = await this.computeScores([user.id], noShowDates);
     const userNoShowDates = noShowDates.get(user.id) ?? [];
 
     return {

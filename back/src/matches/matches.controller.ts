@@ -9,8 +9,19 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { Response } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
@@ -19,7 +30,11 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { FindMatchesQueryDto } from './dto/find-matches-query.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchesService } from './matches.service';
+import { PhotoUploadInterceptor } from '../storage/photo-upload.interceptor';
+import { NEXT_CURSOR_HEADER } from '../utils/matches/match-cursor';
 
+@ApiTags('Partidos')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('matches')
 export class MatchesController {
@@ -40,11 +55,30 @@ export class MatchesController {
   }
 
   @Get()
-  findAll(
+  @ApiOkResponse({
+    headers: {
+      [NEXT_CURSOR_HEADER]: {
+        description:
+          'Cursor de la página siguiente. No se manda si no hay más páginas.',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  async findAll(
     @CurrentUser() user: FirebaseUser,
     @Query() query: FindMatchesQueryDto,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.matchesService.findUpcoming(user.uid, query);
+    const { matches, nextCursor } = await this.matchesService.findUpcoming(
+      user.uid,
+      query,
+    );
+
+    if (nextCursor) {
+      response.setHeader(NEXT_CURSOR_HEADER, nextCursor);
+    }
+
+    return matches;
   }
 
   @Get('mine')
@@ -81,6 +115,24 @@ export class MatchesController {
     @Body() updateMatchDto: UpdateMatchDto,
   ) {
     return this.matchesService.update(user.uid, id, updateMatchDto);
+  }
+
+  @Post(':id/photo')
+  @UseInterceptors(PhotoUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['photo'],
+      properties: { photo: { type: 'string', format: 'binary' } },
+    },
+  })
+  uploadPhoto(
+    @CurrentUser() user: FirebaseUser,
+    @Param('id') id: string,
+    @UploadedFile() photo: Express.Multer.File | undefined,
+  ) {
+    return this.matchesService.uploadPhoto(user.uid, id, photo);
   }
 
   @Delete(':id')

@@ -1,11 +1,13 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Check, Compass, Layers, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 
+import { LoadingScreen } from '@/components/loading-screen';
 import { SwipeCard, type SwipeDecision } from '@/components/matches/swipe-card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -13,6 +15,7 @@ import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { sportPhotoUrl } from '@/lib/sport-photo';
 import { joinRequestErrorMessage, requestToJoin } from '@/lib/matches';
+import { matchKeys } from '@/lib/query-keys';
 import { suspensionMessage } from '@/lib/suspension';
 import type { Match } from '@/types/match';
 
@@ -23,6 +26,9 @@ const FLYOUT_DISTANCE = 600;
 const FLYOUT_LIFT = -40;
 const FLYOUT_DURATION = 300;
 const TAP_TOLERANCE = 8;
+const PREFETCH_REMAINING = 5;
+
+const STALE_AFTER_JOIN = [matchKeys.lists(), matchKeys.discoverLists()];
 
 const RETURN_TRANSITION = 'transform 320ms var(--ease-spring)';
 
@@ -36,7 +42,7 @@ const STACK = [
 ];
 
 const DECK =
-  'absolute top-[max(70px,calc(env(safe-area-inset-top)_+_12px))] right-4 bottom-[max(120px,calc(env(safe-area-inset-bottom)_+_104px))] left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-18rem))] lg:w-auto lg:shrink-0';
+  'absolute top-[max(70px,calc(env(safe-area-inset-top)_+_12px))] right-4 bottom-(--nav-bottom-clearance) left-4 lg:relative lg:inset-auto lg:aspect-[47/61] lg:h-[min(615px,calc(100dvh-18rem))] lg:w-auto lg:shrink-0';
 
 const ACTION_BUTTON =
   'flex size-20 items-center justify-center rounded-full transition active:scale-95';
@@ -47,6 +53,8 @@ const NO_DRAG: Drag = { x: 0, y: 0, active: false };
 
 type SwipeDeckProps = {
   matches: Match[];
+  hasMore: boolean;
+  onLoadMore: () => void;
   onRestart: () => void;
 };
 
@@ -55,11 +63,11 @@ type DeckToast = {
   tone: ToastTone;
 };
 
-export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
+export function SwipeDeck({ matches, hasMore, onLoadMore, onRestart }: SwipeDeckProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, loading: userLoading } = useCurrentUser();
   const [index, setIndex] = useState(0);
-  const [previousMatches, setPreviousMatches] = useState(matches);
   const [drag, setDrag] = useState<Drag>(NO_DRAG);
   const [flyout, setFlyout] = useState<SwipeDecision | null>(null);
   const [toast, setToast] = useState<DeckToast | null>(null);
@@ -74,10 +82,9 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  if (matches !== previousMatches) {
-    setPreviousMatches(matches);
-    setIndex(0);
-  }
+  useEffect(() => {
+    if (matches.length - index <= PREFETCH_REMAINING) onLoadMore();
+  }, [index, matches.length, onLoadMore]);
 
   const current = matches[index];
 
@@ -101,7 +108,13 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
 
       if (direction === 'yes' && current) {
         requestToJoin(current.id)
-          .then(() => setToast({ message: 'Solicitud enviada ⚡', tone: 'success' }))
+          .then(() => {
+            setToast({ message: 'Solicitud enviada ⚡', tone: 'success' });
+            void queryClient.invalidateQueries({ queryKey: matchKeys.mine() });
+            STALE_AFTER_JOIN.forEach((queryKey) =>
+              void queryClient.invalidateQueries({ queryKey, refetchType: 'none' })
+            );
+          })
           .catch((error: unknown) =>
             setToast({ message: joinRequestErrorMessage(error), tone: 'danger' })
           );
@@ -113,8 +126,13 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
         setIndex((previous) => previous + 1);
       }, FLYOUT_DURATION);
     },
-    [current, user, userLoading]
+    [current, user, userLoading, queryClient]
   );
+
+  function restart() {
+    setIndex(0);
+    onRestart();
+  }
 
   function decide(direction: SwipeDecision) {
     if (flyout) return;
@@ -170,6 +188,10 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
       )
     : null;
 
+  if (!current && hasMore) {
+    return <LoadingScreen />;
+  }
+
   if (!matches.length || !current) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-base lg:absolute">
@@ -184,7 +206,7 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
           }
           action={
             matches.length ? (
-              <Button onClick={onRestart} className="gap-2 rounded-full">
+              <Button onClick={restart} className="gap-2 rounded-full">
                 <Compass className="size-[18px]" aria-hidden="true" />
                 Empezar de nuevo
               </Button>
@@ -195,7 +217,7 @@ export function SwipeDeck({ matches, onRestart }: SwipeDeckProps) {
     );
   }
 
-  const ambientPhoto = sportPhotoUrl(current.sport.name, current.id);
+  const ambientPhoto = current.photoUrl ?? sportPhotoUrl(current.sport.name, current.id);
   const offsetX = flyout ? (flyout === 'yes' ? FLYOUT_DISTANCE : -FLYOUT_DISTANCE) : drag.x;
   const offsetY = flyout ? FLYOUT_LIFT : drag.y;
   const decision =

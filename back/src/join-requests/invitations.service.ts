@@ -17,6 +17,8 @@ import {
 } from './dto/respond-invitation.dto';
 import { JoinRequestsRepository } from './join-requests.repository';
 
+const PENDING_INVITATION_NOT_FOUND = 'Pending invitation was not found';
+
 type OpenMatch = {
   status: MatchStatus;
   date: Date;
@@ -124,13 +126,19 @@ export class InvitationsService {
       invitation?.origin !== 'INVITATION' ||
       invitation.status !== 'PENDING'
     ) {
-      throw new NotFoundException('Pending invitation was not found');
+      throw new NotFoundException(PENDING_INVITATION_NOT_FOUND);
     }
 
     this.assertOpen(match);
 
     if (status === 'REJECTED') {
-      const rejected = await this.joinRequestsRepository.reject(invitation.id);
+      const rejected = await this.joinRequestsRepository.rejectIfPending(
+        invitation.id,
+      );
+
+      if (!rejected) {
+        throw new NotFoundException(PENDING_INVITATION_NOT_FOUND);
+      }
 
       await this.notifyOrganizer(match.organizerId, user.id, matchId, status);
 
@@ -139,21 +147,25 @@ export class InvitationsService {
 
     await this.usersService.assertNotSuspended(user.id);
 
-    const accepted = await this.joinRequestsRepository
-      .accept(invitation.id, matchId, user.id)
+    const result = await this.joinRequestsRepository
+      .acceptIfPending(invitation.id, matchId, user.id)
       .catch((error: unknown) => {
         throw toPrismaHttpException(error, {
           P2002: 'You already joined this match',
         });
       });
 
-    if (!accepted) {
+    if (result.outcome === 'full') {
       throw new ConflictException('The match is full');
+    }
+
+    if (result.outcome === 'not-pending') {
+      throw new NotFoundException(PENDING_INVITATION_NOT_FOUND);
     }
 
     await this.notifyOrganizer(match.organizerId, user.id, matchId, status);
 
-    return accepted;
+    return result.request;
   }
 
   private notifyOrganizer(

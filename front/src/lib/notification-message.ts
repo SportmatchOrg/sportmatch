@@ -1,3 +1,4 @@
+import { formatMatchTime } from '@/lib/match-date';
 import { SPORT_LABEL } from '@/types/match';
 import type { AppNotification, NotificationType } from '@/types/notification';
 
@@ -8,7 +9,11 @@ export type NotificationMessage = {
 
 type MessageTemplate = {
   withActor: boolean;
-  text: (sport: string, payload: AppNotification['payload']) => string;
+  text: (
+    sport: string,
+    payload: AppNotification['payload'],
+    match: AppNotification['match']
+  ) => string;
 };
 
 // The actor's account can be deleted after the fact, which nulls the relation.
@@ -73,6 +78,13 @@ const TEMPLATES: Record<NotificationType, MessageTemplate> = {
     text: (_sport, payload) =>
       `Estás suspendido hasta el ${formatDay(readPayload(payload, 'until'))} por faltas`,
   },
+  MATCH_REMINDER: {
+    withActor: false,
+    text: (sport, _payload, match) =>
+      match
+        ? `Mañana jugás ${sport} a las ${formatMatchTime(match.date)} en ${match.location}`
+        : `Mañana jugás ${sport}`,
+  },
 };
 
 export function notificationMessage(notification: AppNotification): NotificationMessage {
@@ -81,6 +93,6 @@ export function notificationMessage(notification: AppNotification): Notification
 
   return {
     actor: template.withActor ? (notification.actor?.name ?? UNKNOWN_ACTOR) : null,
-    text: template.text(sport, notification.payload),
+    text: template.text(sport, notification.payload, notification.match),
   };
 }

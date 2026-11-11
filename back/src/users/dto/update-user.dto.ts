@@ -1,4 +1,3 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types';
 import {
   ArrayMaxSize,
   ArrayUnique,
@@ -9,13 +8,15 @@ import {
   Length,
 } from 'class-validator';
 import { Level } from '../../generated/prisma/client';
-import { CreateUserDto } from './create-user.dto';
 
 const MAX_USER_SPORTS = 5;
 
-export class UpdateUserDto extends PartialType(
-  OmitType(CreateUserDto, ['firebaseUid', 'email'] as const),
-) {
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @Length(2, 60)
+  name?: string;
+
   @IsOptional()
   @IsString()
   @Length(2, 80)

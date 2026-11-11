@@ -56,29 +56,56 @@ const playedBy = (playerId: string): Prisma.MatchWhereInput => ({
   ],
 });
 
+const upcomingWhere = (
+  userId: string,
+  query: FindMatchesQueryDto,
+): Prisma.MatchWhereInput => {
+  const now = new Date();
+
+  return {
+    date: {
+      gte: query.from && query.from > now ? query.from : now,
+      ...(query.to && { lte: query.to }),
+    },
+    ...(query.sportId && { sportId: { in: query.sportId } }),
+    ...(query.level && { level: { in: query.level } }),
+    ...(query.north !== undefined && {
+      latitude: { gte: query.south, lte: query.north },
+      longitude: { gte: query.west, lte: query.east },
+    }),
+    status: 'ACTIVE',
+    organizerId: { not: userId },
+    participants: { none: { userId } },
+    joinRequests: {
+      none: { userId, status: 'PENDING' },
+    },
+  };
+};
+
 @Injectable()
 export class MatchesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findUpcoming(userId: string, query: FindMatchesQueryDto) {
-    const now = new Date();
-
+  findUpcomingCandidates(userId: string, query: FindMatchesQueryDto) {
     return this.prisma.match.findMany({
-      where: {
-        date: {
-          gte: query.from && query.from > now ? query.from : now,
-          ...(query.to && { lte: query.to }),
-        },
-        ...(query.sportId && { sportId: { in: query.sportId } }),
-        ...(query.level && { level: { in: query.level } }),
-        status: 'ACTIVE',
-        organizerId: { not: userId },
-        participants: { none: { userId } },
-        joinRequests: {
-          none: { userId, status: 'PENDING' },
-        },
+      where: upcomingWhere(userId, query),
+      select: {
+        id: true,
+        sportId: true,
+        level: true,
+        organizerId: true,
+        date: true,
+        capacity: true,
+        latitude: true,
+        longitude: true,
+        _count: { select: { participants: true } },
       },
-      orderBy: { date: 'asc' },
+    });
+  }
+
+  findActiveListedByIds(ids: string[], userId: string) {
+    return this.prisma.match.findMany({
+      where: { id: { in: ids }, status: 'ACTIVE' },
       include: matchInclude(userId),
     });
   }
@@ -97,6 +124,7 @@ export class MatchesRepository {
         id: true,
         date: true,
         location: true,
+        photoUrl: true,
         latitude: true,
         longitude: true,
         level: true,
@@ -179,6 +207,23 @@ export class MatchesRepository {
       where: { id },
       data,
       include: matchInclude(userId),
+    });
+  }
+
+  replacePhotoUrl(
+    id: string,
+    organizerId: string,
+    previousPhotoUrl: string | null,
+    photoUrl: string,
+  ) {
+    return this.prisma.match.updateMany({
+      where: {
+        id,
+        organizerId,
+        photoUrl: previousPhotoUrl,
+        status: 'ACTIVE',
+      },
+      data: { photoUrl },
     });
   }
 

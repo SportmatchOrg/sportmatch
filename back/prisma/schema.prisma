@@ -16,6 +16,13 @@ enum Level {
   @@map("level")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+
+  @@map("user_role")
+}
+
 enum MatchStatus {
   ACTIVE
   CANCELED
@@ -31,6 +38,10 @@ model User {
   photoUrl    String?
   city        String?
   level       Level?
+  role        UserRole @default(USER)
+  onboardedAt DateTime?
+  blockedAt    DateTime?
+  blockedUntil DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -44,12 +55,15 @@ model User {
   reportsGiven           Report[]       @relation("ReportsGiven")
   reportsReceived        Report[]       @relation("ReportsReceived")
   reportsReviewed        Report[]       @relation("ReportsReviewed")
+  moderationActionsTaken ModerationAction[] @relation("ModerationActionsTaken")
+  moderationHistory      ModerationAction[] @relation("ModerationHistory")
   lateWithdrawals        LateWithdrawal[]
   notifications          Notification[] @relation("NotificationsReceived")
   triggeredNotifications Notification[] @relation("NotificationsTriggered")
   pushSubscriptions      PushSubscription[]
   activityDays           UserActivityDay[]
   sports                 UserSport[]
+  aiUsages               AiUsage[]
 
   @@map("users")
 }
@@ -90,10 +104,12 @@ model Match {
   longitude     Float?
   capacity      Int
   description   String?
+  photoUrl      String?
   status        MatchStatus    @default(ACTIVE)
   cancelReason  String?
   canceledAt    DateTime?
   filledAt      DateTime?
+  reminderSentAt DateTime?
   organizerId   String
   organizer     User           @relation(fields: [organizerId], references: [id])
   createdAt     DateTime       @default(now())
@@ -220,9 +236,36 @@ model Report {
   reviewedAt     DateTime?
   createdAt      DateTime     @default(now())
 
+  moderationActions ModerationAction[]
+
   @@index([status, createdAt])
   @@index([reportedUserId])
   @@map("reports")
+}
+
+enum ModerationActionType {
+  REPORT_REVIEWED
+  REPORT_DISMISSED
+  USER_BLOCKED
+  USER_UNBLOCKED
+
+  @@map("moderation_action_type")
+}
+
+model ModerationAction {
+  id           String               @id @default(cuid())
+  adminId      String
+  admin        User                 @relation("ModerationActionsTaken", fields: [adminId], references: [id])
+  targetUserId String
+  targetUser   User                 @relation("ModerationHistory", fields: [targetUserId], references: [id])
+  reportId     String?
+  report       Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  type         ModerationActionType
+  detail       Json?
+  createdAt    DateTime             @default(now())
+
+  @@index([targetUserId, createdAt])
+  @@map("moderation_actions")
 }
 
 enum NotificationType {
@@ -237,6 +280,7 @@ enum NotificationType {
   INVITATION_RECEIVED
   INVITATION_ACCEPTED
   INVITATION_REJECTED
+  MATCH_REMINDER
 
   @@map("notification_type")
 }
@@ -328,4 +372,31 @@ model KpiResult {
   @@unique([runId, kpiId])
   @@index([kpiId, createdAt])
   @@map("kpi_results")
+}
+
+enum AiUsageKind {
+  MATCH_DRAFT
+  IMAGE
+
+  @@map("ai_usage_kind")
+}
+
+enum AiProvider {
+  GEMINI
+  OPENROUTER
+  CLOUDFLARE
+
+  @@map("ai_provider")
+}
+
+model AiUsage {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      AiUsageKind
+  provider  AiProvider?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, kind, createdAt])
+  @@map("ai_usages")
 }

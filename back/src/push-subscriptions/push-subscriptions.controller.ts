@@ -6,6 +6,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
@@ -13,6 +14,8 @@ import { CreatePushSubscriptionDto } from './dto/create-push-subscription.dto';
 import { DeletePushSubscriptionDto } from './dto/delete-push-subscription.dto';
 import { PushSubscriptionsService } from './push-subscriptions.service';
 
+@ApiTags('Suscripciones push')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('push-subscriptions')
 export class PushSubscriptionsController {

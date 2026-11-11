@@ -17,6 +17,19 @@ Verificar manualmente que las funciones principales de Sportmatch continúen fun
 | Dev | https://sportmatch-git-dev-sportmatch2.vercel.app | https://sportmatch-dev-aqhcazaacaf7e6g0.brazilsouth-01.azurewebsites.net |
 | Producción | Pendiente de configuración | Pendiente de configuración |
 
+## Variables de despliegue del front
+
+El navegador no llama al backend directamente: usa el proxy `/api/*` del propio dominio del front, que Next.js reenvía al backend.
+
+| Variable | Valor | Entornos |
+| --- | --- | --- |
+| `API_URL` | URL del backend en Azure, sin `/` final. Variable de servidor. | dev, preview y producción |
+| `NEXT_PUBLIC_API_URL` | `/api`. Se fija al compilar: después de cambiarla hay que volver a desplegar. | dev, preview y producción |
+
+Si falta `API_URL`, el build del front falla indicando cuál es.
+
+La sesión vive en la cookie `__session` (HttpOnly, Secure, SameSite=Lax) que emite el backend. Por eso en Azure `FRONT_URL` tiene que ser el dominio real del front, sin `/` final: el backend también lo usa para aceptar solo requests con `Origin` igual a ese dominio en los métodos que no son GET. Si está mal, todos los POST, PATCH y DELETE devuelven 403. Las URLs de Preview de Vercel tienen otro dominio, así que no pueden operar contra un backend configurado con el dominio de dev.
+
 ## Antes de empezar
 
 1. Elegir el entorno que se va a probar y anotar la URL y el commit desplegado.
@@ -54,8 +67,11 @@ Resultado esperado: una persona sin sesión permanece en `/login` y no puede acc
 - [ ] Cerrar sesión.
 - [ ] Iniciar sesión con Google.
 - [ ] Confirmar que Firebase no muestre errores de dominio no autorizado.
+- [ ] Con la sesión iniciada, abrir DevTools → Application y confirmar que la cookie `__session` está marcada como HttpOnly y Secure, y que no hay token en IndexedDB ni en localStorage.
+- [ ] En la consola, confirmar que `document.cookie` no muestra `__session`.
+- [ ] Borrar la cookie `__session` desde DevTools y navegar: la aplicación debe llevar a `/login`.
 
-Resultado esperado: ambos métodos permiten iniciar sesión en el dominio de Vercel.
+Resultado esperado: ambos métodos permiten iniciar sesión en el dominio de Vercel y la sesión queda solo en la cookie HttpOnly.
 
 ### 3. Navegación
 

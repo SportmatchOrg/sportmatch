@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { promoteToAdmin } from './admin/promote-admin';
 import { hoursAgo } from '../src/utils/time/hours-ago';
 import { inDays } from '../src/utils/time/in-days';
 import { MS_PER_HOUR } from '../src/utils/time/milliseconds';
@@ -30,8 +31,22 @@ const SEED_GUIDE = [
       'Suspendido ahora: 3 faltas en los últimos días (noShowCount90d = 3)',
   },
   {
+    user: 'Ana Gómez',
+    scenario:
+      'Su partido de pádel empieza en 23 h 50 min y lo creó hace 3 días: recibe el recordatorio de 24 h en la siguiente corrida',
+  },
+  {
+    user: 'Luis Pérez',
+    scenario:
+      'Su partido de básquet empieza en 4 h y lo creó 5 h antes: no recibe recordatorio',
+  },
+  {
     user: 'SEED_DEMO_EMAIL',
     scenario: 'Tiene los 8 tipos de notificación en /notificaciones',
+  },
+  {
+    user: 'SEED_ADMIN_EMAIL',
+    scenario: 'Queda con role ADMIN y accede a los endpoints de moderación',
   },
 ];
 
@@ -40,6 +55,20 @@ const hoursBefore = (date: Date, hours: number): Date =>
 
 const hoursAfter = (date: Date, hours: number): Date =>
   hoursBefore(date, -hours);
+
+async function promoteSeedAdmin() {
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+
+  if (!adminEmail) {
+    return;
+  }
+
+  if (!(await promoteToAdmin(prisma, adminEmail))) {
+    console.warn(
+      'SEED_ADMIN_EMAIL has no user yet: sign in once and run the seed again',
+    );
+  }
+}
 
 async function main() {
   const sports = await Promise.all(
@@ -77,6 +106,8 @@ async function main() {
     seedUser('seed-uid-5', 'sofia@sportmatch.dev', 'Sofía Torres'),
     seedUser('seed-uid-6', 'tomas@sportmatch.dev', 'Tomás Herrera'),
   ]);
+
+  await promoteSeedAdmin();
 
   await prisma.match.deleteMany();
 
@@ -216,6 +247,46 @@ async function main() {
       organizerId: ana.id,
       participants: {
         create: [luis, marta, pablo].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
+  const reminderDate = hoursAfter(new Date(), 23 + 50 / 60);
+
+  await prisma.match.create({
+    data: {
+      sportId: sportId('PADEL'),
+      level: 'INTERMEDIATE',
+      date: reminderDate,
+      location: 'Club Norte · Cancha 3',
+      latitude: -34.46472,
+      longitude: -58.91042,
+      capacity: 4,
+      description: 'Empieza en menos de 24 h: recibe el recordatorio',
+      organizerId: ana.id,
+      createdAt: hoursBefore(reminderDate, 72),
+      participants: {
+        create: [luis, marta].map(({ id }) => ({ userId: id })),
+      },
+    },
+  });
+
+  const lastMinuteDate = hoursAfter(new Date(), 4);
+
+  await prisma.match.create({
+    data: {
+      sportId: sportId('BASQUET'),
+      level: 'BEGINNER',
+      date: lastMinuteDate,
+      location: 'Polideportivo Municipal',
+      latitude: -34.4663,
+      longitude: -58.9183,
+      capacity: 10,
+      description: 'Creado 5 h antes: no recibe recordatorio',
+      organizerId: luis.id,
+      createdAt: hoursBefore(lastMinuteDate, 5),
+      participants: {
+        create: [ana, sofia].map(({ id }) => ({ userId: id })),
       },
     },
   });

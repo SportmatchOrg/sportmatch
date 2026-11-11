@@ -18,7 +18,8 @@ cp .env.example .env
 
 | Variable | Descripción |
 | --- | --- |
-| `NEXT_PUBLIC_API_URL` | URL base de la API del backend. En local, `http://localhost:3001`. |
+| `API_URL` | URL del backend, solo del lado del servidor. Next.js la usa para el proxy `/api/*` y para la vista previa de los links compartidos. En local, `http://localhost:3001`. |
+| `NEXT_PUBLIC_API_URL` | Base de las llamadas del navegador. Siempre `/api`: el front le habla al proxy de su propio dominio. Se fija al compilar, así que cambiarla exige volver a desplegar. |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Credenciales del proyecto de Firebase. Se obtienen en la consola de Firebase, en la configuración de la app web. |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | |
 | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | |
@@ -27,6 +28,27 @@ cp .env.example .env
 | `NEXT_PUBLIC_GOOGLE_MAP_ID` | ID del mapa asociado al estilo oscuro. Se crea en Google Cloud Console → Google Maps Platform → Map Management. |
 
 Todas son obligatorias. Si falta alguna, la aplicación falla al iniciar con un mensaje que indica cuál (ver `src/lib/env.ts`).
+
+### Imágenes en Azure Blob Storage
+
+Configurar `NEXT_PUBLIC_AZURE_STORAGE_HOST` con el **dominio exacto** de la cuenta
+del ambiente, por ejemplo `<cuenta>.blob.core.windows.net`, sin `https://`, rutas
+ni credenciales. Es un dominio público; la cadena de conexión pertenece
+exclusivamente al backend.
+
+`next.config.ts` permite imágenes HTTPS de ese host únicamente bajo `/images/**`,
+sin puertos personalizados ni parámetros de consulta. Se mantiene el host de
+Google para los avatares existentes. Si la variable está vacía, no se habilita
+ningún host de Azure; una configuración no vacía con formato inválido impide
+iniciar/compilar con un mensaje que identifica la variable.
+
+En local, usar el dominio de **dev** en `front/.env`. En Vercel, configurar el
+dominio de dev para **Preview** y el de prod para **Production**. Generar un nuevo
+despliegue después de cambiar la variable y reiniciar Next.js en local.
+
+Para verificarlo, renderizar temporalmente una URL pública del contenedor con
+`next/image` (con `width` y `height`, o `fill`) y comprobar que carga mediante el
+optimizador sin error de host. Este ticket no agrega una interfaz de subida.
 
 ### Configuración de Google Maps
 

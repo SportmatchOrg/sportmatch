@@ -9,11 +9,24 @@ import { IconButton } from '@/components/ui/icon-button';
 import { PillButton } from '@/components/ui/pill-button';
 import { LAST_STEP, WIZARD_STEPS } from '@/lib/match-wizard';
 
+export const WIZARD_FRAME =
+  'fixed inset-0 z-[60] bg-base lg:static lg:z-auto lg:flex lg:h-[calc(100dvh-5rem)] lg:items-center lg:justify-center lg:px-8 lg:py-6';
+
+export const WIZARD_PANEL =
+  'flex h-full flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[820px] lg:w-full lg:max-w-[1240px] lg:flex-row lg:overflow-hidden lg:rounded-lg lg:bg-panel lg:shadow-bevel';
+
+export const WIZARD_FOOTER =
+  'pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-10 pb-8 lg:static lg:flex lg:items-center lg:justify-between lg:gap-4 lg:border-t lg:border-glass-strong lg:bg-none lg:px-10 lg:py-6';
+
+export const WIZARD_ACTIONS = 'pointer-events-auto flex items-center gap-3 lg:ml-auto';
+
 type WizardShellProps = {
   mode: 'create' | 'edit';
   step: number;
   submitting: boolean;
   continueDisabled?: boolean;
+  continueLabel?: string;
+  assistant?: ReactNode;
   onBack: () => void;
   onExit: () => void;
   onContinue: () => void;
@@ -25,6 +38,8 @@ export function WizardShell({
   step,
   submitting,
   continueDisabled = false,
+  continueLabel,
+  assistant,
   onBack,
   onExit,
   onContinue,
@@ -39,10 +54,13 @@ export function WizardShell({
   const pendingLabel = mode === 'edit' ? 'Guardando…' : 'Publicando…';
   const question =
     isLast && mode === 'edit' ? '¿Listo para guardar los cambios?' : defaultQuestion;
+  const publishLabel = submitting ? pendingLabel : submitLabel;
+  const ctaLabel = continueLabel ?? (isLast ? publishLabel : 'Continuar');
+  const publishing = isLast && !continueLabel;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-base lg:static lg:z-auto lg:flex lg:h-[calc(100dvh-5rem)] lg:items-center lg:justify-center lg:px-8 lg:py-6">
-      <div className="flex h-full flex-col lg:h-[calc(100dvh-8rem)] lg:max-h-[820px] lg:w-full lg:max-w-[1240px] lg:flex-row lg:overflow-hidden lg:rounded-lg lg:bg-panel lg:shadow-bevel">
+    <div className={WIZARD_FRAME}>
+      <div className={WIZARD_PANEL}>
         <WizardRail mode={mode} step={step} />
 
         <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
@@ -89,7 +107,7 @@ export function WizardShell({
             {children}
           </div>
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-base from-55% to-transparent px-5 pt-10 pb-8 lg:static lg:flex lg:items-center lg:justify-between lg:gap-4 lg:border-t lg:border-glass-strong lg:bg-none lg:px-10 lg:py-6">
+          <div className={WIZARD_FOOTER}>
             {isFirst ? (
               <span className="hidden lg:block" />
             ) : (
@@ -105,21 +123,23 @@ export function WizardShell({
               </PillButton>
             )}
 
-            <PillButton
-              disabled={submitting || continueDisabled}
-              onClick={onContinue}
-              className="pointer-events-auto w-full lg:w-auto lg:px-8"
-            >
-              {isLast && submitting && pendingLabel}
-              {isLast && !submitting && submitLabel}
-              {!isLast && 'Continuar'}
+            <div className={WIZARD_ACTIONS}>
+              {assistant}
 
-              {isLast ? (
-                <Check className="size-[18px]" aria-hidden="true" />
-              ) : (
-                <ArrowRight className="size-[18px]" aria-hidden="true" />
-              )}
-            </PillButton>
+              <PillButton
+                disabled={submitting || continueDisabled}
+                onClick={onContinue}
+                className="flex-1 lg:flex-none lg:px-8"
+              >
+                {ctaLabel}
+
+                {publishing ? (
+                  <Check className="size-[18px]" aria-hidden="true" />
+                ) : (
+                  <ArrowRight className="size-[18px]" aria-hidden="true" />
+                )}
+              </PillButton>
+            </div>
           </div>
         </div>
       </div>

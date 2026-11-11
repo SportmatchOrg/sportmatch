@@ -1,7 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+} from 'react';
 
 import { useAuth } from '@/context/auth-context';
 import { fetchUnreadCount } from '@/lib/notifications';
@@ -22,6 +30,8 @@ const UnreadCountContext = createContext<UnreadCountContextValue | undefined>(un
 
 export function UnreadCountProvider({ children }: { children: ReactNode }) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const lastCount = useRef<number | null>(null);
 
   const { data, isPending, isLoadingError, refetch } = useQuery({
     queryKey: notificationKeys.unreadCount,
@@ -30,6 +40,16 @@ export function UnreadCountProvider({ children }: { children: ReactNode }) {
     refetchInterval: POLL_INTERVAL_MS,
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (data === undefined) return;
+
+    if (lastCount.current !== null && data > lastCount.current) {
+      void queryClient.invalidateQueries({ queryKey: notificationKeys.list, refetchType: 'all' });
+    }
+
+    lastCount.current = data;
+  }, [data, queryClient]);
 
   const reload = useCallback(() => void refetch(), [refetch]);
 

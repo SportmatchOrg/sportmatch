@@ -11,7 +11,8 @@ export type NotificationType =
   | 'PARTICIPANT_LEFT'
   | 'MATCH_UPDATED'
   | 'NO_SHOW_CONFIRMED'
-  | 'USER_SUSPENDED';
+  | 'USER_SUSPENDED'
+  | 'MATCH_REMINDER';
 
 export type NotificationMatch = {
   id: string;

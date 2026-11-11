@@ -1,3 +1,7 @@
+:root {
+  --nav-bottom-clearance: max(120px, calc(env(safe-area-inset-bottom) + 104px));
+}
+
 @theme inline {
   --spacing-gutter: 20px;
   --spacing-safe-top: 59px;

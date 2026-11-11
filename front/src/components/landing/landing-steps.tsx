@@ -18,14 +18,14 @@ const STEPS: {
     label: "Paso 2",
     title: "Sumate en un toque",
     description:
-      "Reservás tu lugar, pagás tu parte de la cancha y el grupo se entera al instante.",
+      "Pedís tu lugar y te avisamos apenas el organizador te acepta.",
     icon: Check,
   },
   {
     label: "Paso 3",
     title: "Jugá y volvé",
     description:
-      "Puntuás a los que jugaron, subís de nivel y te empiezan a llegar los partidos que te quedan bien.",
+      "Puntuás a los que jugaron y te recomendamos partidos que van con tu nivel y tus deportes.",
     icon: Flame,
   },
 ];

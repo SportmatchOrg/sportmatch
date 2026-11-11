@@ -1,18 +1,23 @@
 'use client';
 
-import { MapPin, User as UserIcon } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { LoaderCircle, MapPin, User as UserIcon } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
+import { AiImageDialog } from '@/components/ai-image-dialog';
 import { AuthField } from '@/components/auth/auth-field';
 import { PasswordField } from '@/components/auth/password-field';
 import { EditField, editFieldErrorId } from '@/components/profile/edit-field';
 import { EditProfileLayout } from '@/components/profile/edit-profile-layout';
-import { SPORT_ICON } from '@/components/matches/sport-icon';
+import { SportsPicker } from '@/components/profile/sports-picker';
+import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { PillButton } from '@/components/ui/pill-button';
+import { PillButton, pillButtonClassName } from '@/components/ui/pill-button';
 import { TOAST_DURATION, Toast, type ToastTone } from '@/components/ui/toast';
 import { useAuth } from '@/context/auth-context';
-import { useSports } from '@/hooks/use-sports';
+import { useSyncProfileCache } from '@/hooks/use-sync-profile-cache';
+import { useUploadProfilePhoto } from '@/hooks/use-upload-profile-photo';
+import { PHOTO_HINT, PHOTO_TYPES } from '@/lib/photo-upload';
 import {
   MIN_PASSWORD_LENGTH,
   changePassword,
@@ -20,18 +25,19 @@ import {
   hasPassword,
   isWeakPassword,
   isWrongPassword,
+  releaseCredential,
   syncDisplayName,
 } from '@/lib/account';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { openSession } from '@/lib/session';
 import { updateProfile } from '@/lib/users';
 import { cn } from '@/lib/utils';
-import { LEVELS, LEVEL_LABEL, SPORT_LABEL, type Level } from '@/types/match';
+import { LEVELS, LEVEL_LABEL, type Level } from '@/types/match';
 import {
   CITY_MAX,
   CITY_MIN,
   NAME_MAX,
   NAME_MIN,
-  SPORTS_MAX,
   type User,
 } from '@/types/user';
 
@@ -52,6 +58,8 @@ const CURRENT_PASSWORD_REQUIRED = 'Ingresá tu contraseña actual.';
 const WRONG_PASSWORD = 'La contraseña actual es incorrecta.';
 const WEAK_PASSWORD = `La contraseña nueva es muy débil. Usá al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
 const PASSWORD_MISMATCH = 'Las contraseñas no coinciden.';
+const PASSWORD_CHANGED_SESSION_ERROR =
+  'Tu contraseña se cambió, pero no pudimos renovar tu sesión. Iniciá sesión con la contraseña nueva.';
 
 type FieldName = 'name' | 'city' | 'currentPassword' | 'newPassword' | 'repeatPassword';
 
@@ -69,9 +77,13 @@ function SectionHeading({ title, hint }: { title: string; hint: string }) {
 }
 
 export function EditProfileForm({ user }: { user: User }) {
-  const { user: firebaseUser } = useAuth();
-  const canChangePassword = hasPassword(firebaseUser);
-  const { sports, loading: sportsLoading, error: sportsError } = useSports();
+  const { user: sessionUser } = useAuth();
+  const syncProfileCache = useSyncProfileCache();
+  const photo = useUploadProfilePhoto(user.id);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoHintId = useId();
+  const photoErrorId = useId();
+  const canChangePassword = hasPassword(sessionUser);
 
   const [name, setName] = useState(user.name);
   const [city, setCity] = useState(user.city ?? '');
@@ -84,6 +96,18 @@ export function EditProfileForm({ user }: { user: User }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
+  async function applyPhoto(file: File): Promise<boolean> {
+    const updated = await photo.upload(file);
+    if (updated) setToast({ message: 'Foto actualizada', tone: 'success' });
+    return updated;
+  }
+
+  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file) await applyPhoto(file);
+  }
+
   useEffect(() => {
     if (!toast) return;
 
@@ -95,15 +119,6 @@ export function EditProfileForm({ user }: { user: User }) {
   const trimmedCity = city.trim();
   const wantsPassword =
     canChangePassword && [currentPassword, newPassword, repeatPassword].some(Boolean);
-  const sportsFull = sportIds.length >= SPORTS_MAX;
-
-  function toggleSport(sportId: string) {
-    setSportIds((current) => {
-      if (current.includes(sportId)) return current.filter((id) => id !== sportId);
-
-      return current.length >= SPORTS_MAX ? current : [...current, sportId];
-    });
-  }
 
   function validate(): Errors {
     const found: Errors = {};
@@ -120,19 +135,35 @@ export function EditProfileForm({ user }: { user: User }) {
     return found;
   }
 
-  async function save(): Promise<Errors | null> {
-    if (wantsPassword && firebaseUser) {
-      try {
-        await confirmPassword(firebaseUser, currentPassword);
-      } catch (caught) {
-        return {
-          currentPassword: isWrongPassword(caught) ? WRONG_PASSWORD : getAuthErrorMessage(caught),
-        };
-      }
+  function clearPasswordFields() {
+    setCurrentPassword('');
+    setNewPassword('');
+    setRepeatPassword('');
+  }
+
+  async function save(): Promise<Errors | string | null> {
+    if (!wantsPassword || !sessionUser) return saveProfile(null);
+
+    let credential: FirebaseUser;
+    try {
+      credential = await confirmPassword(sessionUser.email, currentPassword);
+    } catch (caught) {
+      return {
+        currentPassword: isWrongPassword(caught) ? WRONG_PASSWORD : getAuthErrorMessage(caught),
+      };
     }
 
     try {
-      await updateProfile(user.id, {
+      return await saveProfile(credential);
+    } finally {
+      await releaseCredential();
+    }
+  }
+
+  async function saveProfile(credential: FirebaseUser | null): Promise<Errors | string | null> {
+    let saved: User;
+    try {
+      saved = await updateProfile(user.id, {
         name: trimmedName,
         city: trimmedCity || null,
         level,
@@ -142,15 +173,36 @@ export function EditProfileForm({ user }: { user: User }) {
       return null;
     }
 
-    if (firebaseUser) await syncDisplayName(firebaseUser, trimmedName);
+    await syncProfileCache(user.id, user.firebaseUid, {
+      name: saved.name,
+      city: saved.city,
+      level: saved.level,
+      sports: saved.sports,
+    });
 
-    if (wantsPassword && firebaseUser) {
+    if (credential) {
       try {
-        await changePassword(firebaseUser, newPassword);
+        await syncDisplayName(credential, trimmedName);
+      } catch {
+        return 'Tu perfil se guardó, pero no pudimos sincronizar el nombre con Firebase. Probá de nuevo.';
+      }
+    }
+
+    if (credential) {
+      try {
+        await changePassword(credential, newPassword);
       } catch (caught) {
+        setToast({ message: 'Tu perfil se guardó, pero no pudimos cambiar la contraseña.', tone: 'danger' });
         return {
           newPassword: isWeakPassword(caught) ? WEAK_PASSWORD : getAuthErrorMessage(caught),
         };
+      }
+
+      try {
+        await openSession(credential);
+      } catch {
+        clearPasswordFields();
+        return PASSWORD_CHANGED_SESSION_ERROR;
       }
     }
 
@@ -159,29 +211,33 @@ export function EditProfileForm({ user }: { user: User }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving || photo.pending) return;
 
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
     setSaving(true);
-    const result = await save();
-    setSaving(false);
+    try {
+      const result = await save();
 
-    if (result === null) {
-      setToast({ message: SAVE_ERROR, tone: 'danger' });
-      return;
+      if (result === null || typeof result === 'string') {
+        setToast({ message: result ?? SAVE_ERROR, tone: 'danger' });
+        return;
+      }
+
+      setErrors(result);
+      if (Object.keys(result).length > 0) return;
+
+      setName(trimmedName);
+      setCity(trimmedCity);
+      clearPasswordFields();
+      setToast({ message: SAVED, tone: 'success' });
+    } catch {
+      setToast({ message: 'No pudimos completar todas las operaciones. Revisá tu perfil antes de volver a intentar.', tone: 'danger' });
+    } finally {
+      setSaving(false);
     }
-
-    setErrors(result);
-    if (Object.keys(result).length > 0) return;
-
-    setName(trimmedName);
-    setCity(trimmedCity);
-    setCurrentPassword('');
-    setNewPassword('');
-    setRepeatPassword('');
-    setToast({ message: SAVED, tone: 'success' });
   }
 
   const describedBy = (field: FieldName) => (errors[field] ? editFieldErrorId(field) : undefined);
@@ -194,13 +250,49 @@ export function EditProfileForm({ user }: { user: User }) {
           type="submit"
           form={FORM_ID}
           size="md"
-          disabled={saving}
+          disabled={saving || photo.pending}
           className="hidden lg:flex"
         >
           {saveLabel}
         </PillButton>
       }
     >
+      <section aria-label="Foto de perfil" className="flex flex-col items-center gap-3 lg:items-start">
+        <button
+          type="button"
+          disabled={saving || photo.pending}
+          onClick={() => photoInput.current?.click()}
+          aria-label="Cambiar foto"
+          aria-busy={photo.pending}
+          aria-describedby={photo.error ? `${photoHintId} ${photoErrorId}` : photoHintId}
+          className="flex flex-col items-center gap-4 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed"
+        >
+          <span className="relative rounded-full">
+            <ProfileAvatar name={user.name} photoUrl={user.photoUrl} />
+            {photo.pending && (
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-base/70">
+                <LoaderCircle className="size-7 animate-spin text-white" aria-hidden="true" />
+              </span>
+            )}
+          </span>
+          <span className={pillButtonClassName({ variant: 'glass', size: 'md' })}>
+            {photo.pending ? 'Subiendo foto…' : 'Cambiar foto'}
+          </span>
+        </button>
+        <AiImageDialog target="profile" disabled={saving || photo.pending} onUse={applyPhoto} />
+        <input
+          ref={photoInput}
+          type="file"
+          accept={PHOTO_TYPES.join(',')}
+          disabled={saving || photo.pending}
+          onChange={(event) => void handlePhotoChange(event)}
+          aria-label="Elegir foto de perfil"
+          tabIndex={-1}
+          className="sr-only"
+        />
+        <p id={photoHintId} className="text-caption text-ink-64">{PHOTO_HINT}</p>
+        {photo.error && <p id={photoErrorId} role="alert" className="text-caption text-danger">{photo.error}</p>}
+      </section>
       <form
         id={FORM_ID}
         onSubmit={handleSubmit}
@@ -251,40 +343,7 @@ export function EditProfileForm({ user }: { user: User }) {
               />
             </EditField>
 
-            <div className="flex flex-col gap-2">
-              <p id="sports-label" className={GROUP_LABEL}>
-                Deportes
-                <span className="normal-case">
-                  {sportIds.length} de {SPORTS_MAX}
-                </span>
-              </p>
-
-              {sportsLoading && <p className="pl-1 text-caption text-ink-46">Cargando deportes…</p>}
-
-              {sportsError && (
-                <p role="alert" className="pl-1 text-caption text-danger">
-                  {sportsError}
-                </p>
-              )}
-
-              <div role="group" aria-labelledby="sports-label" className={CHIPS}>
-                {sports.map((sport) => {
-                  const selected = sportIds.includes(sport.id);
-
-                  return (
-                    <FilterChip
-                      key={sport.id}
-                      icon={SPORT_ICON[sport.name]}
-                      selected={selected}
-                      aria-disabled={saving || (sportsFull && !selected)}
-                      onClick={() => !saving && toggleSport(sport.id)}
-                    >
-                      {SPORT_LABEL[sport.name]}
-                    </FilterChip>
-                  );
-                })}
-              </div>
-            </div>
+            <SportsPicker value={sportIds} onChange={setSportIds} disabled={saving} />
 
             <div className="flex flex-col gap-2">
               <p id="level-label" className={GROUP_LABEL}>
@@ -361,7 +420,7 @@ export function EditProfileForm({ user }: { user: User }) {
           </section>
         )}
 
-        <PillButton type="submit" disabled={saving} className="lg:hidden">
+        <PillButton type="submit" disabled={saving || photo.pending} className="lg:hidden">
           {saveLabel}
         </PillButton>
       </form>

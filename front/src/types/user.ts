@@ -18,9 +18,13 @@ export type PublicProfile = {
   stats: UserStats;
 };
 
+export type UserRole = 'USER' | 'ADMIN';
+
 export type User = {
   id: string;
   firebaseUid: string;
+  role: UserRole;
+  onboardedAt: string | null;
   email: string;
   name: string;
   photoUrl: string | null;
@@ -30,12 +34,24 @@ export type User = {
   stats: UserStats & { suspendedUntil: string | null };
 };
 
+export type CurrentUser = User & { signInProvider: string };
+
 export type ProfileUpdate = {
   name: string;
   city: string | null;
   level: Level | null;
   sportIds: string[];
 };
+
+export type OnboardingData = {
+  sportIds: string[];
+  level: Level;
+  city: string;
+};
+
+export function isAdmin(user: Pick<User, 'role'>): boolean {
+  return user.role === 'ADMIN';
+}
 
 export const NAME_MIN = 2;
 export const NAME_MAX = 60;

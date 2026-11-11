@@ -1,27 +1,24 @@
 'use client';
 
-import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
+import { useMap } from '@vis.gl/react-google-maps';
 import { FunnelX, LocateFixed, MapPinOff, TriangleAlert } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { BaseMap } from '@/components/map/base-map';
+import { ClusteredMatchPins } from '@/components/map/clustered-match-pins';
 import { FitBounds } from '@/components/map/fit-bounds';
 import { MapFilterChips } from '@/components/map/map-filter-chips';
 import { MapFiltersSheet } from '@/components/map/map-filters-sheet';
 import { MapHeader } from '@/components/map/map-header';
 import { MapSearchBar } from '@/components/map/map-search-bar';
-import { MatchPin } from '@/components/map/match-pin';
-import {
-  USER_LOCATION_Z_INDEX,
-  UserLocationMarker,
-} from '@/components/map/user-location-marker';
+import { UserLocationMarker } from '@/components/map/user-location-marker';
 import { MatchRow } from '@/components/matches/match-row';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { PillButton } from '@/components/ui/pill-button';
 import { RetryButton } from '@/components/ui/retry-button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMapBounds } from '@/hooks/use-map-bounds';
 import { useMatches } from '@/hooks/use-matches';
 import { useUserLocation, type UserLocation } from '@/hooks/use-user-location';
 import { DEFAULT_MAP_CENTER } from '@/lib/map-center';
@@ -31,26 +28,28 @@ import {
   toMatchesQuery,
   type MapFilters,
 } from '@/lib/map-filters';
-import { SPORT_LABEL, type Match } from '@/types/match';
+import type { LocatedMatch, Match } from '@/types/match';
 
 const DEFAULT_ZOOM = 12;
 
 const USER_ZOOM = 15;
 
-const PIN_Z_INDEX = USER_LOCATION_Z_INDEX + 1;
+const MAP_MATCH_LIMIT = 500;
 
 const SCREEN =
-  'flex h-[calc(100dvh-(--spacing(28)))] w-full lg:h-[calc(100dvh-(--spacing(20)))]';
+  'fixed inset-0 flex w-full lg:static lg:h-[calc(100dvh-(--spacing(20)))]';
 
 const SIDE_LIST =
   'hidden w-md shrink-0 flex-col gap-4 overflow-y-auto border-r border-glass-strong bg-raised px-6 py-6 lg:flex';
 
 const PANEL =
-  'absolute inset-x-5 top-36 z-10 mx-auto max-w-sm rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6';
+  'absolute inset-x-5 top-[calc(env(safe-area-inset-top)_+_144px)] z-10 mx-auto max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_144px_-_var(--nav-bottom-clearance)_-_16px)] max-w-sm overflow-y-auto rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6 lg:max-h-none';
 
-const MOBILE_CHIPS = '-mx-4 -my-1 overflow-x-auto px-4 py-1 [scrollbar-width:none]';
+const ZOOM_HINT =
+  'pointer-events-none absolute bottom-[calc(var(--nav-bottom-clearance)_+_48px)] left-1/2 z-10 -translate-x-1/2 rounded-full bg-glass-solid px-4 py-2 text-caption font-semibold whitespace-nowrap text-white shadow-bevel backdrop-blur-chip lg:bottom-12';
 
-type LocatedMatch = Match & { latitude: number; longitude: number };
+const CHIPS_ROW =
+  'shrink-0 flex-nowrap overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 function isLocated(match: Match): match is LocatedMatch {
   return match.latitude !== null && match.longitude !== null;
@@ -69,13 +68,18 @@ function MapPanel({ children }: { children: ReactNode }) {
 }
 
 export default function MapPage() {
-  const router = useRouter();
   const map = useMap();
   const { location } = useUserLocation();
   const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const query = useMemo(() => toMatchesQuery(filters), [filters]);
-  const { matches, loading, error, reload } = useMatches(query);
+  const bounds = useMapBounds();
+  const filterQuery = useMemo(() => toMatchesQuery(filters), [filters]);
+  const query = useMemo(
+    () => ({ ...filterQuery, ...bounds, limit: MAP_MATCH_LIMIT }),
+    [filterQuery, bounds],
+  );
+  const { matches, loading, error, reload } = useMatches(query, bounds !== null);
+  const truncated = matches.length === MAP_MATCH_LIMIT;
   const centeredOnUser = useRef(false);
   const searchProps = { onOpenFilters: () => setFiltersOpen(true), origin: location };
 
@@ -198,40 +202,32 @@ export default function MapPage() {
     <main className={SCREEN}>
       <aside aria-label="Partidos en el mapa" className={SIDE_LIST}>
         <MapSearchBar {...searchProps} />
-        {renderChips('flex-wrap')}
+        {renderChips(CHIPS_ROW)}
         {renderList()}
       </aside>
 
       <div className="relative min-w-0 flex-1">
-        <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full">
-          {located.map((match) => (
-            <AdvancedMarker
-              key={match.id}
-              position={position(match)}
-              title={`${SPORT_LABEL[match.sport.name]} · ${match.location}`}
-              onClick={() => router.push(`/partidos/${match.id}`)}
-              zIndex={PIN_Z_INDEX}
-            >
-              <MatchPin sport={match.sport.name} />
-            </AdvancedMarker>
-          ))}
+        <BaseMap defaultCenter={DEFAULT_MAP_CENTER} defaultZoom={DEFAULT_ZOOM} className="size-full" bottomInset>
+          <ClusteredMatchPins matches={located} />
 
           {location ? <UserLocationMarker location={location} /> : <FitBounds points={points} />}
         </BaseMap>
 
-        <MapHeader {...searchProps}>{renderChips(MOBILE_CHIPS)}</MapHeader>
+        <MapHeader {...searchProps}>{renderChips(CHIPS_ROW)}</MapHeader>
 
         {location && (
           <IconButton
             label="Centrar en mi ubicación"
             onClick={recenter}
-            className="absolute right-4 bottom-10 z-10"
+            className="absolute right-4 bottom-[calc(var(--nav-bottom-clearance)_+_40px)] z-10 lg:bottom-10"
           >
             <LocateFixed className="size-5" aria-hidden="true" />
           </IconButton>
         )}
 
         {renderOverlay()}
+
+        {truncated && <p className={ZOOM_HINT}>Acercate para ver todos</p>}
       </div>
 
       <MapFiltersSheet

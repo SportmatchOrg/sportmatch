@@ -6,12 +6,15 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
 import { ListNotificationsDto } from './dto/list-notifications.dto';
 import { NotificationsService } from './notifications.service';
 
+@ApiTags('Notificaciones')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('notifications')
 export class NotificationsController {

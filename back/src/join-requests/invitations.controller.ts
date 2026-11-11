@@ -7,6 +7,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import type { FirebaseUser } from '../auth/types';
@@ -14,6 +15,8 @@ import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { RespondInvitationDto } from './dto/respond-invitation.dto';
 import { InvitationsService } from './invitations.service';
 
+@ApiTags('Invitaciones')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 @Controller('matches/:matchId/invitations')
 export class InvitationsController {

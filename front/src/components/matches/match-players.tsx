@@ -1,8 +1,19 @@
+import { Flag } from 'lucide-react';
+import Link from 'next/link';
+
 import { AvatarStack } from '@/components/matches/avatar-stack';
+import { ReportDialog } from '@/components/reports/report-dialog';
+import { UserAvatar } from '@/components/user-avatar';
 import { cn } from '@/lib/utils';
 import type { PublicUser } from '@/types/match';
 
 const LOW_SPOTS = 2;
+
+const REPORT_BUTTON =
+  'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-caption font-semibold text-ink-64 transition outline-none hover:bg-glass hover:text-white focus-visible:ring-2 focus-visible:ring-brand';
+
+const PLAYER_LINK =
+  'flex min-w-0 flex-1 items-center gap-3 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
 type MatchPlayersProps = {
   participants: PublicUser[];
@@ -10,7 +21,15 @@ type MatchPlayersProps = {
   joinedCount: number;
   capacity: number;
   played?: boolean;
+  report?: { matchId: string; currentUserId: string };
 };
+
+function playerRole(user: PublicUser, organizerId: string, currentUserId: string): string | null {
+  if (user.id === currentUserId) return 'Vos';
+  if (user.id === organizerId) return 'Organizó';
+
+  return null;
+}
 
 export function MatchPlayers({
   participants,
@@ -18,6 +37,7 @@ export function MatchPlayers({
   joinedCount,
   capacity,
   played = false,
+  report,
 }: MatchPlayersProps) {
   const freeSpots = Math.max(0, capacity - joinedCount);
   const low = freeSpots <= LOW_SPOTS;
@@ -51,7 +71,52 @@ export function MatchPlayers({
         )}
       </header>
 
-      <AvatarStack users={users} />
+      {report ? (
+        <ul className="flex flex-col gap-3">
+          {users.map((user) => {
+            const role = playerRole(user, organizer.id, report.currentUserId);
+
+            return (
+              <li key={user.id} className="flex items-center gap-3">
+                <Link href={`/usuarios/${user.id}`} className={PLAYER_LINK}>
+                  <UserAvatar
+                    name={user.name}
+                    photoUrl={user.photoUrl}
+                    sizes="44px"
+                    className="size-11"
+                    initialsClassName="text-caption"
+                  />
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate text-callout font-semibold text-white">
+                      {user.name}
+                    </span>
+                    {role && <span className="text-caption text-ink-46">{role}</span>}
+                  </span>
+                </Link>
+
+                {user.id !== report.currentUserId && (
+                  <ReportDialog
+                    reportedUser={user}
+                    matchId={report.matchId}
+                    trigger={
+                      <button
+                        type="button"
+                        aria-label={`Reportar a ${user.name}`}
+                        className={REPORT_BUTTON}
+                      >
+                        <Flag className="size-4" aria-hidden="true" />
+                        Reportar
+                      </button>
+                    }
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <AvatarStack users={users} />
+      )}
     </section>
   );
 }

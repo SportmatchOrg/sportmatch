@@ -1,4 +1,4 @@
-import { ApiError, apiFetch } from '@/lib/api';
+import { ApiError, apiFetch, apiFetchWithHeaders } from '@/lib/api';
 import { toCreateMatchBody, toUpdateMatchBody, type MatchForm } from '@/lib/match-form';
 import { suspensionErrorMessage } from '@/lib/suspension';
 import type {
@@ -9,10 +9,21 @@ import type {
   MyMatches,
 } from '@/types/match';
 
+const NEXT_CURSOR_HEADER = 'X-Next-Cursor';
+
+export const MATCHES_ERROR_MESSAGE = 'No pudimos cargar los partidos. Probá de nuevo en un momento.';
+
 const CONFLICT = 409;
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 const JOIN_REQUEST_FALLBACK = 'No pudimos enviar tu solicitud. Probá de nuevo.';
+const RESOLVE_REQUEST_FALLBACK = 'No pudimos resolver la solicitud. Probá de nuevo.';
+const RESOLVE_REQUEST_CONFLICTS: Record<string, string> = {
+  full: 'No se pudo aceptar: el partido está lleno',
+  resolved: 'Esta solicitud ya fue resuelta',
+  canceled: 'El partido está cancelado',
+  'already a participant': 'Este jugador ya está anotado',
+};
 
 export function joinRequestErrorMessage(error: unknown): string {
   const suspension = suspensionErrorMessage(error);
@@ -31,6 +42,23 @@ export function joinRequestErrorMessage(error: unknown): string {
   if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
 
   return JOIN_REQUEST_FALLBACK;
+}
+
+export function resolveRequestErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return RESOLVE_REQUEST_FALLBACK;
+
+  if (error.status === CONFLICT) {
+    const message = error.message.toLowerCase();
+    const conflict = Object.entries(RESOLVE_REQUEST_CONFLICTS).find(([fragment]) =>
+      message.includes(fragment)
+    );
+    return conflict ? conflict[1] : RESOLVE_REQUEST_FALLBACK;
+  }
+
+  if (error.status === BAD_REQUEST) return 'Este partido ya se jugó';
+  if (error.status === NOT_FOUND) return 'Esta solicitud ya no existe';
+
+  return RESOLVE_REQUEST_FALLBACK;
 }
 
 export function leaveErrorMessage(error: unknown): string {
@@ -68,6 +96,23 @@ export async function fetchMatches(query: MatchesQuery = {}): Promise<Match[]> {
 
   return apiFetch<Match[]>(search ? `/matches?${search}` : '/matches');
 }
+
+export type MatchesPageQuery = MatchesQuery & { limit: number; cursor?: string };
+
+export type MatchesPage = { matches: Match[]; nextCursor: string | null };
+
+export async function fetchMatchesPage(
+  query: MatchesPageQuery,
+  signal?: AbortSignal
+): Promise<MatchesPage> {
+  const { data, headers } = await apiFetchWithHeaders<Match[]>(
+    `/matches?${toSearchParams(query)}`,
+    { signal }
+  );
+
+  return { matches: data, nextCursor: headers.get(NEXT_CURSOR_HEADER) };
+}
+
 export async function fetchMyMatches(): Promise<MyMatches> {
   return apiFetch<MyMatches>('/matches/mine');
 }
@@ -88,6 +133,12 @@ export async function updateMatch(matchId: string, form: MatchForm): Promise<Mat
     method: 'PATCH',
     body: JSON.stringify(toUpdateMatchBody(form)),
   });
+}
+
+export async function uploadMatchPhoto(matchId: string, file: File): Promise<{ photoUrl: string }> {
+  const body = new FormData();
+  body.append('photo', file);
+  return apiFetch(`/matches/${matchId}/photo`, { method: 'POST', body });
 }
 
 export async function requestToJoin(matchId: string): Promise<void> {
