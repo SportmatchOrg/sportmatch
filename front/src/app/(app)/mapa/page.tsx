@@ -18,6 +18,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { PillButton } from '@/components/ui/pill-button';
 import { RetryButton } from '@/components/ui/retry-button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMapBounds } from '@/hooks/use-map-bounds';
 import { useMatches } from '@/hooks/use-matches';
 import { useUserLocation, type UserLocation } from '@/hooks/use-user-location';
 import { DEFAULT_MAP_CENTER } from '@/lib/map-center';
@@ -33,6 +34,8 @@ const DEFAULT_ZOOM = 12;
 
 const USER_ZOOM = 15;
 
+const MAP_MATCH_LIMIT = 500;
+
 const SCREEN =
   'fixed inset-0 flex w-full lg:static lg:h-[calc(100dvh-(--spacing(20)))]';
 
@@ -41,6 +44,9 @@ const SIDE_LIST =
 
 const PANEL =
   'absolute inset-x-5 top-[calc(env(safe-area-inset-top)_+_144px)] z-10 mx-auto max-h-[calc(100dvh_-_env(safe-area-inset-top)_-_144px_-_var(--nav-bottom-clearance)_-_16px)] max-w-sm overflow-y-auto rounded-lg bg-glass-solid py-8 shadow-float-glass backdrop-blur-card lg:top-6 lg:max-h-none';
+
+const ZOOM_HINT =
+  'pointer-events-none absolute bottom-[calc(var(--nav-bottom-clearance)_+_48px)] left-1/2 z-10 -translate-x-1/2 rounded-full bg-glass-solid px-4 py-2 text-caption font-semibold whitespace-nowrap text-white shadow-bevel backdrop-blur-chip lg:bottom-12';
 
 const CHIPS_ROW =
   'shrink-0 flex-nowrap overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
@@ -66,8 +72,14 @@ export default function MapPage() {
   const { location } = useUserLocation();
   const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const query = useMemo(() => toMatchesQuery(filters), [filters]);
-  const { matches, loading, error, reload } = useMatches(query);
+  const bounds = useMapBounds();
+  const filterQuery = useMemo(() => toMatchesQuery(filters), [filters]);
+  const query = useMemo(
+    () => ({ ...filterQuery, ...bounds, limit: MAP_MATCH_LIMIT }),
+    [filterQuery, bounds],
+  );
+  const { matches, loading, error, reload } = useMatches(query, bounds !== null);
+  const truncated = matches.length === MAP_MATCH_LIMIT;
   const centeredOnUser = useRef(false);
   const searchProps = { onOpenFilters: () => setFiltersOpen(true), origin: location };
 
@@ -214,6 +226,8 @@ export default function MapPage() {
         )}
 
         {renderOverlay()}
+
+        {truncated && <p className={ZOOM_HINT}>Acercate para ver todos</p>}
       </div>
 
       <MapFiltersSheet
