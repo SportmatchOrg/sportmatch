@@ -23,12 +23,12 @@ export const matchesQueryOptions = (query: MatchesQuery) =>
     staleTime: STALE_TIME_MS,
   });
 
-export function useMatches(query: MatchesQuery = NO_FILTERS) {
+export function useMatches(query: MatchesQuery = NO_FILTERS, enabled = true) {
   const { user: firebaseUser, loading: sessionLoading } = useAuth();
 
   const { data, isPending, isLoadingError, refetch } = useQuery({
     ...matchesQueryOptions(query),
-    enabled: !sessionLoading && !!firebaseUser,
+    enabled: enabled && !sessionLoading && !!firebaseUser,
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   });
