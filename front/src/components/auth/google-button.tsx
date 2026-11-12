@@ -3,7 +3,7 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 
-import { useAuth } from '@/context/auth-context';
+import { useStartSession } from '@/hooks/use-start-session';
 import { sessionErrorMessage } from '@/lib/auth-errors';
 import { auth } from '@/lib/firebase';
 
@@ -14,7 +14,7 @@ type GoogleButtonProps = {
 };
 
 export function GoogleButton({ label, disabled = false, onError }: GoogleButtonProps) {
-  const { startSession } = useAuth();
+  const startSession = useStartSession();
   const [submitting, setSubmitting] = useState(false);
 
   async function handleClick() {

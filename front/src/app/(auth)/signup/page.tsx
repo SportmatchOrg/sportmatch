@@ -12,7 +12,7 @@ import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
-import { useAuth } from '@/context/auth-context';
+import { useStartSession } from '@/hooks/use-start-session';
 import { sessionErrorMessage } from '@/lib/auth-errors';
 import { LOGIN_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
@@ -21,7 +21,7 @@ const MIN_PASSWORD_LENGTH = 6;
 
 export default function SignupPage() {
   const { checkingSession, next } = useRedirectIfAuthenticated();
-  const { startSession } = useAuth();
+  const startSession = useStartSession();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

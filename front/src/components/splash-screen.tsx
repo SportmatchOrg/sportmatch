@@ -16,16 +16,19 @@ export function SplashMark({ className }: { className?: string }) {
 
 export function SplashScreen({
   onDone,
+  holding = false,
   tagline = DEFAULT_TAGLINE,
   soundSrc,
   className,
 }: {
   onDone?: () => void;
+  holding?: boolean;
   tagline?: string;
   soundSrc?: string;
   className?: string;
 }) {
-  const [leaving, setLeaving] = useState(false);
+  const [elapsed, setElapsed] = useState(false);
+  const leaving = elapsed && !holding;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -41,15 +44,21 @@ export function SplashScreen({
       void audio.play().catch(() => {});
     }
 
-    const leaveTimeout = setTimeout(() => setLeaving(true), hold);
-    const doneTimeout = setTimeout(() => onDone?.(), hold + FADE_OUT_MS);
+    const elapseTimeout = setTimeout(() => setElapsed(true), hold);
 
     return () => {
-      clearTimeout(leaveTimeout);
-      clearTimeout(doneTimeout);
+      clearTimeout(elapseTimeout);
       audioRef.current?.pause();
     };
-  }, [onDone, soundSrc]);
+  }, [soundSrc]);
+
+  useEffect(() => {
+    if (!leaving) return;
+
+    const doneTimeout = setTimeout(() => onDone?.(), FADE_OUT_MS);
+
+    return () => clearTimeout(doneTimeout);
+  }, [leaving, onDone]);
 
   return (
     <div
