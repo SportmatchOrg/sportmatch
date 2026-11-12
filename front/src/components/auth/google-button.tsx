@@ -1,11 +1,9 @@
 'use client';
 
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 
-import { useStartSession } from '@/hooks/use-start-session';
+import { useGoogleSignIn } from '@/hooks/use-google-sign-in';
 import { sessionErrorMessage } from '@/lib/auth-errors';
-import { auth } from '@/lib/firebase';
 
 type GoogleButtonProps = {
   label: string;
@@ -14,7 +12,7 @@ type GoogleButtonProps = {
 };
 
 export function GoogleButton({ label, disabled = false, onError }: GoogleButtonProps) {
-  const startSession = useStartSession();
+  const signInWithGoogle = useGoogleSignIn();
   const [submitting, setSubmitting] = useState(false);
 
   async function handleClick() {
@@ -22,8 +20,7 @@ export function GoogleButton({ label, disabled = false, onError }: GoogleButtonP
     setSubmitting(true);
 
     try {
-      const { user } = await signInWithPopup(auth, new GoogleAuthProvider());
-      await startSession(user);
+      await signInWithGoogle();
     } catch (caught) {
       onError(sessionErrorMessage(caught));
       setSubmitting(false);
