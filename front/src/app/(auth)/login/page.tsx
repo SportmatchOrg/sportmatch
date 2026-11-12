@@ -11,9 +11,9 @@ import { FormError } from '@/components/auth/form-error';
 import { GoogleButton } from '@/components/auth/google-button';
 import { PasswordField } from '@/components/auth/password-field';
 import { SubmitButton } from '@/components/auth/submit-button';
-import { useAuth } from '@/context/auth-context';
 import { useAccountBlockedNotice } from '@/hooks/use-account-blocked-notice';
 import { useRedirectIfAuthenticated } from '@/hooks/use-redirect-if-authenticated';
+import { useStartSession } from '@/hooks/use-start-session';
 import { SIGNUP_HREF, withNext } from '@/lib/auth-redirect';
 import { auth } from '@/lib/firebase';
 import { sessionErrorMessage } from '@/lib/auth-errors';
@@ -25,7 +25,7 @@ const BLOCKED_NOTICE =
 
 export default function LoginPage() {
   const { checkingSession, next } = useRedirectIfAuthenticated();
-  const { startSession } = useAuth();
+  const startSession = useStartSession();
   const blockedNotice = useAccountBlockedNotice();
 
   const [email, setEmail] = useState('');
